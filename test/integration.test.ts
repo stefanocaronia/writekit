@@ -8,12 +8,21 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, copyFileSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
 const CLI = `node ${join(ROOT, "dist", "cli.js")}`;
 const SANDBOX = join(ROOT, "sandbox");
+const COVER_MOCKUP = join(ROOT, "assets", "cover-mockup.png");
+
+function installCover(projectDir: string): void {
+    const assetsDir = join(projectDir, "assets");
+    mkdirSync(assetsDir, { recursive: true });
+    if (existsSync(COVER_MOCKUP)) {
+        copyFileSync(COVER_MOCKUP, join(assetsDir, "cover.png"));
+    }
+}
 
 function run(cmd: string, cwd?: string): string {
     return execSync(cmd, {
@@ -39,6 +48,7 @@ describe("integration: novel", () => {
         if (!existsSync(DIR)) {
             run(`${CLI} init int-novel --yes --type novel`, SANDBOX);
         }
+        installCover(DIR);
     });
 
     it("populate with realistic content", () => {
@@ -249,6 +259,7 @@ From reluctant ally to active participant in uncovering the truth.
         const html = readFileSync(join(DIR, "build", files[0]), "utf-8");
         expect(html).toContain("The Fountain");
         expect(html).toContain("footnote");
+        expect(html).toContain("cover-image");
     });
 
     it("build epub works", () => {
@@ -310,6 +321,7 @@ describe("integration: essay", () => {
         if (!existsSync(DIR)) {
             run(`${CLI} init int-essay --yes --type essay`, SANDBOX);
         }
+        installCover(DIR);
     });
 
     it("populate with realistic content", () => {
@@ -434,6 +446,7 @@ describe("integration: paper", () => {
         if (!existsSync(DIR)) {
             run(`${CLI} init int-paper --yes --type paper`, SANDBOX);
         }
+        installCover(DIR);
     });
 
     it("populate with realistic content", () => {
@@ -538,6 +551,7 @@ describe("integration: article", () => {
         if (!existsSync(DIR)) {
             run(`${CLI} init int-article --yes --type article`, SANDBOX);
         }
+        installCover(DIR);
     });
 
     it("populate with realistic content", () => {
@@ -629,6 +643,7 @@ describe("integration: collection", () => {
         if (!existsSync(DIR)) {
             run(`${CLI} init int-collection --yes --type collection`, SANDBOX);
         }
+        installCover(DIR);
     });
 
     it("populate with realistic multi-author content", () => {
