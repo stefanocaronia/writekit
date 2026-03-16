@@ -9,6 +9,7 @@ import { addCommand } from "./commands/add.js";
 import { themeCommand } from "./commands/theme.js";
 import { removeCommand } from "./commands/remove.js";
 import { syncCommand } from "./commands/sync.js";
+import { statsCommand } from "./commands/stats.js";
 
 const program = new Command();
 
@@ -24,6 +25,7 @@ program.addCommand(watchCommand);
 program.addCommand(addCommand);
 program.addCommand(removeCommand);
 program.addCommand(syncCommand);
+program.addCommand(statsCommand);
 program.addCommand(themeCommand);
 
 program.parse();

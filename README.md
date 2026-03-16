@@ -124,6 +124,7 @@ my-novel/
 | `wk check` | Validate your project — checks for missing files, broken YAML, and formatting issues |
 | `wk watch` | Watch your files and automatically rebuild when you save. Also runs validation on every change |
 | `wk sync` | Synchronize derived fields — contributor roles, AGENTS.md, reports |
+| `wk stats` | Show detailed statistics — word count, reading time, chapter balance, word frequency |
 
 ### Themes
 
