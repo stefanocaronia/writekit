@@ -14,6 +14,7 @@ import {
     TableRow,
     TableCell,
     WidthType,
+    TableLayoutType,
     LevelFormat,
     convertInchesToTwip,
 } from "docx";
@@ -414,6 +415,7 @@ function parseMarkdownToDocxBlocks(
                     new Table({
                         rows,
                         width: { size: 9000, type: WidthType.DXA },
+                        layout: TableLayoutType.FIXED,
                     }),
                 );
             }
