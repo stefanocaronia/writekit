@@ -94,6 +94,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)
 - [x] **`wk remove`** — remove chapter (con rinumerazione), character, location, note, author. Type-aware: derivato da add_commands escludendo yaml-only (event, source). Sync rinumera capitoli automaticamente.
 - [x] **`wk rename character/location/concept`** — rinomina file, aggiorna frontmatter, cerca/sostituisce in manuscript e outline. Type-aware.
+- [x] **`wk build md`** — quinto formato di output: libro completo in un singolo Markdown (copertina, indice, capitoli, quarta, about, colophon).
 - [x] **Copertina** — immagine da `assets/cover.{jpg,png}` resa in tutti i formati: HTML (hero image), ePub (cover page), PDF (prima pagina), DOCX (prima pagina con immagine). Configurabile in config.yaml: `cover: assets/cover.jpg`
 
 ---
@@ -111,7 +112,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 ## v0.5.0 — Estensioni
 
 - [ ] **Plugin system** — hook pre/post build
-- [x] **Export Markdown singolo** — `wk build md` genera il libro completo in un unico .md (copertina, indice, capitoli, quarta, about, colophon)
+- [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
 - [ ] **Font embedding** — woff2/ttf in HTML e ePub
 - [ ] **Backup command** — `wk backup` crea zip del progetto
