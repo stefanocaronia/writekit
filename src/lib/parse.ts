@@ -24,6 +24,7 @@ export interface BookConfig {
     build_formats?: string[];
     theme?: string;
     cover?: string;
+    print_preset?: string;
 }
 
 export interface Chapter {

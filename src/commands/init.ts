@@ -81,6 +81,7 @@ build_formats:
     - html
 theme: default
 cover: ""
+print_preset: a5
 
 # Legal
 license: All rights reserved

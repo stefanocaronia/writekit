@@ -210,6 +210,26 @@ Other fields (subtitle, genre, ISBN, publisher, etc.) are optional and used in t
 
 If you place a `cover.jpg` or `cover.png` in the `assets/` folder, it will automatically appear in all output formats. You can also set `cover: path/to/image` in config.yaml.
 
+### Print presets
+
+The `print_preset` field in config.yaml controls the PDF page size and margins:
+
+```yaml
+print_preset: trade    # 6×9in, US trade paperback
+```
+
+| Preset | Size | Use |
+|---|---|---|
+| `a4` | 210×297mm | Draft, home printing |
+| `a5` | 148×210mm | Standard EU book (default) |
+| `pocket` | 4.25×7in | Pocket book |
+| `digest` | 5.5×8.5in | Digest / mass market |
+| `trade` | 6×9in | US trade paperback |
+| `royal` | 6.14×9.21in | Royal format |
+| `kdp` | 6×9in | Amazon KDP ready (with bleed) |
+| `ingramspark` | 6×9in | IngramSpark ready (with bleed) |
+| `lulu` | 6×9in | Lulu ready (with bleed) |
+
 The `language` field also controls the editorial labels in your book — "Table of Contents", "Colophon", etc. are automatically translated. Supported: English, Italian, French, German, Spanish, Portuguese, Russian, Arabic, Hindi, Chinese, Korean, Japanese, Dutch, Polish, Turkish, Swedish, Greek.
 
 ### style.yaml

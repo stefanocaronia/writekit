@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { renderBook } from "./html.js";
+import { getPreset, DEFAULT_PRESET, type PrintPreset } from "./print-presets.js";
 
 const CHROME_PATHS_WIN = [
     process.env.PROGRAMFILES + "\\Google\\Chrome\\Application\\chrome.exe",
@@ -41,6 +42,11 @@ function findBrowser(): string | null {
     return null;
 }
 
+function resolvePreset(config: BookConfig): PrintPreset {
+    const presetName = config.print_preset ?? DEFAULT_PRESET;
+    return getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
+}
+
 export async function buildPdf(
     projectDir: string,
     config: BookConfig,
@@ -58,6 +64,7 @@ export async function buildPdf(
         );
     }
 
+    const preset = resolvePreset(config);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
@@ -81,12 +88,13 @@ export async function buildPdf(
         const outPath = join(buildDir, filename);
         await page.pdf({
             path: outPath,
-            format: "A5",
+            width: `${preset.width}mm`,
+            height: `${preset.height}mm`,
             margin: {
-                top: "2cm",
-                bottom: "2cm",
-                left: "2cm",
-                right: "2cm",
+                top: `${preset.margin.top}mm`,
+                bottom: `${preset.margin.bottom}mm`,
+                left: `${preset.margin.inner}mm`,
+                right: `${preset.margin.outer}mm`,
             },
             printBackground: true,
             displayHeaderFooter: false,
@@ -95,7 +103,6 @@ export async function buildPdf(
         return outPath;
     } finally {
         await browser.close();
-        // Clean up temp file
         const { unlink } = await import("node:fs/promises");
         await unlink(htmlPath).catch(() => {});
     }

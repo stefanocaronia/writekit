@@ -143,6 +143,18 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
                 });
             }
 
+            // Validate print preset
+            const presetName = data.print_preset as string;
+            if (presetName) {
+                const { getPreset, presetNames } = await import("../lib/print-presets.js");
+                if (!getPreset(presetName)) {
+                    issues.push({
+                        level: "error",
+                        message: `config.yaml: print_preset "${presetName}" not found — available: ${presetNames().join(", ")}`,
+                    });
+                }
+            }
+
             // Validate theme exists
             const themeName = (data.theme as string) || "default";
             const themes = await listThemes(projectDir);

@@ -88,8 +88,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [ ] **DOCX temi** — font/colori dal tema attivo
 - [ ] **Doc temi nel README** — documentare il workflow temi: il default è builtin (dentro il package, intoccabile). `wk theme create` copia dal default in `themes/` nel progetto. L'utente modifica solo la copia. Aggiornamenti npm aggiornano il default senza toccare i temi custom
 - [x] **Footnotes** — sintassi Pandoc/MultiMarkdown via marked-footnote. HTML/ePub/PDF con CSS, DOCX con FootnoteReferenceRun nativo Word.
-- [ ] **PDF configurabile** — formato pagina (A4/A5/Letter/trim sizes), margini
-- [ ] **Print presets per self-publishing** — configurazione `print:` in config.yaml con `trim` (5x8in, 6x9in, A5), `bleed` (3mm), `gutter` (auto dal numero pagine), `preset` (kdp, ingramspark, lulu, custom). Il preset imposta automaticamente margini, trim e bleed secondo le specifiche della piattaforma
+- [x] **PDF configurabile + print presets** — 9 preset (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu). Ogni preset ha dimensioni, margini e bleed specifici. Config: `print_preset: trade`. Validazione nel check.
 - [ ] **DOCX template utente** — se `assets/template.docx` è presente, il builder usa quegli stili al posto di quelli del tema. Priorità: template utente > tema > default
 - [ ] **Incremental build nel watch** — solo capitoli cambiati
 - [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)

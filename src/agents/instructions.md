@@ -7,7 +7,7 @@ You are working inside a **writekit** project. This is a structured writing fram
 Read `config.yaml` first. It contains:
 - `type` — the project type (novel, collection, essay, paper, article). Adapt your behavior to this type.
 - `title`, `author`, `language` — use these consistently.
-- `theme`, `build_formats` — do not modify unless asked.
+- `theme`, `build_formats`, `print_preset` — do not modify unless asked. `print_preset` controls PDF page size (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu).
 
 Read `style.yaml` before writing or reviewing any text. It defines:
 - `pov` — point of view (first-person, third-person, omniscient). Never break POV consistency.
