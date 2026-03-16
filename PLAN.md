@@ -101,6 +101,12 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.4.0 — Analisi e intelligenza
 
+- [ ] **Convenzioni editoriali per tipo** — ogni type.yaml definisce default tipografici (indent, paragraph spacing, alignment, ecc.). L'utente può sovrascriverli in style.yaml. I temi CSS hanno classi per tutte le varianti, il build applica le classi giuste. Catena: type defaults → style.yaml override → tema CSS.
+  - novel: indent prima riga, no spazio tra paragrafi
+  - essay: indent, no spazio
+  - paper: no indent, spazio tra paragrafi
+  - article: no indent, no spazio
+  - collection: come novel
 - [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?
 - [ ] **Grafo relazioni** — report relazioni personaggi
 - [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
