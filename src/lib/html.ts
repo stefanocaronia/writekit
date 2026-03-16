@@ -89,43 +89,37 @@ export async function renderBook(
         ? `\n    <footer class="colophon">\n      <h2>${escapeHtml(labels.colophon)}</h2>\n      ${colophonLines.map((l) => `<p>${l}</p>`).join("\n      ")}\n    </footer>`
         : "";
 
-    // Table of contents
-    const tocItems = chapters
-        .map(
-            (ch, i) =>
-                `<li><a href="#${chapterId(i)}">${escapeHtml(ch.title)}</a></li>`,
-        )
-        .join("\n        ");
-
-    const toc = `
+    // Table of contents (hidden for single chapter)
+    const showToc = chapters.length > 1;
+    const toc = showToc
+        ? `
         <nav class="toc">
             <h2>${escapeHtml(labels.tableOfContents)}</h2>
             <ol>
-                ${tocItems}
+                ${chapters.map((ch, i) => `<li><a href="#${chapterId(i)}">${escapeHtml(ch.title)}</a></li>`).join("\n                ")}
             </ol>
-        </nav>`;
+        </nav>`
+        : "";
 
-    // Chapters with navigation
+    // Chapters with navigation (hidden for single chapter)
     const chapterSections = renderedChapters
         .map((html, i) => {
-            const prev =
-                i > 0
-                    ? `<a href="#${chapterId(i - 1)}">&larr; ${escapeHtml(chapters[i - 1].title)}</a>`
-                    : "<span></span>";
-            const next =
-                i < chapters.length - 1
-                    ? `<a href="#${chapterId(i + 1)}">${escapeHtml(chapters[i + 1].title)} &rarr;</a>`
-                    : "<span></span>";
-            const top = `<a href="#toc">${escapeHtml(labels.tableOfContents)}</a>`;
+            const nav = showToc
+                ? (() => {
+                    const prev = i > 0
+                        ? `<a href="#${chapterId(i - 1)}">&larr; ${escapeHtml(chapters[i - 1].title)}</a>`
+                        : "<span></span>";
+                    const next = i < chapters.length - 1
+                        ? `<a href="#${chapterId(i + 1)}">${escapeHtml(chapters[i + 1].title)} &rarr;</a>`
+                        : "<span></span>";
+                    const top = `<a href="#toc">${escapeHtml(labels.tableOfContents)}</a>`;
+                    return `\n            <nav class="chapter-nav">\n                ${prev}\n                ${top}\n                ${next}\n            </nav>`;
+                })()
+                : "";
 
             return `
         <section class="chapter" id="${chapterId(i)}">
-            ${html}
-            <nav class="chapter-nav">
-                ${prev}
-                ${top}
-                ${next}
-            </nav>
+            ${html}${nav}
         </section>`;
         })
         .join("\n");
@@ -156,8 +150,7 @@ export async function renderBook(
     <style>${theme.htmlCss}</style>
 </head>
 <body>
-    ${cover}
-    <div id="toc">${toc}</div>
+    ${cover}${showToc ? `\n    <div id="toc">${toc}</div>` : ""}
     ${chapterSections}${backcoverSection}${aboutSection}${colophon}
     <script>${JS}</script>
 </body>
