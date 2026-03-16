@@ -21,6 +21,8 @@ body {
 
 /* --- Cover --- */
 .cover {
+  max-width: var(--max-width);
+  margin: 0 auto;
   text-align: center;
   padding: 8rem 2rem 6rem;
   border-bottom: 1px solid var(--border);
