@@ -24,6 +24,7 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
 import type { DocxStyle } from "./theme.js";
+import { resolveTemplatePath, extractStylesXml } from "./docx-template.js";
 
 // Module-level style, set by buildDocx before rendering
 let FONT = "Georgia";
@@ -685,12 +686,17 @@ export async function buildDocx(
 
     const authorStr = formatAuthors(config.author);
 
+    // Load external styles from template.docx if available
+    const templatePath = await resolveTemplatePath(projectDir);
+    const externalStyles = templatePath ? await extractStylesXml(templatePath) : null;
+
     const doc = new Document({
         title: config.title,
         subject: config.subtitle || undefined,
         creator: authorStr || undefined,
         description: config.genre ? `Genre: ${config.genre}` : undefined,
         keywords: config.genre || undefined,
+        externalStyles: externalStyles ?? undefined,
         numbering: {
             config: [
                 {

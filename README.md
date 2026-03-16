@@ -210,6 +210,8 @@ theme: default       # Which theme to use
 
 Other fields (subtitle, genre, ISBN, publisher, etc.) are optional and used in the book's colophon page.
 
+If you place a `template.docx` in the `assets/` folder, the DOCX builder will use its Word styles (headings, paragraphs, fonts) instead of the theme defaults. Create your template in Word, style it how you want, and writekit will apply those styles automatically.
+
 If you place a `cover.jpg` or `cover.png` in the `assets/` folder, it will automatically appear in all output formats. You can also set `cover: path/to/image` in config.yaml.
 
 ### Print presets
