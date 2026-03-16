@@ -49,6 +49,7 @@ export async function buildPdf(
     filename = "book.pdf",
     contributors: Contributor[] = [],
     backcover = "",
+    coverImagePath?: string | null,
 ): Promise<string> {
     const browserPath = findBrowser();
     if (!browserPath) {
@@ -61,7 +62,7 @@ export async function buildPdf(
     await mkdir(buildDir, { recursive: true });
 
     // Generate HTML first
-    const html = await renderBook(config, chapters, theme, contributors, backcover);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath);
     const htmlPath = join(buildDir, "_temp.html");
     await writeFile(htmlPath, html, "utf-8");
 

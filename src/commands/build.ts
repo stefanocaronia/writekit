@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { join } from "node:path";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
-import { loadConfig, loadChapters, loadContributors, loadBackcover, type BookConfig, type Chapter } from "../lib/parse.js";
+import { loadConfig, loadChapters, loadContributors, loadBackcover, resolveCover, type BookConfig, type Chapter } from "../lib/parse.js";
 import { renderBook } from "../lib/html.js";
 import { buildEpub as buildEpubFile } from "../lib/epub.js";
 import { buildPdf as buildPdfFile } from "../lib/pdf.js";
@@ -26,7 +26,8 @@ async function buildHtml(
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
-    const html = await renderBook(config, chapters, theme, contributors, backcover);
+    const coverPath = await resolveCover(projectDir, config);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverPath);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
@@ -44,7 +45,8 @@ async function buildEpub(
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
-    const outPath = await buildEpubFile(projectDir, config, chapters, theme, buildFilename(config,"epub"), contributors, backcover);
+    const coverPath = await resolveCover(projectDir, config);
+    const outPath = await buildEpubFile(projectDir, config, chapters, theme, buildFilename(config,"epub"), contributors, backcover, coverPath);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -57,7 +59,8 @@ async function buildPdf(
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
-    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"), contributors, backcover);
+    const coverPath = await resolveCover(projectDir, config);
+    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"), contributors, backcover, coverPath);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -70,7 +73,8 @@ async function buildDocx(
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
-    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover);
+    const coverPath = await resolveCover(projectDir, config);
+    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }

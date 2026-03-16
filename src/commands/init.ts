@@ -80,6 +80,7 @@ date: ""
 build_formats:
     - html
 theme: default
+cover: ""
 
 # Legal
 license: All rights reserved

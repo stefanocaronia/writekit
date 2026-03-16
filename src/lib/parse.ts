@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, access } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml } from "yaml";
 
@@ -23,6 +23,7 @@ export interface BookConfig {
     copyright?: string;
     build_formats?: string[];
     theme?: string;
+    cover?: string;
 }
 
 export interface Chapter {
@@ -87,6 +88,20 @@ export async function loadBackcover(projectDir: string): Promise<string> {
     } catch {
         return "";
     }
+}
+
+export async function resolveCover(projectDir: string, config: BookConfig): Promise<string | null> {
+    // Explicit path in config
+    if (config.cover) {
+        const explicit = join(projectDir, config.cover);
+        try { await access(explicit); return explicit; } catch { return null; }
+    }
+    // Auto-detect in assets/
+    for (const name of ["cover.jpg", "cover.jpeg", "cover.png", "cover.webp"]) {
+        const p = join(projectDir, "assets", name);
+        try { await access(p); return p; } catch { /* continue */ }
+    }
+    return null;
 }
 
 export async function loadConfig(projectDir: string): Promise<BookConfig> {

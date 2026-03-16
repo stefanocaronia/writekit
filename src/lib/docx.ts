@@ -15,7 +15,7 @@ import {
     LevelFormat,
     convertInchesToTwip,
 } from "docx";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
@@ -417,6 +417,7 @@ export async function buildDocx(
     filename = "book.docx",
     contributors: Contributor[] = [],
     backcover = "",
+    coverImagePath?: string | null,
 ): Promise<string> {
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
@@ -425,6 +426,29 @@ export async function buildDocx(
         properties: { page: { size: typeof PAGE_A5 } };
         children: (Paragraph | Table)[];
     }[] = [];
+
+    // Cover image page
+    if (coverImagePath) {
+        try {
+            const { ImageRun } = await import("docx");
+            const imgData = await readFile(coverImagePath);
+            sections.push({
+                properties: { page: { size: PAGE_A5 } },
+                children: [
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [
+                            new ImageRun({
+                                data: imgData,
+                                transformation: { width: 400, height: 580 },
+                                type: "jpg",
+                            }),
+                        ],
+                    }),
+                ],
+            });
+        } catch { /* skip cover if error */ }
+    }
 
     // Title page
     const titleChildren: Paragraph[] = [

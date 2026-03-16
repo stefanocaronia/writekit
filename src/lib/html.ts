@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { extname } from "node:path";
 import { marked } from "./markdown.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
@@ -34,6 +36,7 @@ export async function renderBook(
     theme: Theme,
     contributors?: Contributor[],
     backcover?: string,
+    coverImagePath?: string | null,
 ): Promise<string> {
     const labels = getLabels(config.language);
 
@@ -44,12 +47,24 @@ export async function renderBook(
         renderedChapters.push(html);
     }
 
+    // Cover image
+    let coverImageHtml = "";
+    if (coverImagePath) {
+        try {
+            const imgData = await readFile(coverImagePath);
+            const ext = extname(coverImagePath).slice(1).replace("jpg", "jpeg");
+            const base64 = imgData.toString("base64");
+            coverImageHtml = `<img class="cover-image" src="data:image/${ext};base64,${base64}" alt="Cover" />`;
+        } catch { /* no cover image */ }
+    }
+
     // Cover
     const seriesLine = config.series
         ? `<div class="subtitle">${escapeHtml(config.series)}${config.volume ? ` — Vol. ${config.volume}` : ""}</div>`
         : "";
     const cover = `
         <header class="cover">
+            ${coverImageHtml}
             <h1>${escapeHtml(config.title)}</h1>
             ${config.subtitle ? `<div class="subtitle">${escapeHtml(config.subtitle)}</div>` : ""}
             ${seriesLine}

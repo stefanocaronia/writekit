@@ -77,7 +77,7 @@ my-novel/
 ├── contributors/       Author, translator, editor bios
 ├── notes/              Free-form ideas, research, anything
 ├── reference/          External material (images, PDFs, sources)
-├── assets/             Cover art, illustrations
+├── assets/             Cover image (cover.jpg or cover.png), illustrations
 │
 └── build/              Generated output (PDF, ePub, HTML, Word)
     └── reports/        Auto-generated summaries of your project
@@ -198,6 +198,8 @@ theme: default       # Which theme to use
 ```
 
 Other fields (subtitle, genre, ISBN, publisher, etc.) are optional and used in the book's colophon page.
+
+If you place a `cover.jpg` or `cover.png` in the `assets/` folder, it will automatically appear in all output formats. You can also set `cover: path/to/image` in config.yaml.
 
 The `language` field also controls the editorial labels in your book — "Table of Contents", "Colophon", etc. are automatically translated. Supported: English, Italian, French, German, Spanish, Portuguese, Russian, Arabic, Hindi, Chinese, Korean, Japanese, Dutch, Polish, Turkish, Swedish, Greek.
 

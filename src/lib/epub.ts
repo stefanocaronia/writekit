@@ -2,8 +2,8 @@ import { marked } from "./markdown.js";
 import crypto from "node:crypto";
 import yazl from "yazl";
 import { createWriteStream } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readFile } from "node:fs/promises";
+import { join, extname } from "node:path";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
@@ -41,7 +41,7 @@ function generateContainerXml(): string {
 </container>`;
 }
 
-function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false): string {
+function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string): string {
         const uuid = `urn:uuid:${simpleUuid()}`;
 
         const metadataLines = [
@@ -68,6 +68,15 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcove
                 `    <itemref idref="titlepage" />`,
                 `    <itemref idref="toc" />`,
         ];
+
+        // Cover image
+        if (coverExt) {
+                const mimeMap: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
+                const mime = mimeMap[coverExt] ?? "image/jpeg";
+                manifestItems.push(`    <item id="cover-image" href="cover.${coverExt}" media-type="${mime}" properties="cover-image" />`);
+                manifestItems.push(`    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml" />`);
+                spineItems.unshift(`    <itemref idref="cover" />`);
+        }
 
         for (let i = 0; i < chapters.length; i++) {
                 const id = `chapter-${i + 1}`;
@@ -184,6 +193,7 @@ export async function buildEpub(
         filename = "book.epub",
         contributors: Contributor[] = [],
         backcover = "",
+        coverImagePath?: string | null,
 ): Promise<string> {
         const buildDir = join(projectDir, "build");
         await mkdir(buildDir, { recursive: true });
@@ -197,10 +207,23 @@ export async function buildEpub(
         // META-INF
         zip.addBuffer(Buffer.from(generateContainerXml()), "META-INF/container.xml");
 
+        // Cover image
+        let coverExt: string | undefined;
+        if (coverImagePath) {
+                try {
+                        const imgData = await readFile(coverImagePath);
+                        coverExt = extname(coverImagePath).slice(1).toLowerCase().replace("jpg", "jpeg");
+                        if (coverExt === "jpeg") coverExt = "jpg"; // normalize for filename
+                        zip.addBuffer(imgData, `OEBPS/cover.${coverExt}`);
+                        const coverBody = `<div style="text-align:center"><img src="cover.${coverExt}" alt="Cover" style="max-width:100%;max-height:100%" /></div>`;
+                        zip.addBuffer(Buffer.from(wrapXhtml("Cover", coverBody, config.language || "it")), "OEBPS/cover.xhtml");
+                } catch { /* no cover */ }
+        }
+
         // OEBPS
         const hasBackcover = !!backcover;
         const hasAbout = contributors.some((c) => c.bio);
-        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout)), "OEBPS/content.opf");
+        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt)), "OEBPS/content.opf");
         zip.addBuffer(Buffer.from(theme.epubCss), "OEBPS/style.css");
         zip.addBuffer(Buffer.from(generateTitlePage(config)), "OEBPS/titlepage.xhtml");
         zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters)), "OEBPS/toc.xhtml");

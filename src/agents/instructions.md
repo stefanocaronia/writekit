@@ -28,6 +28,7 @@ Read `style.yaml` before writing or reviewing any text. It defines:
 - **reference/** — external material provided by the author. Read-only.
 - **synopsis.md** — the overall summary. Align your writing with it.
 - **backcover.md** — the back cover pitch. Helps understand the book's intended audience and angle.
+- **assets/cover.{jpg,png}** — cover image, auto-detected and rendered in all build formats. Can also be set explicitly in config.yaml as `cover: path/to/image`.
 
 ## Writing rules
 
