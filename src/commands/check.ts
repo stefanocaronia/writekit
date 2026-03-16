@@ -241,7 +241,7 @@ export const checkCommand = new Command("check")
 
         if (!(await fileExists(join(projectDir, "config.yaml")))) {
             console.error(
-                `\n${icon.error} ${c.red("No config.yaml found. Are you inside a novel project?")}\n`,
+                `\n${icon.error} ${c.red("No config.yaml found. Are you inside a writekit project?")}\n`,
             );
             process.exit(1);
         }

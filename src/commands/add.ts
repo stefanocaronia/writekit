@@ -3,12 +3,8 @@ import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
 import { slugify, padNumber } from "../lib/slug.js";
-import { fileExists, assertProject } from "../lib/fs-utils.js";
+import { fileExists, assertProject, frontmatter } from "../lib/fs-utils.js";
 import { c, icon } from "../lib/ui.js";
-
-function frontmatter(data: Record<string, unknown>, body: string): string {
-    return `---\n${stringify(data).trimEnd()}\n---\n\n${body}`;
-}
 
 async function ensureDir(dir: string): Promise<void> {
     await mkdir(dir, { recursive: true });
@@ -23,7 +19,7 @@ async function countMdFiles(dir: string): Promise<number> {
     }
 }
 
-// --- novel add chapter ---
+// --- wkadd chapter ---
 
 const addChapter = new Command("chapter")
     .description("Add a new chapter to manuscript and outline")
@@ -83,7 +79,7 @@ const addChapter = new Command("chapter")
         console.log(`  ${c.dim(`outline/chapters/${pad}.md`)}\n`);
     });
 
-// --- novel add character ---
+// --- wkadd character ---
 
 const addCharacter = new Command("character")
     .description("Add a new character sheet")
@@ -122,7 +118,7 @@ const addCharacter = new Command("character")
         console.log(`  ${c.dim(`characters/${slug}.md`)}\n`);
     });
 
-// --- novel add location ---
+// --- wkadd location ---
 
 const addLocation = new Command("location")
     .description("Add a new worldbuilding entry")
@@ -159,7 +155,7 @@ const addLocation = new Command("location")
         console.log(`  ${c.dim(`world/${slug}.md`)}\n`);
     });
 
-// --- novel add note ---
+// --- wkadd note ---
 
 const addNote = new Command("note")
     .description("Add a new note")
@@ -186,7 +182,7 @@ const addNote = new Command("note")
         console.log(`  ${c.dim(`notes/${slug}.md`)}\n`);
     });
 
-// --- novel add event ---
+// --- wkadd event ---
 
 interface TimelineData {
     events: Array<{ date: string; description: string; chapter: string }>;
@@ -227,7 +223,7 @@ const addEvent = new Command("event")
         console.log(`  ${c.dim(`timeline.yaml (${data.events.length} events)`)}\n`);
     });
 
-// --- novel add (parent command) ---
+// --- wkadd (parent command) ---
 
 export const addCommand = new Command("add")
     .description("Add chapters, characters, locations, notes, or events");

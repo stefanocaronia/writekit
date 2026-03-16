@@ -1,5 +1,6 @@
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
+import { stringify } from "yaml";
 import { c, icon } from "./ui.js";
 
 export async function fileExists(path: string): Promise<boolean> {
@@ -24,11 +25,15 @@ export function assertProject(projectDir: string): Promise<void> {
     return fileExists(join(projectDir, "config.yaml")).then((exists) => {
         if (!exists) {
             console.error(
-                `\n${icon.error} ${c.red("No config.yaml found. Are you inside a novel project?")}\n`,
+                `\n${icon.error} ${c.red("No config.yaml found. Are you inside a writekit project?")}\n`,
             );
             process.exit(1);
         }
     });
+}
+
+export function frontmatter(data: Record<string, unknown>, body: string): string {
+    return `---\n${stringify(data).trimEnd()}\n---\n\n${body}`;
 }
 
 export function bookFilename(title: string, author: string, ext: string): string {

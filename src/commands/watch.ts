@@ -102,7 +102,7 @@ export const watchCommand = new Command("watch")
             console.error(
                 `\n${icon.error} ${c.red(`Format "${format}" is not supported for watch.`)} Use: ${WATCHABLE_FORMATS.join(", ")}`,
             );
-            console.error(`${c.dim("For PDF and DOCX, use: novel build pdf")}\n`);
+            console.error(`${c.dim("For PDF and DOCX, use: wk build pdf")}\n`);
             process.exit(1);
         }
 

@@ -11,7 +11,7 @@ import { themeCommand } from "./commands/theme.js";
 const program = new Command();
 
 program
-    .name("novel")
+    .name("wk")
     .description("CLI framework for creating books")
     .version("0.1.0");
 

@@ -6,11 +6,114 @@ import {
     HeadingLevel,
     AlignmentType,
     BorderStyle,
+    ExternalHyperlink,
+    Table,
+    TableRow,
+    TableCell,
+    WidthType,
+    LevelFormat,
+    convertInchesToTwip,
 } from "docx";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BookConfig, Chapter } from "./parse.js";
 import { buildColophonLines } from "./metadata.js";
+
+const FONT = "Georgia";
+
+// ── Inline parsing ──────────────────────────────────────────────────────────
+
+const INLINE_PATTERNS: {
+    regex: RegExp;
+    factory: (m: RegExpMatchArray) => TextRun | ExternalHyperlink;
+}[] = [
+    // inline code `text`
+    {
+        regex: /`([^`]+)`/,
+        factory: (m) =>
+            new TextRun({
+                text: m[1],
+                font: "Consolas",
+                size: 20,
+                color: "C7254E",
+                shading: { fill: "F9F2F4" },
+            }),
+    },
+    // ***bold italic***
+    {
+        regex: /\*\*\*(.+?)\*\*\*/,
+        factory: (m) =>
+            new TextRun({ text: m[1], bold: true, italics: true, font: FONT }),
+    },
+    // **bold**
+    {
+        regex: /\*\*(.+?)\*\*/,
+        factory: (m) =>
+            new TextRun({ text: m[1], bold: true, font: FONT }),
+    },
+    // *italic* or _italic_
+    {
+        regex: /(\*(.+?)\*|_(.+?)_)/,
+        factory: (m) =>
+            new TextRun({ text: m[2] || m[3], italics: true, font: FONT }),
+    },
+    // [text](url)
+    {
+        regex: /\[([^\]]+)\]\(([^)]+)\)/,
+        factory: (m) =>
+            new ExternalHyperlink({
+                link: m[2],
+                children: [
+                    new TextRun({
+                        text: m[1],
+                        font: FONT,
+                        color: "2E74B5",
+                        underline: {},
+                    }),
+                ],
+            }),
+    },
+];
+
+function parseInline(
+    text: string,
+): (TextRun | ExternalHyperlink)[] {
+    const result: (TextRun | ExternalHyperlink)[] = [];
+    let remaining = text;
+
+    while (remaining.length > 0) {
+        let earliestIndex = Infinity;
+        let earliestMatch: RegExpMatchArray | null = null;
+        let earliestPattern: (typeof INLINE_PATTERNS)[0] | null = null;
+
+        for (const pattern of INLINE_PATTERNS) {
+            const match = remaining.match(pattern.regex);
+            if (match && match.index !== undefined && match.index < earliestIndex) {
+                earliestIndex = match.index;
+                earliestMatch = match;
+                earliestPattern = pattern;
+            }
+        }
+
+        if (!earliestMatch || !earliestPattern) {
+            result.push(new TextRun({ text: remaining, font: FONT }));
+            break;
+        }
+
+        if (earliestIndex > 0) {
+            result.push(
+                new TextRun({ text: remaining.slice(0, earliestIndex), font: FONT }),
+            );
+        }
+
+        result.push(earliestPattern.factory(earliestMatch));
+        remaining = remaining.slice(earliestIndex + earliestMatch[0].length);
+    }
+
+    return result;
+}
+
+// ── Block parsing ───────────────────────────────────────────────────────────
 
 function parseMarkdownToDocx(markdown: string): Paragraph[] {
     const paragraphs: Paragraph[] = [];
@@ -27,34 +130,19 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
         }
 
         // Headings
-        if (line.startsWith("### ")) {
+        const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
+        if (headingMatch) {
+            const level = headingMatch[1].length as 1 | 2 | 3;
+            const headingMap = {
+                1: HeadingLevel.HEADING_1,
+                2: HeadingLevel.HEADING_2,
+                3: HeadingLevel.HEADING_3,
+            };
             paragraphs.push(
                 new Paragraph({
-                    heading: HeadingLevel.HEADING_3,
-                    children: parseInline(line.slice(4)),
-                    spacing: { before: 400, after: 200 },
-                }),
-            );
-            i++;
-            continue;
-        }
-        if (line.startsWith("## ")) {
-            paragraphs.push(
-                new Paragraph({
-                    heading: HeadingLevel.HEADING_2,
-                    children: parseInline(line.slice(3)),
-                    spacing: { before: 400, after: 200 },
-                }),
-            );
-            i++;
-            continue;
-        }
-        if (line.startsWith("# ")) {
-            paragraphs.push(
-                new Paragraph({
-                    heading: HeadingLevel.HEADING_1,
-                    children: parseInline(line.slice(2)),
-                    spacing: { before: 400, after: 300 },
+                    heading: headingMap[level],
+                    children: parseInline(headingMatch[2]),
+                    spacing: { before: 400, after: level === 1 ? 300 : 200 },
                 }),
             );
             i++;
@@ -66,7 +154,7 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
             paragraphs.push(
                 new Paragraph({
                     alignment: AlignmentType.CENTER,
-                    children: [new TextRun({ text: "* * *", color: "666666" })],
+                    children: [new TextRun({ text: "* * *", color: "666666", font: FONT })],
                     spacing: { before: 400, after: 400 },
                 }),
             );
@@ -74,12 +162,44 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
             continue;
         }
 
-        // Blockquote
-        if (line.startsWith("> ")) {
-            const quoteText = line.slice(2);
+        // Code block (fenced)
+        if (line.trim().startsWith("```")) {
+            i++;
+            const codeLines: string[] = [];
+            while (i < lines.length && !lines[i].trim().startsWith("```")) {
+                codeLines.push(lines[i]);
+                i++;
+            }
+            if (i < lines.length) i++; // skip closing ```
+
+            for (const codeLine of codeLines) {
+                paragraphs.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: codeLine || " ",
+                                font: "Consolas",
+                                size: 18,
+                            }),
+                        ],
+                        shading: { fill: "F5F5F5" },
+                        spacing: { after: 40 },
+                    }),
+                );
+            }
+            continue;
+        }
+
+        // Blockquote (multi-line)
+        if (line.startsWith("> ") || line === ">") {
+            const quoteLines: string[] = [];
+            while (i < lines.length && (lines[i].startsWith("> ") || lines[i] === ">")) {
+                quoteLines.push(lines[i].slice(2));
+                i++;
+            }
             paragraphs.push(
                 new Paragraph({
-                    children: parseInline(quoteText),
+                    children: parseInline(quoteLines.join(" ")),
                     indent: { left: 720 },
                     border: {
                         left: {
@@ -92,7 +212,38 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
                     spacing: { before: 200, after: 200 },
                 }),
             );
-            i++;
+            continue;
+        }
+
+        // Unordered list
+        if (/^\s*[-*+]\s+/.test(line)) {
+            while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
+                const text = lines[i].replace(/^\s*[-*+]\s+/, "");
+                paragraphs.push(
+                    new Paragraph({
+                        children: parseInline(text),
+                        numbering: { reference: "bullet-list", level: 0 },
+                        spacing: { after: 80 },
+                    }),
+                );
+                i++;
+            }
+            continue;
+        }
+
+        // Ordered list
+        if (/^\s*\d+\.\s+/.test(line)) {
+            while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+                const text = lines[i].replace(/^\s*\d+\.\s+/, "");
+                paragraphs.push(
+                    new Paragraph({
+                        children: parseInline(text),
+                        numbering: { reference: "numbered-list", level: 0 },
+                        spacing: { after: 80 },
+                    }),
+                );
+                i++;
+            }
             continue;
         }
 
@@ -110,41 +261,91 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
     return paragraphs;
 }
 
-// Matches: ***bold italic***, **bold**, *italic*, _italic_, or plain text
-const INLINE_REGEX = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_|(.+?)(?=\*|_|$))/g;
+// ── Table support ───────────────────────────────────────────────────────────
+// Tables and paragraphs need to coexist in section children.
+// We parse markdown into a mixed array, then flatten for the section.
 
-function parseInline(text: string): TextRun[] {
-    const runs: TextRun[] = [];
-    INLINE_REGEX.lastIndex = 0;
-    let match;
+function parseMarkdownToDocxBlocks(
+    markdown: string,
+): (Paragraph | Table)[] {
+    const blocks: (Paragraph | Table)[] = [];
+    const lines = markdown.split("\n");
+    let i = 0;
 
-    while ((match = INLINE_REGEX.exec(text)) !== null) {
-        if (match[0] === "") continue;
+    while (i < lines.length) {
+        const line = lines[i];
 
-        if (match[2]) {
-            // ***bold italic***
-            runs.push(new TextRun({ text: match[2], bold: true, italics: true, font: "Georgia" }));
-        } else if (match[3]) {
-            // **bold**
-            runs.push(new TextRun({ text: match[3], bold: true, font: "Georgia" }));
-        } else if (match[4]) {
-            // *italic*
-            runs.push(new TextRun({ text: match[4], italics: true, font: "Georgia" }));
-        } else if (match[5]) {
-            // _italic_
-            runs.push(new TextRun({ text: match[5], italics: true, font: "Georgia" }));
-        } else if (match[6]) {
-            // plain text
-            runs.push(new TextRun({ text: match[6], font: "Georgia" }));
+        if (line.trim() === "") {
+            i++;
+            continue;
         }
+
+        // Table detection
+        if (line.includes("|") && i + 1 < lines.length && /^\|?\s*[-:]+/.test(lines[i + 1])) {
+            const tableRows: string[][] = [];
+            while (i < lines.length && lines[i].includes("|")) {
+                const cells = lines[i]
+                    .split("|")
+                    .map((c) => c.trim())
+                    .filter((c) => c !== "" && !/^[-:]+$/.test(c));
+                if (cells.length > 0) tableRows.push(cells);
+                i++;
+            }
+
+            if (tableRows.length > 0) {
+                const colCount = Math.max(...tableRows.map((r) => r.length));
+                const rows = tableRows.map(
+                    (cells, rowIdx) =>
+                        new TableRow({
+                            children: Array.from({ length: colCount }, (_, ci) =>
+                                new TableCell({
+                                    width: { size: Math.floor(9000 / colCount), type: WidthType.DXA },
+                                    children: [
+                                        new Paragraph({
+                                            children: parseInline(cells[ci] || ""),
+                                            spacing: { before: 40, after: 40 },
+                                        }),
+                                    ],
+                                    shading: rowIdx === 0 ? { fill: "F0F0F0" } : undefined,
+                                }),
+                            ),
+                        }),
+                );
+
+                blocks.push(
+                    new Table({
+                        rows,
+                        width: { size: 9000, type: WidthType.DXA },
+                    }),
+                );
+            }
+            continue;
+        }
+
+        // Delegate everything else to paragraph parser (one line at a time for non-table)
+        // Collect lines until table or end
+        const nonTableLines: string[] = [];
+        while (
+            i < lines.length &&
+            !(
+                lines[i].includes("|") &&
+                i + 1 < lines.length &&
+                /^\|?\s*[-:]+/.test(lines[i + 1])
+            )
+        ) {
+            nonTableLines.push(lines[i]);
+            i++;
+        }
+
+        blocks.push(...parseMarkdownToDocx(nonTableLines.join("\n")));
     }
 
-    if (runs.length === 0) {
-        runs.push(new TextRun({ text, font: "Georgia" }));
-    }
-
-    return runs;
+    return blocks;
 }
+
+// ── Document builder ────────────────────────────────────────────────────────
+
+const PAGE_A5 = { width: 8391, height: 11906 };
 
 export async function buildDocx(
     projectDir: string,
@@ -155,7 +356,10 @@ export async function buildDocx(
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
-    const sections = [];
+    const sections: {
+        properties: { page: { size: typeof PAGE_A5 } };
+        children: (Paragraph | Table)[];
+    }[] = [];
 
     // Title page
     const titleChildren: Paragraph[] = [
@@ -163,7 +367,7 @@ export async function buildDocx(
         new Paragraph({
             alignment: AlignmentType.CENTER,
             heading: HeadingLevel.TITLE,
-            children: [new TextRun({ text: config.title, font: "Georgia", size: 56 })],
+            children: [new TextRun({ text: config.title, font: FONT, size: 56 })],
         }),
     ];
 
@@ -172,7 +376,13 @@ export async function buildDocx(
             new Paragraph({
                 alignment: AlignmentType.CENTER,
                 children: [
-                    new TextRun({ text: config.subtitle, font: "Georgia", size: 28, italics: true, color: "666666" }),
+                    new TextRun({
+                        text: config.subtitle,
+                        font: FONT,
+                        size: 28,
+                        italics: true,
+                        color: "666666",
+                    }),
                 ],
                 spacing: { before: 200 },
             }),
@@ -184,7 +394,12 @@ export async function buildDocx(
             new Paragraph({
                 alignment: AlignmentType.CENTER,
                 children: [
-                    new TextRun({ text: config.author, font: "Georgia", size: 24, color: "666666" }),
+                    new TextRun({
+                        text: config.author,
+                        font: FONT,
+                        size: 24,
+                        color: "666666",
+                    }),
                 ],
                 spacing: { before: 600 },
             }),
@@ -192,57 +407,95 @@ export async function buildDocx(
     }
 
     sections.push({
-        properties: { page: { size: { width: 8391, height: 11906 } } }, // A5
+        properties: { page: { size: PAGE_A5 } },
         children: titleChildren,
     });
 
     // Chapters
     for (const chapter of chapters) {
-        const children: Paragraph[] = [
+        const children: (Paragraph | Table)[] = [
             new Paragraph({
                 heading: HeadingLevel.HEADING_1,
                 children: [
-                    new TextRun({ text: chapter.title, font: "Georgia", size: 36, color: "8B4513" }),
+                    new TextRun({
+                        text: chapter.title,
+                        font: FONT,
+                        size: 36,
+                        color: "8B4513",
+                    }),
                 ],
                 spacing: { before: 600, after: 400 },
             }),
-            ...parseMarkdownToDocx(chapter.body),
+            ...parseMarkdownToDocxBlocks(chapter.body),
         ];
 
         sections.push({
-            properties: { page: { size: { width: 8391, height: 11906 } } },
+            properties: { page: { size: PAGE_A5 } },
             children,
         });
     }
 
     // Colophon
-    const colophonChildren: Paragraph[] = [
-        new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            children: [new TextRun({ text: "Colophon", font: "Georgia", color: "8B4513" })],
-            spacing: { before: 600, after: 400 },
-        }),
-    ];
-
     const colophonLines = buildColophonLines(config);
-
-    for (const line of colophonLines) {
-        colophonChildren.push(
-            new Paragraph({
-                children: [new TextRun({ text: line, font: "Georgia", size: 20, color: "666666" })],
-                spacing: { after: 80 },
-            }),
-        );
-    }
-
     if (colophonLines.length > 0) {
+        const colophonChildren: Paragraph[] = [
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [
+                    new TextRun({ text: "Colophon", font: FONT, color: "8B4513" }),
+                ],
+                spacing: { before: 600, after: 400 },
+            }),
+        ];
+
+        for (const line of colophonLines) {
+            colophonChildren.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: line, font: FONT, size: 20, color: "666666" }),
+                    ],
+                    spacing: { after: 80 },
+                }),
+            );
+        }
+
         sections.push({
-            properties: { page: { size: { width: 8391, height: 11906 } } },
+            properties: { page: { size: PAGE_A5 } },
             children: colophonChildren,
         });
     }
 
-    const doc = new Document({ sections });
+    const doc = new Document({
+        numbering: {
+            config: [
+                {
+                    reference: "bullet-list",
+                    levels: [
+                        {
+                            level: 0,
+                            format: LevelFormat.BULLET,
+                            text: "\u2022",
+                            alignment: AlignmentType.LEFT,
+                            style: { paragraph: { indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) } } },
+                        },
+                    ],
+                },
+                {
+                    reference: "numbered-list",
+                    levels: [
+                        {
+                            level: 0,
+                            format: LevelFormat.DECIMAL,
+                            text: "%1.",
+                            alignment: AlignmentType.LEFT,
+                            style: { paragraph: { indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) } } },
+                        },
+                    ],
+                },
+            ],
+        },
+        sections,
+    });
 
     const buffer = await Packer.toBuffer(doc);
     const outPath = join(buildDir, filename);

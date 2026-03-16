@@ -17,9 +17,7 @@ const DIRS = [
     "build",
 ];
 
-function frontmatter(data: Record<string, unknown>, body: string): string {
-    return `---\n${stringify(data).trimEnd()}\n---\n\n${body}`;
-}
+import { frontmatter } from "../lib/fs-utils.js";
 
 interface InitOptions {
     title: string;
@@ -59,7 +57,7 @@ async function promptOptions(name: string, skip: boolean): Promise<InitOptions> 
 }
 
 export const initCommand = new Command("init")
-    .description("Create a new novel project")
+    .description("Create a new writing project")
     .argument("<name>", "Project name (directory)")
     .option("-y, --yes", "Skip prompts, use defaults")
     .action(async (name: string, opts: { yes?: boolean }) => {
@@ -67,7 +65,7 @@ export const initCommand = new Command("init")
         const options = await promptOptions(name, !!opts.yes);
 
         const { c, icon } = await import("../lib/ui.js");
-        console.log(`\n${icon.book} ${c.bold("Creating novel project:")} ${c.cyan(name)}\n`);
+        console.log(`\n${icon.book} ${c.bold("Creating project:")} ${c.cyan(name)}\n`);
 
         // Create directory structure
         for (const dir of DIRS) {
@@ -226,7 +224,7 @@ copyright: ${JSON.stringify(copyrightLine)}
             join(projectDir, "README.md"),
             `# ${options.title}
 ${options.author ? `\nby ${options.author}\n` : ""}
-A novel project powered by [novel-maker](https://github.com/novel-maker).
+A novel project powered by [writekit](https://github.com/stefanocaronia/writekit).
 
 ## Project Structure
 
@@ -249,26 +247,26 @@ A novel project powered by [novel-maker](https://github.com/novel-maker).
 ## Commands
 
 \`\`\`bash
-novel init <name>        # Create a new project
-novel add chapter <title> # Add a chapter
-novel add character <name> # Add a character sheet
-novel add location <name>  # Add a worldbuilding entry
-novel add note <title>     # Add a note
-novel add event <desc>     # Add a timeline event
-novel check              # Validate project structure
-novel build [format]     # Build the book (pdf, epub, html, docx, all)
-novel watch [format]     # Watch and rebuild on changes
+wk init <name>        # Create a new project
+wk add chapter <title> # Add a chapter
+wk add character <name> # Add a character sheet
+wk add location <name>  # Add a worldbuilding entry
+wk add note <title>     # Add a note
+wk add event <desc>     # Add a timeline event
+wk check              # Validate project structure
+wk build [format]     # Build the book (pdf, epub, html, docx, all)
+wk watch [format]     # Watch and rebuild on changes
 \`\`\`
 
 ## Workflow
 
-1. \`novel init my-book\` — scaffold the project
+1. \`wk init my-book\` — scaffold the project
 2. Fill in \`config.yaml\`, \`style.yaml\`, \`synopsis.md\`
 3. Plan your story in \`outline/\`
 4. Create characters in \`characters/\` and world in \`world/\`
 5. Write chapters in \`manuscript/\`
-6. Run \`novel check\` to validate
-7. Run \`novel build\` to generate output
+6. Run \`wk check\` to validate
+7. Run \`wk build\` to generate output
 `,
         );
 
@@ -312,5 +310,5 @@ novel watch [format]     # Watch and rebuild on changes
         if (gitOk) console.log(`\n  ${icon.git} ${c.dim("git repository initialized")}`);
         console.log(`\n${icon.done} ${c.green("Done!")} Start writing with:\n`);
         console.log(`  ${c.cyan(`cd ${name}`)}`);
-        console.log(`  ${c.cyan("novel build html")}\n`);
+        console.log(`  ${c.cyan("wk build html")}\n`);
     });

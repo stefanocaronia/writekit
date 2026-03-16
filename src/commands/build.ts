@@ -120,7 +120,7 @@ function resolveFormats(format: string | undefined, config: BookConfig): Format[
 }
 
 export const buildCommand = new Command("build")
-    .description("Build the novel (pdf, epub, html, docx, all, clean)")
+    .description("Build the project (pdf, epub, html, docx, all, clean)")
     .argument("[format]", "Output format (default: from config or html)")
     .action(async (format: string | undefined) => {
         const { c, icon } = await import("../lib/ui.js");

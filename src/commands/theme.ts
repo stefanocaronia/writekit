@@ -1,14 +1,15 @@
 import { Command } from "commander";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { parse as parseYaml, stringify } from "yaml";
 import { listThemes, createTheme } from "../lib/theme.js";
 import { assertProject } from "../lib/fs-utils.js";
 import { c, icon } from "../lib/ui.js";
 
 async function getActiveTheme(projectDir: string): Promise<string> {
     const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
-    const match = raw.match(/^theme:\s*(.+)$/m);
-    return match ? match[1].trim() : "default";
+    const config = parseYaml(raw) as Record<string, unknown>;
+    return (config.theme as string) || "default";
 }
 
 async function setActiveTheme(
@@ -16,18 +17,13 @@ async function setActiveTheme(
     themeName: string,
 ): Promise<void> {
     const configPath = join(projectDir, "config.yaml");
-    let raw = await readFile(configPath, "utf-8");
-
-    if (raw.match(/^theme:\s*.+$/m)) {
-        raw = raw.replace(/^theme:\s*.+$/m, `theme: ${themeName}`);
-    } else {
-        raw += `\ntheme: ${themeName}\n`;
-    }
-
-    await writeFile(configPath, raw, "utf-8");
+    const raw = await readFile(configPath, "utf-8");
+    const config = parseYaml(raw) as Record<string, unknown>;
+    config.theme = themeName;
+    await writeFile(configPath, stringify(config), "utf-8");
 }
 
-// --- novel theme list ---
+// --- wktheme list ---
 
 const themeList = new Command("list")
     .description("List available themes")
@@ -56,7 +52,7 @@ const themeList = new Command("list")
         }
     });
 
-// --- novel theme use ---
+// --- wktheme use ---
 
 const themeUse = new Command("use")
     .description("Set the active theme")
@@ -73,7 +69,7 @@ const themeUse = new Command("use")
 
         if (!found) {
             console.error(
-                `\n${icon.error} ${c.red(`Theme "${name}" not found.`)} Run ${c.cyan("novel theme list")} to see available themes.\n`,
+                `\n${icon.error} ${c.red(`Theme "${name}" not found.`)} Run ${c.cyan("wk theme list")} to see available themes.\n`,
             );
             process.exit(1);
         }
@@ -82,7 +78,7 @@ const themeUse = new Command("use")
         console.log(`\n${icon.done} ${c.green("Theme set to")} ${c.bold(name)}\n`);
     });
 
-// --- novel theme create ---
+// --- wktheme create ---
 
 const themeCreate = new Command("create")
     .description("Create a new custom theme based on default")
@@ -101,7 +97,7 @@ const themeCreate = new Command("create")
             console.log(`  ${c.dim(`├── html.css`)}`);
             console.log(`  ${c.dim(`└── epub.css`)}\n`);
             console.log(
-                `  Edit the CSS files, then run ${c.cyan(`novel theme use ${name}`)}\n`,
+                `  Edit the CSS files, then run ${c.cyan(`wk theme use ${name}`)}\n`,
             );
         } catch (e) {
             console.error(
@@ -111,7 +107,7 @@ const themeCreate = new Command("create")
         }
     });
 
-// --- novel theme (parent) ---
+// --- wktheme (parent) ---
 
 export const themeCommand = new Command("theme")
     .description("Manage themes");

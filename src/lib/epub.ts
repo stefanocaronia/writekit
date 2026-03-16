@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import crypto from "node:crypto";
 import yazl from "yazl";
 import { createWriteStream } from "node:fs";
 import { mkdir } from "node:fs/promises";
@@ -137,8 +138,7 @@ function generateColophon(config: BookConfig): string {
 }
 
 function simpleUuid(): string {
-        const hex = () => Math.random().toString(16).slice(2, 10);
-        return `${hex()}-${hex().slice(0, 4)}-4${hex().slice(1, 4)}-${hex().slice(0, 4)}-${hex()}${hex().slice(0, 4)}`;
+        return crypto.randomUUID();
 }
 
 export async function buildEpub(
