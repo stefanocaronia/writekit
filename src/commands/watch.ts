@@ -18,8 +18,24 @@ const WATCH_DIRS = [
     "manuscript",
     "characters",
     "world",
+    "contributors",
+    "arguments",
+    "concepts",
     "notes",
+    "assets",
 ];
+
+// Dirs/files that trigger a full rebuild (affect output content)
+const BUILD_TRIGGERS = new Set([
+    "manuscript", "config.yaml", "style.yaml", "synopsis.md",
+    "backcover.md", "assets", "contributors", "timeline.yaml",
+    "thesis.md", "abstract.md",
+]);
+
+function shouldRebuild(changedPath: string): boolean {
+    const dir = changedPath.split("/")[0];
+    return BUILD_TRIGGERS.has(dir) || BUILD_TRIGGERS.has(changedPath);
+}
 
 const WATCHABLE_FORMATS = ["html", "epub"] as const;
 type WatchFormat = (typeof WATCHABLE_FORMATS)[number];
@@ -45,6 +61,8 @@ async function runCycle(
         console.log(`${timestamp()} ${c.magenta("changed")} ${c.cyan(changedFile)}`);
     }
 
+    const needsBuild = !changedFile || shouldRebuild(changedFile);
+
     // Check
     const checkStart = Date.now();
     console.log(`${timestamp()} Starting ${c.yellow("check")}...`);
@@ -59,11 +77,11 @@ async function runCycle(
     }
     console.log(`${timestamp()} Finished ${c.yellow("check")} ${c.green("✓")} ${c.dim(elapsed(checkStart))}`);
 
-    // Build
+    // Build (skip if change was in a non-content dir like notes/, characters/)
     const config = await loadConfig(projectDir);
     const chapters = await loadChapters(projectDir);
 
-    if (chapters.length > 0) {
+    if (needsBuild && chapters.length > 0) {
         const theme = await loadTheme(config.theme, projectDir);
         const buildStart = Date.now();
         console.log(`${timestamp()} Starting ${c.yellow(`build ${format}`)}...`);
@@ -80,6 +98,8 @@ async function runCycle(
             await buildEpub(projectDir, config, chapters, theme, fname);
             console.log(`${timestamp()} Finished ${c.yellow(`build ${format}`)} ${c.green("✓")} ${c.dim(elapsed(buildStart))} ${c.dim(`→ ${fname}`)}`);
         }
+    } else if (!needsBuild && changedFile) {
+        console.log(`${timestamp()} ${c.dim("Build skipped (non-content change)")}`);
     }
 
     // Sync (reports, agents, contributor roles)

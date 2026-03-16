@@ -86,11 +86,11 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **DOCX template custom** — `assets/template.docx` sovrascrive gli stili Word del tema. Estrazione styles.xml via jszip. Priorità: template utente > tema > default.
 - [x] **DOCX Table of Contents** — campo TOC generato dai Heading 1 (capitoli), Word lo aggiorna all'apertura. Posizionato dopo la title page.
 - [x] **DOCX temi** — font/colori dal tema attivo via docx settings in theme.yaml
-- [ ] **Doc temi nel README** — documentare il workflow temi: il default è builtin (dentro il package, intoccabile). `wk theme create` copia dal default in `themes/` nel progetto. L'utente modifica solo la copia. Aggiornamenti npm aggiornano il default senza toccare i temi custom
+- [x] **Doc temi nel README** — workflow completo documentato: builtin vs custom, struttura cartella tema, DOCX style priority chain
 - [x] **Footnotes** — sintassi Pandoc/MultiMarkdown via marked-footnote. HTML/ePub/PDF con CSS, DOCX con FootnoteReferenceRun nativo Word.
 - [x] **PDF configurabile + print presets** — 9 preset (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu). Ogni preset ha dimensioni, margini e bleed specifici. Config: `print_preset: trade`. Validazione nel check.
 - [x] **DOCX template utente** — implementato insieme a DOCX template custom sopra
-- [ ] **Incremental build nel watch** — solo capitoli cambiati
+- [x] **Incremental build nel watch** — skip build se il file cambiato non è content (notes, characters, ecc.). Build solo su manuscript, config, style, assets, contributors.
 - [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)
 - [x] **`wk remove`** — remove chapter (con rinumerazione), character, location, note, author. Type-aware: derivato da add_commands escludendo yaml-only (event, source). Sync rinumera capitoli automaticamente.
 - [x] **`wk rename character/location/concept`** — rinomina file, aggiorna frontmatter, cerca/sostituisce in manuscript e outline. Type-aware.

@@ -138,7 +138,7 @@ my-novel/
 
 ### Themes
 
-Themes control how your book looks in HTML and ePub formats.
+Themes control how your book looks in HTML, ePub, and DOCX formats.
 
 | Command | What it does |
 |---|---|
@@ -148,10 +148,34 @@ Themes control how your book looks in HTML and ePub formats.
 
 Writekit ships with two themes:
 
-- **default** — serif, traditional book typography (Georgia)
-- **minimal** — clean sans-serif, modern (system-ui)
+- **default** — serif, traditional book typography (Georgia, warm brown accents)
+- **minimal** — clean sans-serif, modern (Calibri, blue accents)
 
-The built-in themes cannot be modified. When you create a custom theme, you get a copy in your project's `themes/` folder that you can edit freely. Updates to writekit will refresh the built-in themes without touching your custom themes.
+#### How themes work
+
+The built-in themes live inside the writekit package and cannot be modified. When you run `wk theme create my-theme`, writekit copies the default theme into your project's `themes/my-theme/` folder. You can then edit those files freely.
+
+A theme folder contains:
+
+```
+themes/my-theme/
+├── theme.yaml      # Name, description, DOCX font/color settings
+├── html.css        # Styles for HTML and PDF output
+├── epub.css        # Styles for ePub output (simpler CSS)
+└── template.docx   # (optional) Word template — overrides DOCX styles
+```
+
+To switch themes: `wk theme use my-theme` (updates config.yaml).
+
+When you update writekit via npm, the built-in themes are refreshed but your custom themes in `themes/` are never touched.
+
+#### DOCX style priority
+
+The DOCX builder applies styles in this order (each overrides the previous):
+
+1. **theme.yaml** `docx:` section — font, colors
+2. **themes/{name}/template.docx** — if present, overrides theme.yaml styles
+3. **assets/template.docx** — if present, overrides everything
 
 ## Writing in Markdown
 
