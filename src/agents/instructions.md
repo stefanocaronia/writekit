@@ -60,6 +60,9 @@ Read `style.yaml` before writing or reviewing any text. It defines:
    - `wk remove character <name>` — remove a character sheet (novel only)
    - `wk remove location <name>` — remove a worldbuilding entry (novel only)
    - `wk remove note <name>` — remove a note
+   - `wk rename character <old> <new>` — rename a character everywhere
+   - `wk rename location <old> <new>` — rename a location everywhere
+   - `wk rename concept <old> <new>` — rename a concept everywhere
    - `wk sync` — synchronize derived fields (contributor roles, agents, reports)
    - `wk stats` — show project statistics (word count, reading time, chapter balance)
    - `wk check` — validate the project

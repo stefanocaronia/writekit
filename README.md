@@ -110,6 +110,9 @@ my-novel/
 | `wk remove character <name>` | Remove a character sheet |
 | `wk remove location <name>` | Remove a worldbuilding entry |
 | `wk remove note <name>` | Remove a note |
+| `wk rename character <old> <new>` | Rename a character — updates file, frontmatter, and all references |
+| `wk rename location <old> <new>` | Rename a location — updates file, frontmatter, and all references |
+| `wk rename concept <old> <new>` | Rename a concept — updates file, frontmatter, and all references |
 
 ### Building your book
 

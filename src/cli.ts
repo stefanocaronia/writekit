@@ -10,6 +10,7 @@ import { themeCommand } from "./commands/theme.js";
 import { removeCommand } from "./commands/remove.js";
 import { syncCommand } from "./commands/sync.js";
 import { statsCommand } from "./commands/stats.js";
+import { renameCommand } from "./commands/rename.js";
 
 const program = new Command();
 
@@ -26,6 +27,7 @@ program.addCommand(addCommand);
 program.addCommand(removeCommand);
 program.addCommand(syncCommand);
 program.addCommand(statsCommand);
+program.addCommand(renameCommand);
 program.addCommand(themeCommand);
 
 program.parse();

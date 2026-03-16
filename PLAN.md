@@ -94,7 +94,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [ ] **Incremental build nel watch** — solo capitoli cambiati
 - [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)
 - [x] **`wk remove`** — remove chapter (con rinumerazione), character, location, note, author. Type-aware: derivato da add_commands escludendo yaml-only (event, source). Sync rinumera capitoli automaticamente.
-- [ ] **`wk rename character/location`** — rinomina file, aggiorna frontmatter `name`, cerca/sostituisce nei capitoli e outline
+- [x] **`wk rename character/location/concept`** — rinomina file, aggiorna frontmatter, cerca/sostituisce in manuscript e outline. Type-aware.
 - [x] **Copertina** — immagine da `assets/cover.{jpg,png}` resa in tutti i formati: HTML (hero image), ePub (cover page), PDF (prima pagina), DOCX (prima pagina con immagine). Configurabile in config.yaml: `cover: assets/cover.jpg`
 
 ---
