@@ -69,10 +69,16 @@ export async function loadContributors(projectDir: string): Promise<Contributor[
         for (const file of mdFiles) {
             const content = await readFile(join(dir, file), "utf-8");
             const { data, body } = parseFrontmatter(content);
+            const name = (data.name as string) ?? "";
+            let bio = body.replace(/^#.*\n+/, "").trim();
+            // Remove name from start of bio to avoid duplication
+            if (name && bio.toLowerCase().startsWith(name.toLowerCase())) {
+                bio = bio.slice(name.length).trimStart();
+            }
             contributors.push({
-                name: (data.name as string) ?? "",
+                name,
                 roles: Array.isArray(data.roles) ? data.roles : [],
-                bio: body.replace(/^#.*\n+/, "").trim(),
+                bio,
             });
         }
 
