@@ -23,7 +23,8 @@ function fixXhtmlAttrs(html: string): string {
         // data-footnote-ref (no value) → data-footnote-ref="true"
         return html
                 .replace(/\sdata-footnote-ref(?=[\s>\/])/g, ' data-footnote-ref="true"')
-                .replace(/\sdata-footnote-backref(?=[\s>\/])/g, ' data-footnote-backref="true"');
+                .replace(/\sdata-footnote-backref(?=[\s>\/])/g, ' data-footnote-backref="true"')
+                .replace(/\sdata-footnotes(?=[\s>\/])/g, ' data-footnotes="true"');
 }
 
 function wrapXhtml(title: string, body: string, lang: string): string {
@@ -155,16 +156,16 @@ ${items}
 }
 
 function generateTitlePage(config: BookConfig): string {
-        const lines = [`<h1>${escapeXml(config.title)}</h1>`];
-        if (config.subtitle) lines.push(`<p style="font-style:italic;color:#666">${escapeXml(config.subtitle)}</p>`);
+        const lines = [`<h1 style="font-size:2.5em;margin-bottom:0.3em">${escapeXml(config.title)}</h1>`];
+        if (config.subtitle) lines.push(`<p style="font-size:1.2em;font-style:italic;color:#666;margin-top:0.5em">${escapeXml(config.subtitle)}</p>`);
         if (config.series) {
                 let s = escapeXml(config.series);
                 if (config.volume) s += ` — Vol. ${config.volume}`;
-                lines.push(`<p style="color:#666">${s}</p>`);
+                lines.push(`<p style="font-size:1em;color:#666;margin-top:0.5em">${s}</p>`);
         }
-        if (config.author) lines.push(`<p style="margin-top:2em">${escapeXml(formatAuthors(config.author))}</p>`);
+        if (config.author) lines.push(`<p style="font-size:1.1em;margin-top:3em;color:#444">${escapeXml(formatAuthors(config.author))}</p>`);
 
-        return wrapXhtml(config.title, `<div style="text-align:center;padding-top:4em">\n${lines.join("\n")}\n</div>`, config.language || "it");
+        return wrapXhtml(config.title, `<div style="text-align:center;padding-top:6em">\n${lines.join("\n")}\n</div>`, config.language || "it");
 }
 
 function generateColophon(config: BookConfig): string {
