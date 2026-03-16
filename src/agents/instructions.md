@@ -20,7 +20,7 @@ Read `style.yaml` before writing or reviewing any text. It defines:
 
 - **manuscript/** — the actual text. One Markdown file per chapter/section, numbered `01-slug.md`. Each has YAML frontmatter with at minimum `title` and `draft`.
 - **outline/** — the planned structure. Read before writing to understand what each chapter should accomplish.
-- **characters/** — character sheets (novel/collection only). Read before writing scenes with those characters. Respect their appearance, personality, voice, and arc.
+- **characters/** — character sheets (novel/collection only). Read before writing scenes with those characters. Respect their appearance, personality, voice, and arc. Characters may have `aliases` — different names they are referred to (nicknames, titles, surnames). Use aliases consistently.
 - **world/** — worldbuilding entries (novel only). Locations, systems, cultures. Be consistent with established facts.
 - **timeline.yaml** — chronological events (novel only). Do not contradict the timeline.
 - **concepts/** — key term definitions (essay, paper). Read before writing to use terminology consistently.

@@ -126,6 +126,7 @@ const addCharacter = new Command("character")
                 {
                     name,
                     role: opts.role,
+                    aliases: [],
                     age: "",
                     relationships: [],
                 },

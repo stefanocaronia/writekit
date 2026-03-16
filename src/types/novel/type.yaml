@@ -37,7 +37,7 @@ schemas:
         optional: [pov, characters, location]
     characters:
         required: [name, role]
-        optional: [age, relationships]
+        optional: [aliases, age, relationships]
     world:
         required: [name, type]
         optional: []
@@ -64,6 +64,7 @@ sample_files:
         frontmatter:
             name: ""
             role: protagonist
+            aliases: []
             age: ""
             relationships: []
         body: "# Character Name\n\n## Appearance\n\n## Personality\n\n## Backstory\n\n## Arc\n\n## Notes\n"
