@@ -1,3 +1,9 @@
 name: Default
 description: Classic book typography — warm tones, serif font, justified text
 author: writekit
+docx:
+    font: Georgia
+    heading_font: Georgia
+    accent_color: "8B4513"
+    text_color: "2C2C2C"
+    muted_color: "666666"

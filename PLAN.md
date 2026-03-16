@@ -85,7 +85,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **Immagini nel manuscript** — `![alt](path)` in HTML (base64), ePub (zip), PDF (via HTML), DOCX (ImageRun). Path relativi al progetto.
 - [ ] **DOCX template custom** — il template .docx (con stili Word: Heading 1, Normal, Quote, ecc.) fa parte del tema in `src/themes/{name}/template.docx`. `wk theme create` lo copia per customizzazione. Il builder lo usa come base. Se assente nel tema, usa stili default
 - [x] **DOCX Table of Contents** — campo TOC generato dai Heading 1 (capitoli), Word lo aggiorna all'apertura. Posizionato dopo la title page.
-- [ ] **DOCX temi** — font/colori dal tema attivo
+- [x] **DOCX temi** — font/colori dal tema attivo via docx settings in theme.yaml
 - [ ] **Doc temi nel README** — documentare il workflow temi: il default è builtin (dentro il package, intoccabile). `wk theme create` copia dal default in `themes/` nel progetto. L'utente modifica solo la copia. Aggiornamenti npm aggiornano il default senza toccare i temi custom
 - [x] **Footnotes** — sintassi Pandoc/MultiMarkdown via marked-footnote. HTML/ePub/PDF con CSS, DOCX con FootnoteReferenceRun nativo Word.
 - [x] **PDF configurabile + print presets** — 9 preset (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu). Ogni preset ha dimensioni, margini e bleed specifici. Config: `print_preset: trade`. Validazione nel check.

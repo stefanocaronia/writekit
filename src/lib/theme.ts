@@ -7,10 +7,27 @@ import { dirExists } from "./fs-utils.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BUILTIN_THEMES_DIR = join(__dirname, "..", "themes");
 
+export interface DocxStyle {
+    font: string;
+    heading_font: string;
+    accent_color: string;
+    text_color: string;
+    muted_color: string;
+}
+
+const DEFAULT_DOCX_STYLE: DocxStyle = {
+    font: "Georgia",
+    heading_font: "Georgia",
+    accent_color: "8B4513",
+    text_color: "2C2C2C",
+    muted_color: "666666",
+};
+
 export interface Theme {
     name: string;
     htmlCss: string;
     epubCss: string;
+    docx: DocxStyle;
 }
 
 export interface ThemeInfo {
@@ -25,11 +42,21 @@ function localThemesDir(projectDir: string): string {
 }
 
 async function loadThemeFrom(themeDir: string, name: string): Promise<Theme> {
-    const [htmlCss, epubCss] = await Promise.all([
+    const [htmlCss, epubCss, yamlRaw] = await Promise.all([
         readFile(join(themeDir, "html.css"), "utf-8"),
         readFile(join(themeDir, "epub.css"), "utf-8"),
+        readFile(join(themeDir, "theme.yaml"), "utf-8").catch(() => ""),
     ]);
-    return { name, htmlCss, epubCss };
+
+    let docx = { ...DEFAULT_DOCX_STYLE };
+    if (yamlRaw) {
+        const data = parseYaml(yamlRaw) as Record<string, unknown>;
+        if (data.docx && typeof data.docx === "object") {
+            docx = { ...DEFAULT_DOCX_STYLE, ...(data.docx as Partial<DocxStyle>) };
+        }
+    }
+
+    return { name, htmlCss, epubCss, docx };
 }
 
 async function readThemeInfo(

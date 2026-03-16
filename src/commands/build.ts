@@ -70,12 +70,12 @@ async function buildDocx(
     projectDir: string,
     config: BookConfig,
     chapters: Chapter[],
-    _theme: Theme,
+    theme: Theme,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath);
+    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }

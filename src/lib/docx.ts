@@ -23,8 +23,13 @@ import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
+import type { DocxStyle } from "./theme.js";
 
-const FONT = "Georgia";
+// Module-level style, set by buildDocx before rendering
+let FONT = "Georgia";
+let ACCENT = "8B4513";
+let TEXT_COLOR = "2C2C2C";
+let MUTED = "666666";
 
 // ── Inline parsing ──────────────────────────────────────────────────────────
 
@@ -218,7 +223,7 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageDat
             paragraphs.push(
                 new Paragraph({
                     alignment: AlignmentType.CENTER,
-                    children: [new TextRun({ text: "* * *", color: "666666", font: FONT })],
+                    children: [new TextRun({ text: "* * *", color: MUTED, font: FONT })],
                     spacing: { before: 400, after: 400 },
                 }),
             );
@@ -446,7 +451,15 @@ export async function buildDocx(
     contributors: Contributor[] = [],
     backcover = "",
     coverImagePath?: string | null,
+    docxStyle?: DocxStyle,
 ): Promise<string> {
+    // Apply theme style
+    if (docxStyle) {
+        FONT = docxStyle.font;
+        ACCENT = docxStyle.accent_color;
+        TEXT_COLOR = docxStyle.text_color;
+        MUTED = docxStyle.muted_color;
+    }
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
@@ -498,7 +511,7 @@ export async function buildDocx(
                         font: FONT,
                         size: 28,
                         italics: true,
-                        color: "666666",
+                        color: MUTED,
                     }),
                 ],
                 spacing: { before: 200 },
@@ -515,7 +528,7 @@ export async function buildDocx(
                         text: formatAuthors(config.author),
                         font: FONT,
                         size: 24,
-                        color: "666666",
+                        color: MUTED,
                     }),
                 ],
                 spacing: { before: 600 },
@@ -536,7 +549,7 @@ export async function buildDocx(
             new Paragraph({
                 heading: HeadingLevel.HEADING_2,
                 children: [
-                    new TextRun({ text: labels.tableOfContents, font: FONT, color: "8B4513" }),
+                    new TextRun({ text: labels.tableOfContents, font: FONT, color: ACCENT }),
                 ],
                 spacing: { before: 400, after: 400 },
             }),
@@ -584,7 +597,7 @@ export async function buildDocx(
                         text: chapter.title,
                         font: FONT,
                         size: 36,
-                        color: "8B4513",
+                        color: ACCENT,
                     }),
                 ],
                 spacing: { before: 600, after: 400 },
@@ -613,7 +626,7 @@ export async function buildDocx(
             new Paragraph({
                 heading: HeadingLevel.HEADING_2,
                 children: [
-                    new TextRun({ text: labels.aboutTheAuthor, font: FONT, color: "8B4513" }),
+                    new TextRun({ text: labels.aboutTheAuthor, font: FONT, color: ACCENT }),
                 ],
                 spacing: { before: 600, after: 400 },
             }),
@@ -647,7 +660,7 @@ export async function buildDocx(
             new Paragraph({
                 heading: HeadingLevel.HEADING_2,
                 children: [
-                    new TextRun({ text: labels.colophon, font: FONT, color: "8B4513" }),
+                    new TextRun({ text: labels.colophon, font: FONT, color: ACCENT }),
                 ],
                 spacing: { before: 600, after: 400 },
             }),
@@ -657,7 +670,7 @@ export async function buildDocx(
             colophonChildren.push(
                 new Paragraph({
                     children: [
-                        new TextRun({ text: line, font: FONT, size: 20, color: "666666" }),
+                        new TextRun({ text: line, font: FONT, size: 20, color: MUTED }),
                     ],
                     spacing: { after: 80 },
                 }),
