@@ -453,6 +453,7 @@ export async function buildDocx(
     backcover = "",
     coverImagePath?: string | null,
     docxStyle?: DocxStyle,
+    themeDir?: string,
 ): Promise<string> {
     // Apply theme style
     if (docxStyle) {
@@ -687,7 +688,7 @@ export async function buildDocx(
     const authorStr = formatAuthors(config.author);
 
     // Load external styles from template.docx if available
-    const templatePath = await resolveTemplatePath(projectDir);
+    const templatePath = await resolveTemplatePath(projectDir, themeDir);
     const externalStyles = templatePath ? await extractStylesXml(templatePath) : null;
 
     const doc = new Document({

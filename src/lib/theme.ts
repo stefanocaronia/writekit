@@ -28,6 +28,7 @@ export interface Theme {
     htmlCss: string;
     epubCss: string;
     docx: DocxStyle;
+    dir: string;
 }
 
 export interface ThemeInfo {
@@ -56,7 +57,7 @@ async function loadThemeFrom(themeDir: string, name: string): Promise<Theme> {
         }
     }
 
-    return { name, htmlCss, epubCss, docx };
+    return { name, htmlCss, epubCss, docx, dir: themeDir };
 }
 
 async function readThemeInfo(

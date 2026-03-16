@@ -75,7 +75,7 @@ async function buildDocx(
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx);
+    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, theme.dir);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
