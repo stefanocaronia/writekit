@@ -40,6 +40,37 @@ async function countMdFiles(dir: string): Promise<number> {
 
 // --- wkadd chapter ---
 
+async function getTypeSchema(projectDir: string): Promise<{ manuscript: Set<string>; outline: Set<string>; hasOutlineChapters: boolean }> {
+    try {
+        const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
+        const cfg = parseYaml(raw) as Record<string, unknown>;
+        const typeName = (cfg.type as string) || "novel";
+        if (isValidType(typeName)) {
+            const typeDef = await loadType(typeName);
+            const msSchema = typeDef.schemas?.manuscript;
+            const olSchema = typeDef.schemas?.["outline/chapters"];
+            const msFields = new Set([
+                ...(msSchema?.required ?? []),
+                ...(msSchema?.optional ?? []),
+            ]);
+            const olFields = new Set([
+                ...(olSchema?.required ?? []),
+                ...(olSchema?.optional ?? []),
+            ]);
+            return {
+                manuscript: msFields,
+                outline: olFields,
+                hasOutlineChapters: typeDef.dirs.includes("outline/chapters"),
+            };
+        }
+    } catch { /* fallback */ }
+    return {
+        manuscript: new Set(["chapter", "title", "pov", "draft", "author"]),
+        outline: new Set(["chapter", "title", "pov", "characters", "location"]),
+        hasOutlineChapters: true,
+    };
+}
+
 const addChapter = new Command("chapter")
     .description("Add a new chapter to manuscript and outline")
     .argument("<title>", "Chapter title")
@@ -47,10 +78,10 @@ const addChapter = new Command("chapter")
         const projectDir = process.cwd();
         await assertProject(projectDir);
 
+        const schema = await getTypeSchema(projectDir);
+
         const manuscriptDir = join(projectDir, "manuscript");
-        const outlineDir = join(projectDir, "outline", "chapters");
         await ensureDir(manuscriptDir);
-        await ensureDir(outlineDir);
 
         const existing = await countMdFiles(manuscriptDir);
         const num = existing + 1;
@@ -58,44 +89,48 @@ const addChapter = new Command("chapter")
         const slug = slugify(title);
 
         const manuscriptFile = join(manuscriptDir, `${pad}-${slug}.md`);
-        const outlineFile = join(outlineDir, `${pad}.md`);
 
         if (await fileExists(manuscriptFile)) {
             console.error(`\nFile already exists: manuscript/${pad}-${slug}.md\n`);
             process.exit(1);
         }
 
+        // Build frontmatter with only fields the type supports
+        const msFm: Record<string, unknown> = { title };
+        if (schema.manuscript.has("chapter")) msFm.chapter = num;
+        if (schema.manuscript.has("pov")) msFm.pov = "";
+        if (schema.manuscript.has("draft")) msFm.draft = 1;
+        if (schema.manuscript.has("author")) msFm.author = "";
+
         await writeFile(
             manuscriptFile,
-            frontmatter(
-                {
-                    chapter: num,
-                    title,
-                    pov: "",
-                    draft: 1,
-                },
-                `# ${title}\n\n`,
-            ),
+            frontmatter(msFm, `# ${title}\n\n`),
         );
 
-        await writeFile(
-            outlineFile,
-            frontmatter(
-                {
-                    chapter: num,
-                    title,
-                    pov: "",
-                    characters: [],
-                    location: "",
-                },
-                `# Chapter ${num} — Outline\n\n`,
-            ),
-        );
+        // Outline chapter (only if type supports it)
+        if (schema.hasOutlineChapters) {
+            const outlineDir = join(projectDir, "outline", "chapters");
+            await ensureDir(outlineDir);
+            const outlineFile = join(outlineDir, `${pad}.md`);
 
+            const olFm: Record<string, unknown> = { title };
+            if (schema.outline.has("chapter")) olFm.chapter = num;
+            if (schema.outline.has("pov")) olFm.pov = "";
+            if (schema.outline.has("characters")) olFm.characters = [];
+            if (schema.outline.has("location")) olFm.location = "";
+
+            await writeFile(
+                outlineFile,
+                frontmatter(olFm, `# Chapter ${num} — Outline\n\n`),
+            );
+        }
 
         console.log(`\n${icon.chapter} ${c.green(`Added chapter ${num}:`)} ${c.bold(title)}\n`);
         console.log(`  ${c.dim(`manuscript/${pad}-${slug}.md`)}`);
-        console.log(`  ${c.dim(`outline/chapters/${pad}.md`)}\n`);
+        if (schema.hasOutlineChapters) {
+            console.log(`  ${c.dim(`outline/chapters/${pad}.md`)}`);
+        }
+        console.log();
     });
 
 // --- wkadd character ---
