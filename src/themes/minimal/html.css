@@ -118,8 +118,9 @@ body {
   margin-bottom: 0.75rem;
 }
 .chapter p {
-  margin-bottom: 1.2rem;
+  margin: 0 0 0.4rem 0;
   text-align: left;
+  line-height: 1.7;
 }
 .chapter p + p {
   text-indent: 0;

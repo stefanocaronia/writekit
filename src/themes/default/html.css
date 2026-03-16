@@ -109,9 +109,10 @@ body {
   margin-bottom: 0.75rem;
 }
 .chapter p {
-  margin-bottom: 1rem;
+  margin: 0;
   text-align: justify;
   hyphens: auto;
+  line-height: 1.7;
 }
 .chapter p + p {
   text-indent: 1.5rem;
