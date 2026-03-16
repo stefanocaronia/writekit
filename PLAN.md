@@ -93,7 +93,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [ ] **DOCX template utente** — se `assets/template.docx` è presente, il builder usa quegli stili al posto di quelli del tema. Priorità: template utente > tema > default
 - [ ] **Incremental build nel watch** — solo capitoli cambiati
 - [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)
-- [x] **`wk remove`** — remove chapter (con rinumerazione), character, location, note, author
+- [x] **`wk remove`** — remove chapter (con rinumerazione), character, location, note, author. Type-aware: derivato da add_commands escludendo yaml-only (event, source). Sync rinumera capitoli automaticamente.
 - [ ] **`wk rename character/location`** — rinomina file, aggiorna frontmatter `name`, cerca/sostituisce nei capitoli e outline
 - [x] **Copertina** — immagine da `assets/cover.{jpg,png}` resa in tutti i formati: HTML (hero image), ePub (cover page), PDF (prima pagina), DOCX (prima pagina con immagine). Configurabile in config.yaml: `cover: assets/cover.jpg`
 

@@ -4,8 +4,27 @@ import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
 import { assertProject, fileExists } from "../lib/fs-utils.js";
 import { slugify, padNumber } from "../lib/slug.js";
-import { loadType, isValidType } from "../lib/project-type.js";
+import { loadType, isValidType, getRemoveCommands } from "../lib/project-type.js";
 import { c, icon } from "../lib/ui.js";
+
+async function assertRemoveCommand(projectDir: string, command: string): Promise<void> {
+    try {
+        const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
+        const cfg = parseYaml(raw) as Record<string, unknown>;
+        const typeName = (cfg.type as string) || "novel";
+        if (isValidType(typeName)) {
+            const typeDef = await loadType(typeName);
+            const allowed = getRemoveCommands(typeDef);
+            if (!allowed.includes(command)) {
+                console.error(
+                    `\n${icon.error} ${c.red(`"wk remove ${command}" is not available for ${typeDef.name} projects.`)}`,
+                );
+                console.error(`  ${c.dim(`Available: ${allowed.join(", ")}`)}\n`);
+                process.exit(1);
+            }
+        }
+    } catch { /* config not readable, let other commands handle it */ }
+}
 
 // --- wk remove author ---
 
@@ -88,6 +107,7 @@ const removeChapter = new Command("chapter")
     .action(async (num: string) => {
         const projectDir = process.cwd();
         await assertProject(projectDir);
+        await assertRemoveCommand(projectDir, "chapter");
 
         const chapterNum = parseInt(num, 10);
         if (isNaN(chapterNum) || chapterNum < 1) {
@@ -143,20 +163,7 @@ function makeFileRemoveCommand(
         .action(async (name: string) => {
             const projectDir = process.cwd();
             await assertProject(projectDir);
-
-            // Check type allows this
-            try {
-                const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
-                const cfg = parseYaml(raw) as Record<string, unknown>;
-                const typeName = (cfg.type as string) || "novel";
-                if (isValidType(typeName)) {
-                    const typeDef = await loadType(typeName);
-                    if (!typeDef.dirs.includes(dir)) {
-                        console.error(`\n${icon.error} ${c.red(`"${dir}/" is not available for ${typeDef.name} projects.`)}\n`);
-                        process.exit(1);
-                    }
-                }
-            } catch { /* let it proceed */ }
+            await assertRemoveCommand(projectDir, commandName);
 
             const targetDir = join(projectDir, dir);
             const slug = slugify(name);

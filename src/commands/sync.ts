@@ -1,8 +1,9 @@
 import { Command } from "commander";
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile, rename } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml, stringify } from "yaml";
 import { assertProject } from "../lib/fs-utils.js";
+import { padNumber } from "../lib/slug.js";
 import { ensureAgentsMd } from "../lib/agents.js";
 import { generateReports } from "../lib/reports.js";
 import { c, icon } from "../lib/ui.js";
@@ -81,12 +82,47 @@ async function syncContributorRoles(projectDir: string): Promise<number> {
     return updated;
 }
 
-export async function syncProject(projectDir: string): Promise<{ roles: number; agents: boolean; reports: string[] }> {
+async function syncChapterNumbering(projectDir: string): Promise<number> {
+    let renamed = 0;
+
+    // Manuscript
+    const msDir = join(projectDir, "manuscript");
+    try {
+        const files = (await readdir(msDir)).filter((f) => extname(f) === ".md").sort();
+        for (let i = 0; i < files.length; i++) {
+            const expected = `${padNumber(i + 1)}-`;
+            if (!files[i].startsWith(expected)) {
+                const slug = files[i].replace(/^\d+-/, "");
+                const newName = `${padNumber(i + 1)}-${slug}`;
+                await rename(join(msDir, files[i]), join(msDir, newName));
+                renamed++;
+            }
+        }
+    } catch { /* manuscript may not exist */ }
+
+    // Outline chapters
+    const outDir = join(projectDir, "outline", "chapters");
+    try {
+        const files = (await readdir(outDir)).filter((f) => extname(f) === ".md").sort();
+        for (let i = 0; i < files.length; i++) {
+            const expected = `${padNumber(i + 1)}.md`;
+            if (files[i] !== expected) {
+                await rename(join(outDir, files[i]), join(outDir, expected));
+                renamed++;
+            }
+        }
+    } catch { /* outline/chapters may not exist */ }
+
+    return renamed;
+}
+
+export async function syncProject(projectDir: string): Promise<{ roles: number; chapters: number; agents: boolean; reports: string[] }> {
     const roles = await syncContributorRoles(projectDir);
+    const chapters = await syncChapterNumbering(projectDir);
     await ensureAgentsMd(projectDir);
     const reports = await generateReports(projectDir);
 
-    return { roles, agents: true, reports };
+    return { roles, chapters, agents: true, reports };
 }
 
 export const syncCommand = new Command("sync")
@@ -103,6 +139,11 @@ export const syncCommand = new Command("sync")
             console.log(`  ${c.green("✓")} Updated ${result.roles} contributor role(s)`);
         } else {
             console.log(`  ${c.dim("✓ Contributor roles up to date")}`);
+        }
+        if (result.chapters > 0) {
+            console.log(`  ${c.green("✓")} Renumbered ${result.chapters} chapter file(s)`);
+        } else {
+            console.log(`  ${c.dim("✓ Chapter numbering up to date")}`);
         }
         console.log(`  ${c.dim("✓ AGENTS.md refreshed")}`);
         console.log(`  ${c.dim(`✓ Reports: ${result.reports.join(", ")}`)}`);

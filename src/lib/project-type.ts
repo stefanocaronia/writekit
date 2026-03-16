@@ -47,6 +47,13 @@ export async function loadType(name: string): Promise<ProjectType> {
     return parseYaml(raw) as ProjectType;
 }
 
+// Commands that operate on YAML entries, not individual files — not removable
+const YAML_ONLY_COMMANDS = new Set(["event", "source"]);
+
+export function getRemoveCommands(typeDef: ProjectType): string[] {
+    return typeDef.add_commands.filter((cmd) => !YAML_ONLY_COMMANDS.has(cmd));
+}
+
 export async function listTypes(): Promise<{ name: string; description: string }[]> {
     const result: { name: string; description: string }[] = [];
 

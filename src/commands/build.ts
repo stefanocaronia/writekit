@@ -181,6 +181,9 @@ export const buildCommand = new Command("build")
         if (syncResult.roles > 0) {
             console.log(`  ${c.dim(`✓ Updated ${syncResult.roles} contributor role(s)`)}`);
         }
+        if (syncResult.chapters > 0) {
+            console.log(`  ${c.dim(`✓ Renumbered ${syncResult.chapters} chapter file(s)`)}`);
+        }
         console.log(`  ${c.dim(`✓ Reports: ${syncResult.reports.join(", ")}`)}`);
         console.log(`  ${c.dim("✓ AGENTS.md refreshed")}`);
 
