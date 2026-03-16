@@ -1,5 +1,14 @@
 import type { BookConfig } from "./parse.js";
 
+export function formatAuthors(author: string | string[]): string {
+    if (Array.isArray(author)) {
+        if (author.length === 0) return "";
+        if (author.length === 1) return author[0];
+        return author.slice(0, -1).join(", ") + " & " + author[author.length - 1];
+    }
+    return author || "";
+}
+
 export function buildColophonLines(config: BookConfig): string[] {
     const lines: string[] = [];
     if (config.copyright) lines.push(config.copyright);

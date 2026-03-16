@@ -8,7 +8,7 @@ export interface BookConfig {
     subtitle?: string;
     series?: string;
     volume?: number;
-    author: string;
+    author: string | string[];
     translator?: string;
     editor?: string;
     illustrator?: string;
@@ -30,6 +30,7 @@ export interface Chapter {
     title: string;
     pov?: string;
     draft?: number;
+    author?: string;
     body: string;
     filename: string;
 }
@@ -74,6 +75,7 @@ export async function loadChapters(projectDir: string): Promise<Chapter[]> {
             title: (data.title as string) ?? file.replace(/\.md$/, ""),
             pov: data.pov as string | undefined,
             draft: data.draft as number | undefined,
+            author: data.author as string | undefined,
             body,
             filename: file,
         });

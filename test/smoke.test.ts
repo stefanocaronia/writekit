@@ -26,7 +26,7 @@ describe("writekit smoke tests", () => {
 
     it("shows help", () => {
         const out = run(`${CLI} --help`);
-        expect(out).toContain("CLI framework for creating books");
+        expect(out).toContain("CLI toolkit for writing");
         expect(out).toContain("init");
         expect(out).toContain("build");
         expect(out).toContain("check");
@@ -122,6 +122,18 @@ describe("writekit smoke tests", () => {
         const docxFiles = readdirSync(buildDir)
             .filter((f: string) => f.endsWith(".docx"));
         expect(docxFiles.length).toBeGreaterThan(0);
+    });
+
+    it("add author works", () => {
+        run(`${CLI} add author "Lucia Bianchi"`, TEST_DIR);
+        const config = readFileSync(join(TEST_DIR, "config.yaml"), "utf-8");
+        expect(config).toContain("Lucia Bianchi");
+    });
+
+    it("remove author works", () => {
+        run(`${CLI} remove author "Lucia Bianchi"`, TEST_DIR);
+        const config = readFileSync(join(TEST_DIR, "config.yaml"), "utf-8");
+        expect(config).not.toContain("Lucia Bianchi");
     });
 
     it("theme list works", () => {

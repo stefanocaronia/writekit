@@ -36,9 +36,10 @@ export function frontmatter(data: Record<string, unknown>, body: string): string
     return `---\n${stringify(data).trimEnd()}\n---\n\n${body}`;
 }
 
-export function bookFilename(title: string, author: string, ext: string): string {
+export function bookFilename(title: string, author: string | string[], ext: string): string {
+    const authorStr = Array.isArray(author) ? author.join(", ") : author;
     const parts = [title];
-    if (author) parts.push(author);
+    if (authorStr) parts.push(authorStr);
     const name = parts.join(" - ").replace(/[<>:"/\\|?*]/g, "");
     return `${name}.${ext}`;
 }

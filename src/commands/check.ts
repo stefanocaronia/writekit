@@ -225,12 +225,37 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         }
     }
 
-    // Check type-specific required files
-    for (const file of typeDef.files) {
-        const fullPath = join(projectDir, file);
-        if (file.endsWith(".md") && await fileExists(fullPath)) {
-            // Already checked above
-        }
+    // Cross-validate per-chapter authors against global authors
+    if (await fileExists(join(projectDir, "config.yaml"))) {
+        try {
+            const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
+            const cfg = parseYaml(raw) as Record<string, unknown>;
+            const globalAuthor = cfg.author;
+            const globalAuthors = new Set(
+                (Array.isArray(globalAuthor) ? globalAuthor : globalAuthor ? [globalAuthor] : [])
+                    .map((a: string) => a.toLowerCase()),
+            );
+
+            if (globalAuthors.size > 0) {
+                const manuscriptDir = join(projectDir, "manuscript");
+                const msFiles = await getMdFiles(manuscriptDir);
+                for (const file of msFiles) {
+                    const content = await readFile(join(manuscriptDir, file), "utf-8");
+                    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+                    if (fmMatch) {
+                        const { data } = tryParseYaml(fmMatch[1], `manuscript/${file}`);
+                        if (data?.author && typeof data.author === "string" && data.author) {
+                            if (!globalAuthors.has(data.author.toLowerCase())) {
+                                issues.push({
+                                    level: "warning",
+                                    message: `manuscript/${file}: author "${data.author}" is not in config.yaml authors`,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        } catch { /* config already validated above */ }
     }
 
     // Split into errors and warnings

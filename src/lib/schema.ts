@@ -16,7 +16,7 @@ export const configSchema: Schema = {
     subtitle: { type: "string" },
     series: { type: "string" },
     volume: { type: "number" },
-    author: { type: "string", required: true },
+    author: { type: "string", required: true }, // also accepts array — validated separately
     translator: { type: "string" },
     editor: { type: "string" },
     illustrator: { type: "string" },
@@ -133,8 +133,8 @@ export function validateData(
         // Skip if not present and not required
         if (value === undefined || value === null || value === "") continue;
 
-        // Check type
-        if (!checkType(value, def.type)) {
+        // Check type (author field accepts string or array)
+        if (!checkType(value, def.type) && !(field === "author" && Array.isArray(value))) {
             issues.push({
                 level: "error",
                 message: `${file}: field "${field}" should be ${def.type}, got ${typeof value}`,

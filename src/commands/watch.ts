@@ -3,6 +3,7 @@ import { watch, type FSWatcher } from "node:fs";
 import { join } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { checkProject, printCheckResults } from "./check.js";
+import { ensureAgentsMd } from "../lib/agents.js";
 import { loadConfig, loadChapters } from "../lib/parse.js";
 import { renderBook } from "../lib/html.js";
 import { buildEpub } from "../lib/epub.js";
@@ -86,6 +87,9 @@ async function runCycle(
     const reportStart = Date.now();
     await generateReports(projectDir);
     console.log(`${timestamp()} Finished ${c.yellow("reports")} ${c.green("✓")} ${c.dim(elapsed(reportStart))}`);
+
+    // Ensure AGENTS.md
+    await ensureAgentsMd(projectDir);
 
     console.log();
 }

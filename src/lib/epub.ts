@@ -6,7 +6,7 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { BookConfig, Chapter } from "./parse.js";
 import type { Theme } from "./theme.js";
-import { buildColophonLines } from "./metadata.js";
+import { buildColophonLines, formatAuthors } from "./metadata.js";
 
 function escapeXml(text: string): string {
         return text
@@ -48,7 +48,12 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[]): string {
                 `    <dc:title>${escapeXml(config.title)}</dc:title>`,
                 `    <dc:language>${config.language || "it"}</dc:language>`,
         ];
-        if (config.author) metadataLines.push(`    <dc:creator>${escapeXml(config.author)}</dc:creator>`);
+        if (config.author) {
+            const authors = Array.isArray(config.author) ? config.author : [config.author];
+            for (const a of authors) {
+                if (a) metadataLines.push(`    <dc:creator>${escapeXml(a)}</dc:creator>`);
+            }
+        }
         if (config.publisher) metadataLines.push(`    <dc:publisher>${escapeXml(config.publisher)}</dc:publisher>`);
         if (config.copyright) metadataLines.push(`    <dc:rights>${escapeXml(config.copyright)}</dc:rights>`);
         if (config.date) metadataLines.push(`    <dc:date>${escapeXml(String(config.date))}</dc:date>`);
@@ -116,7 +121,7 @@ function generateTitlePage(config: BookConfig): string {
                 if (config.volume) s += ` — Vol. ${config.volume}`;
                 lines.push(`<p style="color:#666">${s}</p>`);
         }
-        if (config.author) lines.push(`<p style="margin-top:2em">${escapeXml(config.author)}</p>`);
+        if (config.author) lines.push(`<p style="margin-top:2em">${escapeXml(formatAuthors(config.author))}</p>`);
 
         return wrapXhtml(config.title, `<div style="text-align:center;padding-top:4em">\n${lines.join("\n")}\n</div>`, config.language || "it");
 }

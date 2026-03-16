@@ -245,13 +245,89 @@ const addEvent = new Command("event")
         console.log(`  ${c.dim(`timeline.yaml (${data.events.length} events)`)}\n`);
     });
 
+// --- wkadd author ---
+
+const addAuthor = new Command("author")
+    .description("Add an author to config.yaml")
+    .argument("<name>", "Author name")
+    .action(async (name: string) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+
+        const configPath = join(projectDir, "config.yaml");
+        const raw = await readFile(configPath, "utf-8");
+        const cfg = parseYaml(raw) as Record<string, unknown>;
+
+        const current = cfg.author;
+        if (Array.isArray(current)) {
+            if (current.includes(name)) {
+                console.log(`\n${icon.warn}  ${c.yellow(`"${name}" is already an author.`)}\n`);
+                return;
+            }
+            current.push(name);
+        } else if (typeof current === "string" && current) {
+            if (current === name) {
+                console.log(`\n${icon.warn}  ${c.yellow(`"${name}" is already an author.`)}\n`);
+                return;
+            }
+            cfg.author = [current, name];
+        } else {
+            cfg.author = name;
+        }
+
+        await writeFile(configPath, stringify(cfg));
+        const authors = Array.isArray(cfg.author) ? cfg.author : [cfg.author];
+        console.log(`\n${icon.character} ${c.green("Added author:")} ${c.bold(name)}\n`);
+        console.log(`  ${c.dim(`Authors: ${authors.join(", ")}`)}\n`);
+    });
+
+// --- wkadd source ---
+
+const addSource = new Command("source")
+    .description("Add a source to bibliography.yaml")
+    .argument("<title>", "Source title")
+    .option("-a, --author <author>", "Source author", "")
+    .option("-y, --year <year>", "Publication year", "")
+    .option("-u, --url <url>", "URL", "")
+    .action(async (title: string, opts: { author: string; year: string; url: string }) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+        await assertAddCommand(projectDir, "source");
+
+        const bibPath = join(projectDir, "bibliography.yaml");
+        let data: { sources: Array<Record<string, string>> };
+
+        try {
+            const raw = await readFile(bibPath, "utf-8");
+            data = parseYaml(raw) as typeof data;
+            if (!data || !Array.isArray(data.sources)) {
+                data = { sources: [] };
+            }
+        } catch {
+            data = { sources: [] };
+        }
+
+        data.sources.push({
+            author: opts.author,
+            title,
+            year: opts.year,
+            url: opts.url,
+        });
+
+        await writeFile(bibPath, stringify(data));
+        console.log(`\n${icon.note} ${c.green("Added source:")} ${c.bold(title)}\n`);
+        console.log(`  ${c.dim(`bibliography.yaml (${data.sources.length} sources)`)}\n`);
+    });
+
 // --- wkadd (parent command) ---
 
 export const addCommand = new Command("add")
-    .description("Add chapters, characters, locations, notes, or events");
+    .description("Add chapters, characters, locations, notes, events, authors, or sources");
 
 addCommand.addCommand(addChapter);
 addCommand.addCommand(addCharacter);
 addCommand.addCommand(addLocation);
 addCommand.addCommand(addNote);
 addCommand.addCommand(addEvent);
+addCommand.addCommand(addAuthor);
+addCommand.addCommand(addSource);

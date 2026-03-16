@@ -1,7 +1,7 @@
 import { marked } from "marked";
 import type { BookConfig, Chapter } from "./parse.js";
 import type { Theme } from "./theme.js";
-import { buildColophonLines } from "./metadata.js";
+import { buildColophonLines, formatAuthors } from "./metadata.js";
 
 const JS = `
     // Smooth scroll for TOC links
@@ -48,7 +48,7 @@ export async function renderBook(
             <h1>${escapeHtml(config.title)}</h1>
             ${config.subtitle ? `<div class="subtitle">${escapeHtml(config.subtitle)}</div>` : ""}
             ${seriesLine}
-            ${config.author ? `<div class="author">${escapeHtml(config.author)}</div>` : ""}
+            ${config.author ? `<div class="author">${escapeHtml(formatAuthors(config.author))}</div>` : ""}
         </header>`;
 
     // Colophon

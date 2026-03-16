@@ -10,6 +10,7 @@ import { generateReports } from "../lib/reports.js";
 import { loadTheme, type Theme } from "../lib/theme.js";
 import { assertProject, bookFilename } from "../lib/fs-utils.js";
 import { checkProject, printCheckResults } from "./check.js";
+import { ensureAgentsMd } from "../lib/agents.js";
 
 const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx"] as const;
 type Format = (typeof SUPPORTED_FORMATS)[number];
@@ -167,5 +168,9 @@ export const buildCommand = new Command("build")
         console.log(`\n${icon.report} ${c.bold("Generating reports...")}\n`);
         const generated = await generateReports(projectDir);
         console.log(`  ${c.dim(`→ build/reports/ (${generated.join(", ")})`)}`);
+
+        // Ensure AGENTS.md writekit section is up to date
+        await ensureAgentsMd(projectDir);
+
         console.log(`\n${icon.done} ${c.green("Done!")}\n`);
     });

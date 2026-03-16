@@ -6,6 +6,7 @@ import { stringify } from "yaml";
 import { input, select } from "@inquirer/prompts";
 import { frontmatter } from "../lib/fs-utils.js";
 import { loadType, allTypeNames, type ProjectType, type TypeName } from "../lib/project-type.js";
+import { ensureAgentsMd } from "../lib/agents.js";
 
 interface InitOptions {
     title: string;
@@ -146,6 +147,8 @@ function buildReadme(options: InitOptions, typeDef: ProjectType): string {
         lines.push(`wk add ${cmd} ${argName}`);
     }
 
+    lines.push("wk add author <name>  # Add an author");
+    lines.push("wk remove author <name> # Remove an author");
     lines.push("```");
 
     return lines.join("\n") + "\n";
@@ -260,6 +263,9 @@ export const initCommand = new Command("init")
         // .gitignore
         await writeFile(join(projectDir, ".gitignore"), "build/\n");
 
+        // AGENTS.md
+        await ensureAgentsMd(projectDir);
+
         // git init
         let gitOk = false;
         try {
@@ -288,6 +294,7 @@ export const initCommand = new Command("init")
                 console.log(c.gray(`  ├── ${dir}/`));
             }
         }
+        console.log(c.gray("  ├── AGENTS.md"));
         console.log(c.gray("  └── README.md"));
 
         if (gitOk) console.log(`\n  ${icon.git} ${c.dim("git repository initialized")}`);

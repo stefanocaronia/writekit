@@ -28,6 +28,24 @@ You'll be asked for a title, author name, and language. A new folder is created 
 
 Open the `manuscript/` folder and start writing in Markdown — a simple text format where `**bold**` makes **bold**, `*italic*` makes *italic*, and `# Heading` makes a heading. If you've ever written a message on Slack, Discord, or Reddit, you already know the basics.
 
+## Project types
+
+When you create a project, writekit asks what type of text you're writing:
+
+| Type | Best for |
+|---|---|
+| **novel** | Novels, novellas, long-form fiction — characters, world, timeline |
+| **collection** | Anthologies — short stories, poems, essays by one or more authors |
+| **essay** | Single long-form non-fiction |
+| **paper** | Academic papers with bibliography |
+| **article** | Short articles — the simplest structure |
+
+Each type sets up only the folders and files you need. You choose the type once at creation:
+
+```bash
+wk init my-essay --type essay
+```
+
 ### 4. Build your book
 
 ```bash
@@ -71,12 +89,16 @@ my-novel/
 
 | Command | What it does |
 |---|---|
-| `wk init <name>` | Create a new project |
+| `wk init <name>` | Create a new project (prompts for type, title, author, language) |
+| `wk init <name> --type essay` | Create a project of a specific type |
 | `wk add chapter <title>` | Add a new chapter |
-| `wk add character <name>` | Add a character sheet |
-| `wk add location <name>` | Add a place to your world |
+| `wk add character <name>` | Add a character sheet (novel only) |
+| `wk add location <name>` | Add a place to your world (novel only) |
 | `wk add note <title>` | Add a note |
-| `wk add event <description>` | Add a timeline event |
+| `wk add event <description>` | Add a timeline event (novel only) |
+| `wk add author <name>` | Add an author to the project |
+| `wk add source <title>` | Add a bibliography source (paper only) |
+| `wk remove author <name>` | Remove an author from the project |
 
 ### Building your book
 

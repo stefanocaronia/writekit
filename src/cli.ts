@@ -7,19 +7,21 @@ import { checkCommand } from "./commands/check.js";
 import { watchCommand } from "./commands/watch.js";
 import { addCommand } from "./commands/add.js";
 import { themeCommand } from "./commands/theme.js";
+import { removeCommand } from "./commands/remove.js";
 
 const program = new Command();
 
 program
     .name("wk")
-    .description("CLI framework for creating books")
-    .version("0.1.0");
+    .description("CLI toolkit for writing books, essays, and articles")
+    .version("0.2.0");
 
 program.addCommand(initCommand);
 program.addCommand(buildCommand);
 program.addCommand(checkCommand);
 program.addCommand(watchCommand);
 program.addCommand(addCommand);
+program.addCommand(removeCommand);
 program.addCommand(themeCommand);
 
 program.parse();

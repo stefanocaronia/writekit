@@ -17,7 +17,7 @@ import {
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BookConfig, Chapter } from "./parse.js";
-import { buildColophonLines } from "./metadata.js";
+import { buildColophonLines, formatAuthors } from "./metadata.js";
 
 const FONT = "Georgia";
 
@@ -395,7 +395,7 @@ export async function buildDocx(
                 alignment: AlignmentType.CENTER,
                 children: [
                     new TextRun({
-                        text: config.author,
+                        text: formatAuthors(config.author),
                         font: FONT,
                         size: 24,
                         color: "666666",
@@ -465,7 +465,14 @@ export async function buildDocx(
         });
     }
 
+    const authorStr = formatAuthors(config.author);
+
     const doc = new Document({
+        title: config.title,
+        subject: config.subtitle || undefined,
+        creator: authorStr || undefined,
+        description: config.genre ? `Genre: ${config.genre}` : undefined,
+        keywords: config.genre || undefined,
         numbering: {
             config: [
                 {
