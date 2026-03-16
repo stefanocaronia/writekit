@@ -570,10 +570,10 @@ export async function buildDocx(
     const footnotes = extractFootnotes(allMarkdown);
 
     // Build Document footnotes config
-    const docFootnotes: Record<number, { children: Paragraph[] }> = {};
+    const docFootnotes: Record<string, { children: Paragraph[] }> = {};
     for (const [id, num] of footnotes.idToNum) {
         const text = footnotes.defs.get(id) ?? "";
-        docFootnotes[num] = {
+        docFootnotes[String(num)] = {
             children: [new Paragraph({
                 children: [new TextRun({ text, font: FONT, size: 18 })],
             })],
