@@ -51,6 +51,44 @@ export function parseFrontmatter(content: string): {
     }
 }
 
+export interface Contributor {
+    name: string;
+    roles: string[];
+    bio: string;
+}
+
+export async function loadContributors(projectDir: string): Promise<Contributor[]> {
+    const dir = join(projectDir, "contributors");
+    try {
+        const files = await readdir(dir);
+        const mdFiles = files.filter((f) => extname(f) === ".md").sort();
+        const contributors: Contributor[] = [];
+
+        for (const file of mdFiles) {
+            const content = await readFile(join(dir, file), "utf-8");
+            const { data, body } = parseFrontmatter(content);
+            contributors.push({
+                name: (data.name as string) ?? "",
+                roles: Array.isArray(data.roles) ? data.roles : [],
+                bio: body.replace(/^#.*\n+/, "").trim(),
+            });
+        }
+
+        return contributors;
+    } catch {
+        return [];
+    }
+}
+
+export async function loadBackcover(projectDir: string): Promise<string> {
+    try {
+        const content = await readFile(join(projectDir, "backcover.md"), "utf-8");
+        return content.replace(/^#.*\n+/, "").trim();
+    } catch {
+        return "";
+    }
+}
+
 export async function loadConfig(projectDir: string): Promise<BookConfig> {
     const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
     return parseYaml(raw) as BookConfig;

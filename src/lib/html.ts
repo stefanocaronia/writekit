@@ -1,5 +1,5 @@
 import { marked } from "marked";
-import type { BookConfig, Chapter } from "./parse.js";
+import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
@@ -32,6 +32,8 @@ export async function renderBook(
     config: BookConfig,
     chapters: Chapter[],
     theme: Theme,
+    contributors?: Contributor[],
+    backcover?: string,
 ): Promise<string> {
     const labels = getLabels(config.language);
 
@@ -108,6 +110,23 @@ export async function renderBook(
         })
         .join("\n");
 
+    // Back cover
+    const backcoverSection = backcover
+        ? `\n    <section class="backcover">\n      ${await marked(backcover)}\n    </section>`
+        : "";
+
+    // About the author(s)
+    let aboutSection = "";
+    if (contributors && contributors.length > 0) {
+        const bios = contributors
+            .filter((c) => c.bio)
+            .map((c) => `<p><strong>${escapeHtml(c.name)}</strong></p>\n      <p>${escapeHtml(c.bio)}</p>`)
+            .join("\n      ");
+        if (bios) {
+            aboutSection = `\n    <section class="about-authors">\n      <h2>${escapeHtml(labels.aboutTheAuthor)}</h2>\n      ${bios}\n    </section>`;
+        }
+    }
+
     return `<!DOCTYPE html>
 <html lang="${config.language || "it"}">
 <head>
@@ -119,7 +138,7 @@ export async function renderBook(
 <body>
     ${cover}
     <div id="toc">${toc}</div>
-    ${chapterSections}${colophon}
+    ${chapterSections}${backcoverSection}${aboutSection}${colophon}
     <script>${JS}</script>
 </body>
 </html>`;

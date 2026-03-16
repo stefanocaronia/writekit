@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { join } from "node:path";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
-import { loadConfig, loadChapters, type BookConfig, type Chapter } from "../lib/parse.js";
+import { loadConfig, loadChapters, loadContributors, loadBackcover, type BookConfig, type Chapter } from "../lib/parse.js";
 import { renderBook } from "../lib/html.js";
 import { buildEpub as buildEpubFile } from "../lib/epub.js";
 import { buildPdf as buildPdfFile } from "../lib/pdf.js";
@@ -24,7 +24,9 @@ async function buildHtml(
     chapters: Chapter[],
     theme: Theme,
 ): Promise<void> {
-    const html = await renderBook(config, chapters, theme);
+    const contributors = await loadContributors(projectDir);
+    const backcover = await loadBackcover(projectDir);
+    const html = await renderBook(config, chapters, theme, contributors, backcover);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
@@ -40,7 +42,9 @@ async function buildEpub(
     chapters: Chapter[],
     theme: Theme,
 ): Promise<void> {
-    const outPath = await buildEpubFile(projectDir, config, chapters, theme, buildFilename(config,"epub"));
+    const contributors = await loadContributors(projectDir);
+    const backcover = await loadBackcover(projectDir);
+    const outPath = await buildEpubFile(projectDir, config, chapters, theme, buildFilename(config,"epub"), contributors, backcover);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -62,7 +66,9 @@ async function buildDocx(
     chapters: Chapter[],
     _theme: Theme,
 ): Promise<void> {
-    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"));
+    const contributors = await loadContributors(projectDir);
+    const backcover = await loadBackcover(projectDir);
+    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }

@@ -4,7 +4,7 @@ import yazl from "yazl";
 import { createWriteStream } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import type { BookConfig, Chapter } from "./parse.js";
+import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
@@ -41,7 +41,7 @@ function generateContainerXml(): string {
 </container>`;
 }
 
-function generateContentOpf(config: BookConfig, chapters: Chapter[]): string {
+function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false): string {
         const uuid = `urn:uuid:${simpleUuid()}`;
 
         const metadataLines = [
@@ -73,6 +73,18 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[]): string {
                 const id = `chapter-${i + 1}`;
                 manifestItems.push(`    <item id="${id}" href="${id}.xhtml" media-type="application/xhtml+xml" />`);
                 spineItems.push(`    <itemref idref="${id}" />`);
+        }
+
+        // Add back cover
+        if (hasBackcover) {
+                manifestItems.push(`    <item id="backcover" href="backcover.xhtml" media-type="application/xhtml+xml" />`);
+                spineItems.push(`    <itemref idref="backcover" />`);
+        }
+
+        // Add about the author(s)
+        if (hasAbout) {
+                manifestItems.push(`    <item id="about" href="about.xhtml" media-type="application/xhtml+xml" />`);
+                spineItems.push(`    <itemref idref="about" />`);
         }
 
         // Add colophon
@@ -145,6 +157,21 @@ function generateColophon(config: BookConfig): string {
         return wrapXhtml(labels.colophon, body, config.language || "it");
 }
 
+function generateAboutAuthors(config: BookConfig, contributors: Contributor[]): string {
+        const labels = getLabels(config.language);
+        const bios = contributors
+                .filter((c) => c.bio)
+                .map((c) => `<p><strong>${escapeXml(c.name)}</strong></p>\n<p>${escapeXml(c.bio)}</p>`)
+                .join("\n");
+        if (!bios) return "";
+        return wrapXhtml(labels.aboutTheAuthor, `<div class="about-authors">\n<h1>${escapeXml(labels.aboutTheAuthor)}</h1>\n${bios}\n</div>`, config.language || "it");
+}
+
+function generateBackcover(config: BookConfig, backcover: string): string {
+        const body = `<div class="backcover">\n${marked(backcover)}\n</div>`;
+        return wrapXhtml("Back Cover", body, config.language || "it");
+}
+
 function simpleUuid(): string {
         return crypto.randomUUID();
 }
@@ -155,6 +182,8 @@ export async function buildEpub(
         chapters: Chapter[],
         theme: Theme,
         filename = "book.epub",
+        contributors: Contributor[] = [],
+        backcover = "",
 ): Promise<string> {
         const buildDir = join(projectDir, "build");
         await mkdir(buildDir, { recursive: true });
@@ -169,7 +198,9 @@ export async function buildEpub(
         zip.addBuffer(Buffer.from(generateContainerXml()), "META-INF/container.xml");
 
         // OEBPS
-        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters)), "OEBPS/content.opf");
+        const hasBackcover = !!backcover;
+        const hasAbout = contributors.some((c) => c.bio);
+        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout)), "OEBPS/content.opf");
         zip.addBuffer(Buffer.from(theme.epubCss), "OEBPS/style.css");
         zip.addBuffer(Buffer.from(generateTitlePage(config)), "OEBPS/titlepage.xhtml");
         zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters)), "OEBPS/toc.xhtml");
@@ -179,6 +210,17 @@ export async function buildEpub(
                 const htmlBody = await marked(chapters[i].body);
                 const xhtml = wrapXhtml(chapters[i].title, htmlBody, config.language || "it");
                 zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
+        }
+
+        // Back cover
+        if (backcover) {
+                zip.addBuffer(Buffer.from(generateBackcover(config, backcover)), "OEBPS/backcover.xhtml");
+        }
+
+        // About the author(s)
+        const aboutXhtml = generateAboutAuthors(config, contributors);
+        if (aboutXhtml) {
+                zip.addBuffer(Buffer.from(aboutXhtml), "OEBPS/about.xhtml");
         }
 
         // Colophon

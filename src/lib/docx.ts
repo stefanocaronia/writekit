@@ -16,7 +16,7 @@ import {
 } from "docx";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { BookConfig, Chapter } from "./parse.js";
+import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 
@@ -353,6 +353,8 @@ export async function buildDocx(
     config: BookConfig,
     chapters: Chapter[],
     filename = "book.docx",
+    contributors: Contributor[] = [],
+    backcover = "",
 ): Promise<string> {
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
@@ -436,8 +438,50 @@ export async function buildDocx(
         });
     }
 
-    // Colophon
+    // Back cover
+    if (backcover) {
+        sections.push({
+            properties: { page: { size: PAGE_A5 } },
+            children: parseMarkdownToDocxBlocks(backcover),
+        });
+    }
+
+    // About the author(s)
     const labels = getLabels(config.language);
+    const contribsWithBio = contributors.filter((c) => c.bio);
+    if (contribsWithBio.length > 0) {
+        const aboutChildren: Paragraph[] = [
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [
+                    new TextRun({ text: labels.aboutTheAuthor, font: FONT, color: "8B4513" }),
+                ],
+                spacing: { before: 600, after: 400 },
+            }),
+        ];
+        for (const contrib of contribsWithBio) {
+            aboutChildren.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: contrib.name, font: FONT, size: 24, bold: true }),
+                    ],
+                    spacing: { before: 300, after: 100 },
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: contrib.bio, font: FONT, size: 22 }),
+                    ],
+                    spacing: { after: 200 },
+                }),
+            );
+        }
+        sections.push({
+            properties: { page: { size: PAGE_A5 } },
+            children: aboutChildren,
+        });
+    }
+
+    // Colophon
     const colophonLines = buildColophonLines(config);
     if (colophonLines.length > 0) {
         const colophonChildren: Paragraph[] = [
