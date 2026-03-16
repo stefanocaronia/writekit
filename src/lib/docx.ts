@@ -8,6 +8,7 @@ import {
     BorderStyle,
     ExternalHyperlink,
     FootnoteReferenceRun,
+    ImageRun,
     Table,
     TableRow,
     TableCell,
@@ -19,6 +20,7 @@ import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
+import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
 
 const FONT = "Georgia";
@@ -176,7 +178,7 @@ function parseInline(
 
 // ── Block parsing ───────────────────────────────────────────────────────────
 
-function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap): Paragraph[] {
+function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageData?: Map<string, { data: Buffer; width: number; height: number }>): Paragraph[] {
     const paragraphs: Paragraph[] = [];
     const lines = markdown.split("\n");
     let i = 0;
@@ -308,6 +310,30 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap): Paragra
             continue;
         }
 
+        // Image ![alt](path)
+        const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
+        if (imgMatch && imageData) {
+            const src = imgMatch[2];
+            const img = imageData.get(src);
+            if (img) {
+                paragraphs.push(
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 200, after: 200 },
+                        children: [
+                            new ImageRun({
+                                data: img.data,
+                                transformation: { width: img.width, height: img.height },
+                                type: "jpg",
+                            }),
+                        ],
+                    }),
+                );
+                i++;
+                continue;
+            }
+        }
+
         // Regular paragraph
         paragraphs.push(
             new Paragraph({
@@ -329,6 +355,7 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap): Paragra
 function parseMarkdownToDocxBlocks(
     markdown: string,
     footnotes?: FootnoteMap,
+    imageData?: Map<string, { data: Buffer; width: number; height: number }>,
 ): (Paragraph | Table)[] {
     const blocks: (Paragraph | Table)[] = [];
     const cleaned = footnotes ? stripFootnoteDefinitions(markdown) : markdown;
@@ -400,7 +427,7 @@ function parseMarkdownToDocxBlocks(
             i++;
         }
 
-        blocks.push(...parseMarkdownToDocx(nonTableLines.join("\n")));
+        blocks.push(...parseMarkdownToDocx(nonTableLines.join("\n"), footnotes, imageData));
     }
 
     return blocks;
@@ -515,6 +542,18 @@ export async function buildDocx(
         };
     }
 
+    // Collect images from all chapters
+    const allBodies = chapters.map((c) => c.body).join("\n");
+    const imgPaths = collectImagePaths(allBodies, projectDir);
+    const imageDataMap = new Map<string, { data: Buffer; width: number; height: number }>();
+    for (const img of imgPaths) {
+        try {
+            const data = await readFile(img.absPath);
+            // Default reasonable size for DOCX (400x300), could be improved with image-size lib
+            imageDataMap.set(img.src, { data, width: 400, height: 300 });
+        } catch { /* skip */ }
+    }
+
     // Chapters
     for (const chapter of chapters) {
         const children: (Paragraph | Table)[] = [
@@ -530,7 +569,7 @@ export async function buildDocx(
                 ],
                 spacing: { before: 600, after: 400 },
             }),
-            ...parseMarkdownToDocxBlocks(chapter.body, footnotes),
+            ...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap),
         ];
 
         sections.push({
