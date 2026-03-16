@@ -1,0 +1,82 @@
+import { readFile, readdir } from "node:fs/promises";
+import { join, extname } from "node:path";
+import { parse as parseYaml } from "yaml";
+
+export interface BookConfig {
+    title: string;
+    subtitle?: string;
+    series?: string;
+    volume?: number;
+    author: string;
+    translator?: string;
+    editor?: string;
+    illustrator?: string;
+    language: string;
+    genre?: string;
+    isbn?: string;
+    publisher?: string;
+    edition?: number;
+    date?: string;
+    license?: string;
+    license_url?: string;
+    copyright?: string;
+    build_formats?: string[];
+    theme?: string;
+}
+
+export interface Chapter {
+    number: number;
+    title: string;
+    pov?: string;
+    draft?: number;
+    body: string;
+    filename: string;
+}
+
+export function parseFrontmatter(content: string): {
+    data: Record<string, unknown>;
+    body: string;
+} {
+    const match = content.match(/^---\n([\s\S]*?)\n---\n\n?([\s\S]*)$/);
+    if (!match) {
+        return { data: {}, body: content };
+    }
+    try {
+        const data = parseYaml(match[1]) as Record<string, unknown>;
+        return { data: data ?? {}, body: match[2] };
+    } catch {
+        return { data: {}, body: content };
+    }
+}
+
+export async function loadConfig(projectDir: string): Promise<BookConfig> {
+    const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
+    return parseYaml(raw) as BookConfig;
+}
+
+export async function loadChapters(projectDir: string): Promise<Chapter[]> {
+    const manuscriptDir = join(projectDir, "manuscript");
+    const files = await readdir(manuscriptDir);
+
+    const mdFiles = files
+        .filter((f) => extname(f) === ".md")
+        .sort();
+
+    const chapters: Chapter[] = [];
+
+    for (const file of mdFiles) {
+        const content = await readFile(join(manuscriptDir, file), "utf-8");
+        const { data, body } = parseFrontmatter(content);
+
+        chapters.push({
+            number: (data.chapter as number) ?? chapters.length + 1,
+            title: (data.title as string) ?? file.replace(/\.md$/, ""),
+            pov: data.pov as string | undefined,
+            draft: data.draft as number | undefined,
+            body,
+            filename: file,
+        });
+    }
+
+    return chapters;
+}

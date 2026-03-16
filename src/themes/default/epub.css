@@ -1,0 +1,67 @@
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2c2c2c;
+  line-height: 1.8;
+  margin: 1em;
+}
+
+h1 {
+  font-size: 1.8em;
+  font-weight: normal;
+  color: #8b4513;
+  margin-bottom: 1em;
+}
+
+h2 {
+  font-size: 1.3em;
+  font-weight: normal;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+h3 {
+  font-size: 1.1em;
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+}
+
+p {
+  margin-bottom: 0.8em;
+  text-align: justify;
+}
+
+p + p {
+  text-indent: 1.5em;
+}
+
+blockquote {
+  margin: 1em 0;
+  padding: 0.3em 1em;
+  border-left: 3px solid #e0ddd5;
+  color: #666;
+  font-style: italic;
+}
+
+hr {
+  border: none;
+  text-align: center;
+  margin: 1.5em 0;
+}
+
+hr::after {
+  content: "* * *";
+  color: #666;
+  letter-spacing: 0.5em;
+}
+
+.colophon {
+  margin-top: 3em;
+  padding-top: 1em;
+  border-top: 1px solid #e0ddd5;
+  font-size: 0.85em;
+  color: #666;
+}
+
+.colophon p {
+  margin-bottom: 0.3em;
+}

@@ -1,0 +1,239 @@
+import { Command } from "commander";
+import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
+import { join, extname } from "node:path";
+import { stringify, parse as parseYaml } from "yaml";
+import { slugify, padNumber } from "../lib/slug.js";
+import { fileExists, assertProject } from "../lib/fs-utils.js";
+import { c, icon } from "../lib/ui.js";
+
+function frontmatter(data: Record<string, unknown>, body: string): string {
+    return `---\n${stringify(data).trimEnd()}\n---\n\n${body}`;
+}
+
+async function ensureDir(dir: string): Promise<void> {
+    await mkdir(dir, { recursive: true });
+}
+
+async function countMdFiles(dir: string): Promise<number> {
+    try {
+        const files = await readdir(dir);
+        return files.filter((f) => extname(f) === ".md").length;
+    } catch {
+        return 0;
+    }
+}
+
+// --- novel add chapter ---
+
+const addChapter = new Command("chapter")
+    .description("Add a new chapter to manuscript and outline")
+    .argument("<title>", "Chapter title")
+    .action(async (title: string) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+
+        const manuscriptDir = join(projectDir, "manuscript");
+        const outlineDir = join(projectDir, "outline", "chapters");
+        await ensureDir(manuscriptDir);
+        await ensureDir(outlineDir);
+
+        const existing = await countMdFiles(manuscriptDir);
+        const num = existing + 1;
+        const pad = padNumber(num);
+        const slug = slugify(title);
+
+        const manuscriptFile = join(manuscriptDir, `${pad}-${slug}.md`);
+        const outlineFile = join(outlineDir, `${pad}.md`);
+
+        if (await fileExists(manuscriptFile)) {
+            console.error(`\nFile already exists: manuscript/${pad}-${slug}.md\n`);
+            process.exit(1);
+        }
+
+        await writeFile(
+            manuscriptFile,
+            frontmatter(
+                {
+                    chapter: num,
+                    title,
+                    pov: "",
+                    draft: 1,
+                },
+                `# ${title}\n\n`,
+            ),
+        );
+
+        await writeFile(
+            outlineFile,
+            frontmatter(
+                {
+                    chapter: num,
+                    title,
+                    pov: "",
+                    characters: [],
+                    location: "",
+                },
+                `# Chapter ${num} — Outline\n\n`,
+            ),
+        );
+
+
+        console.log(`\n${icon.chapter} ${c.green(`Added chapter ${num}:`)} ${c.bold(title)}\n`);
+        console.log(`  ${c.dim(`manuscript/${pad}-${slug}.md`)}`);
+        console.log(`  ${c.dim(`outline/chapters/${pad}.md`)}\n`);
+    });
+
+// --- novel add character ---
+
+const addCharacter = new Command("character")
+    .description("Add a new character sheet")
+    .argument("<name>", "Character name")
+    .option("-r, --role <role>", "Role (protagonist, antagonist, supporting, minor)", "supporting")
+    .action(async (name: string, opts: { role: string }) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+
+        const dir = join(projectDir, "characters");
+        await ensureDir(dir);
+
+        const slug = slugify(name);
+        const file = join(dir, `${slug}.md`);
+
+        if (await fileExists(file)) {
+            console.error(`\nFile already exists: characters/${slug}.md\n`);
+            process.exit(1);
+        }
+
+        await writeFile(
+            file,
+            frontmatter(
+                {
+                    name,
+                    role: opts.role,
+                    age: "",
+                    relationships: [],
+                },
+                `# ${name}\n\n## Appearance\n\n## Personality\n\n## Backstory\n\n## Arc\n\n## Notes\n`,
+            ),
+        );
+
+
+        console.log(`\n${icon.character} ${c.green("Added character:")} ${c.bold(name)}\n`);
+        console.log(`  ${c.dim(`characters/${slug}.md`)}\n`);
+    });
+
+// --- novel add location ---
+
+const addLocation = new Command("location")
+    .description("Add a new worldbuilding entry")
+    .option("-t, --type <type>", "Type (location, system, organization, culture)", "location")
+    .argument("<name>", "Location/entry name")
+    .action(async (name: string, opts: { type: string }) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+
+        const dir = join(projectDir, "world");
+        await ensureDir(dir);
+
+        const slug = slugify(name);
+        const file = join(dir, `${slug}.md`);
+
+        if (await fileExists(file)) {
+            console.error(`\nFile already exists: world/${slug}.md\n`);
+            process.exit(1);
+        }
+
+        await writeFile(
+            file,
+            frontmatter(
+                {
+                    name,
+                    type: opts.type,
+                },
+                `# ${name}\n\n## Description\n\n## Details\n\n## Notes\n`,
+            ),
+        );
+
+
+        console.log(`\n${icon.location} ${c.green(`Added ${opts.type}:`)} ${c.bold(name)}\n`);
+        console.log(`  ${c.dim(`world/${slug}.md`)}\n`);
+    });
+
+// --- novel add note ---
+
+const addNote = new Command("note")
+    .description("Add a new note")
+    .argument("<title>", "Note title")
+    .action(async (title: string) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+
+        const dir = join(projectDir, "notes");
+        await ensureDir(dir);
+
+        const slug = slugify(title);
+        const file = join(dir, `${slug}.md`);
+
+        if (await fileExists(file)) {
+            console.error(`\nFile already exists: notes/${slug}.md\n`);
+            process.exit(1);
+        }
+
+        await writeFile(file, `# ${title}\n\n`);
+
+
+        console.log(`\n${icon.note} ${c.green("Added note:")} ${c.bold(title)}\n`);
+        console.log(`  ${c.dim(`notes/${slug}.md`)}\n`);
+    });
+
+// --- novel add event ---
+
+interface TimelineData {
+    events: Array<{ date: string; description: string; chapter: string }>;
+}
+
+const addEvent = new Command("event")
+    .description("Add an event to timeline.yaml")
+    .argument("<description>", "Event description")
+    .option("-d, --date <date>", "When the event occurs", "")
+    .option("-c, --chapter <chapter>", "Related chapter", "")
+    .action(async (description: string, opts: { date: string; chapter: string }) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+
+        const timelinePath = join(projectDir, "timeline.yaml");
+        let data: TimelineData;
+
+        try {
+            const raw = await readFile(timelinePath, "utf-8");
+            data = parseYaml(raw) as TimelineData;
+            if (!data || !Array.isArray(data.events)) {
+                data = { events: [] };
+            }
+        } catch {
+            data = { events: [] };
+        }
+
+        data.events.push({
+            date: opts.date,
+            description,
+            chapter: opts.chapter,
+        });
+
+        await writeFile(timelinePath, stringify(data));
+
+
+        console.log(`\n${icon.event} ${c.green("Added event:")} ${c.bold(description)}\n`);
+        console.log(`  ${c.dim(`timeline.yaml (${data.events.length} events)`)}\n`);
+    });
+
+// --- novel add (parent command) ---
+
+export const addCommand = new Command("add")
+    .description("Add chapters, characters, locations, notes, or events");
+
+addCommand.addCommand(addChapter);
+addCommand.addCommand(addCharacter);
+addCommand.addCommand(addLocation);
+addCommand.addCommand(addNote);
+addCommand.addCommand(addEvent);

@@ -7,7 +7,7 @@
     "novel": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const{cpSync}=require('fs');cpSync('src/themes','dist/themes',{recursive:true})\"",
     "dev": "tsc --watch",
     "start": "node dist/cli.js"
   },
@@ -23,12 +23,19 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/marked": "^5.0.2",
     "@types/node": "^22.0.0",
+    "@types/yazl": "^3.3.0",
     "typescript": "^5.7.0"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.3.2",
     "commander": "^13.0.0",
-    "yaml": "^2.8.2"
+    "docx": "^9.6.1",
+    "marked": "^17.0.4",
+    "puppeteer-core": "^24.39.1",
+    "yaml": "^2.8.2",
+    "yazl": "^3.3.1"
   },
   "engines": {
     "node": ">=18"
