@@ -258,6 +258,68 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         } catch { /* config already validated above */ }
     }
 
+    // Cross-validate contributors ↔ config
+    const contribDir = join(projectDir, "contributors");
+    if (await dirExists(contribDir)) {
+        try {
+            const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
+            const cfg = parseYaml(raw) as Record<string, unknown>;
+
+            // Gather all names from config contributor fields
+            const configNames = new Set<string>();
+            for (const field of ["author", "translator", "editor", "illustrator"]) {
+                const value = cfg[field];
+                const names: string[] = Array.isArray(value)
+                    ? value
+                    : typeof value === "string" && value
+                        ? [value]
+                        : [];
+                for (const n of names) configNames.add(n.toLowerCase());
+            }
+
+            // Gather all names from contributor sheets
+            const contribFiles = await getMdFiles(contribDir);
+            const sheetNames = new Set<string>();
+            for (const file of contribFiles) {
+                const content = await readFile(join(contribDir, file), "utf-8");
+                const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+                if (fmMatch) {
+                    const { data } = tryParseYaml(fmMatch[1], `contributors/${file}`);
+                    if (data?.name && typeof data.name === "string") {
+                        sheetNames.add(data.name.toLowerCase());
+                    }
+                }
+            }
+
+            // Config name without sheet
+            for (const name of configNames) {
+                if (!sheetNames.has(name)) {
+                    issues.push({
+                        level: "warning",
+                        message: `"${name}" is in config.yaml but has no sheet in contributors/`,
+                    });
+                }
+            }
+
+            // Sheet without config name
+            for (const file of contribFiles) {
+                const content = await readFile(join(contribDir, file), "utf-8");
+                const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+                if (fmMatch) {
+                    const { data } = tryParseYaml(fmMatch[1], `contributors/${file}`);
+                    if (data?.name && typeof data.name === "string") {
+                        if (!configNames.has(data.name.toLowerCase())) {
+                            issues.push({
+                                level: "warning",
+                                message: `contributors/${file}: "${data.name}" has no role in config.yaml`,
+                            });
+                        }
+                    }
+                }
+            }
+        } catch { /* config already validated above */ }
+    }
+
     // Split into errors and warnings
     return {
         errors: issues.filter((i) => i.level === "error").map((i) => i.message),

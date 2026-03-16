@@ -153,3 +153,136 @@ describe("writekit smoke tests", () => {
         expect(remaining.length).toBe(0);
     });
 });
+
+// ---------------------------------------------------------------------------
+// Project types
+// ---------------------------------------------------------------------------
+
+const TYPES_TO_TEST = ["essay", "paper", "article", "collection"] as const;
+
+interface TypeExpectation {
+    dirs: string[];
+    missingDirs: string[];
+    files: string[];
+    missingFiles: string[];
+    hasCharacterAdd: boolean;
+}
+
+const TYPE_EXPECTATIONS: Record<string, TypeExpectation> = {
+    essay: {
+        dirs: ["outline", "manuscript", "notes", "reference", "assets", "build"],
+        missingDirs: ["characters", "world", "outline/chapters"],
+        files: ["config.yaml", "style.yaml", "synopsis.md", ".gitignore", "README.md", "AGENTS.md"],
+        missingFiles: ["timeline.yaml", "bibliography.yaml"],
+        hasCharacterAdd: false,
+    },
+    paper: {
+        dirs: ["outline", "manuscript", "notes", "reference", "assets", "build"],
+        missingDirs: ["characters", "world", "outline/chapters"],
+        files: ["config.yaml", "style.yaml", "synopsis.md", "bibliography.yaml", ".gitignore", "README.md", "AGENTS.md"],
+        missingFiles: ["timeline.yaml"],
+        hasCharacterAdd: false,
+    },
+    article: {
+        dirs: ["manuscript", "notes", "reference", "assets", "build"],
+        missingDirs: ["outline", "characters", "world"],
+        files: ["config.yaml", "style.yaml", "synopsis.md", ".gitignore", "README.md", "AGENTS.md"],
+        missingFiles: ["timeline.yaml", "bibliography.yaml"],
+        hasCharacterAdd: false,
+    },
+    collection: {
+        dirs: ["outline", "manuscript", "notes", "reference", "assets", "build"],
+        missingDirs: ["characters", "world", "outline/chapters"],
+        files: ["config.yaml", "style.yaml", "synopsis.md", ".gitignore", "README.md", "AGENTS.md"],
+        missingFiles: ["timeline.yaml", "bibliography.yaml"],
+        hasCharacterAdd: false,
+    },
+};
+
+describe("project types", () => {
+    for (const typeName of TYPES_TO_TEST) {
+        describe(typeName, () => {
+            const TYPE_DIR = join(ROOT, "sandbox", `test-${typeName}`);
+            const expected = TYPE_EXPECTATIONS[typeName];
+
+            beforeAll(() => {
+                rmSync(TYPE_DIR, { recursive: true, force: true });
+                mkdirSync(join(ROOT, "sandbox"), { recursive: true });
+                run(`${CLI} init test-${typeName} --yes --type ${typeName}`, join(ROOT, "sandbox"));
+            });
+
+            afterAll(() => {
+                rmSync(TYPE_DIR, { recursive: true, force: true });
+            });
+
+            it("init creates the right directories", () => {
+                for (const dir of expected.dirs) {
+                    expect(existsSync(join(TYPE_DIR, dir)), `expected dir: ${dir}`).toBe(true);
+                }
+                for (const dir of expected.missingDirs) {
+                    expect(existsSync(join(TYPE_DIR, dir)), `should not exist: ${dir}`).toBe(false);
+                }
+            });
+
+            it("init creates the right files", () => {
+                for (const file of expected.files) {
+                    expect(existsSync(join(TYPE_DIR, file)), `expected file: ${file}`).toBe(true);
+                }
+                for (const file of expected.missingFiles) {
+                    expect(existsSync(join(TYPE_DIR, file)), `should not exist: ${file}`).toBe(false);
+                }
+            });
+
+            it("config.yaml has the correct type", () => {
+                const config = readFileSync(join(TYPE_DIR, "config.yaml"), "utf-8");
+                expect(config).toContain(`type: ${typeName}`);
+            });
+
+            it("check passes on fresh project (no errors)", () => {
+                // run() throws on non-zero exit; check exits 1 only for errors
+                const out = run(`${CLI} check`, TYPE_DIR);
+                expect(out).toContain("Checking project");
+            });
+
+            it("add chapter works", () => {
+                run(`${CLI} add chapter "Test Chapter"`, TYPE_DIR);
+                expect(existsSync(join(TYPE_DIR, "manuscript", "02-test-chapter.md"))).toBe(true);
+            });
+
+            it("add character fails for non-novel type", () => {
+                expect(() => {
+                    run(`${CLI} add character "Test Char"`, TYPE_DIR);
+                }).toThrow();
+            });
+
+            it("build html works", () => {
+                run(`${CLI} build html`, TYPE_DIR);
+                const buildDir = join(TYPE_DIR, "build");
+                expect(existsSync(buildDir)).toBe(true);
+                const htmlFiles = readdirSync(buildDir)
+                    .filter((f: string) => f.endsWith(".html"));
+                expect(htmlFiles.length).toBeGreaterThan(0);
+            });
+        });
+    }
+
+    // Verify that 'add character' DOES work for novel (the default type)
+    describe("novel (character add)", () => {
+        const NOVEL_DIR = join(ROOT, "sandbox", "test-novel-type");
+
+        beforeAll(() => {
+            rmSync(NOVEL_DIR, { recursive: true, force: true });
+            mkdirSync(join(ROOT, "sandbox"), { recursive: true });
+            run(`${CLI} init test-novel-type --yes --type novel`, join(ROOT, "sandbox"));
+        });
+
+        afterAll(() => {
+            rmSync(NOVEL_DIR, { recursive: true, force: true });
+        });
+
+        it("add character works for novel type", () => {
+            run(`${CLI} add character "Test Hero"`, NOVEL_DIR);
+            expect(existsSync(join(NOVEL_DIR, "characters", "test-hero.md"))).toBe(true);
+        });
+    });
+});

@@ -2,6 +2,7 @@ import { marked } from "marked";
 import type { BookConfig, Chapter } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
+import { getLabels } from "./i18n.js";
 
 const JS = `
     // Smooth scroll for TOC links
@@ -32,6 +33,8 @@ export async function renderBook(
     chapters: Chapter[],
     theme: Theme,
 ): Promise<string> {
+    const labels = getLabels(config.language);
+
     // Render all chapters markdown to HTML
     const renderedChapters: string[] = [];
     for (const chapter of chapters) {
@@ -61,7 +64,7 @@ export async function renderBook(
     });
 
     const colophon = colophonLines.length > 0
-        ? `\n    <footer class="colophon">\n      <h2>Colophon</h2>\n      ${colophonLines.map((l) => `<p>${l}</p>`).join("\n      ")}\n    </footer>`
+        ? `\n    <footer class="colophon">\n      <h2>${escapeHtml(labels.colophon)}</h2>\n      ${colophonLines.map((l) => `<p>${l}</p>`).join("\n      ")}\n    </footer>`
         : "";
 
     // Table of contents
@@ -74,7 +77,7 @@ export async function renderBook(
 
     const toc = `
         <nav class="toc">
-            <h2>Indice</h2>
+            <h2>${escapeHtml(labels.tableOfContents)}</h2>
             <ol>
                 ${tocItems}
             </ol>
@@ -91,7 +94,7 @@ export async function renderBook(
                 i < chapters.length - 1
                     ? `<a href="#${chapterId(i + 1)}">${escapeHtml(chapters[i + 1].title)} &rarr;</a>`
                     : "<span></span>";
-            const top = `<a href="#toc">Indice</a>`;
+            const top = `<a href="#toc">${escapeHtml(labels.tableOfContents)}</a>`;
 
             return `
         <section class="chapter" id="${chapterId(i)}">

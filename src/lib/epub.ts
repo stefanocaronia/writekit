@@ -7,6 +7,7 @@ import { join } from "node:path";
 import type { BookConfig, Chapter } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
+import { getLabels } from "./i18n.js";
 
 function escapeXml(text: string): string {
         return text
@@ -94,6 +95,7 @@ ${spineItems.join("\n")}
 }
 
 function generateTocXhtml(config: BookConfig, chapters: Chapter[]): string {
+        const labels = getLabels(config.language);
         const items = chapters
                 .map(
                         (ch, i) =>
@@ -102,9 +104,9 @@ function generateTocXhtml(config: BookConfig, chapters: Chapter[]): string {
                 .join("\n");
 
         return wrapXhtml(
-                "Indice",
+                labels.tableOfContents,
                 `<nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc">
-    <h1>Indice</h1>
+    <h1>${escapeXml(labels.tableOfContents)}</h1>
     <ol>
 ${items}
     </ol>
@@ -127,6 +129,7 @@ function generateTitlePage(config: BookConfig): string {
 }
 
 function generateColophon(config: BookConfig): string {
+        const labels = getLabels(config.language);
         const rawLines = buildColophonLines(config);
         const lines = rawLines.map((line) => {
                 if (config.license_url && line === config.license) {
@@ -136,10 +139,10 @@ function generateColophon(config: BookConfig): string {
         });
 
         const body = lines.length > 0
-                ? `<div class="colophon">\n<h1>Colophon</h1>\n${lines.join("\n")}\n</div>`
+                ? `<div class="colophon">\n<h1>${escapeXml(labels.colophon)}</h1>\n${lines.join("\n")}\n</div>`
                 : `<div class="colophon"><p>&#160;</p></div>`;
 
-        return wrapXhtml("Colophon", body, config.language || "it");
+        return wrapXhtml(labels.colophon, body, config.language || "it");
 }
 
 function simpleUuid(): string {

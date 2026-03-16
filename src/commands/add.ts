@@ -245,41 +245,92 @@ const addEvent = new Command("event")
         console.log(`  ${c.dim(`timeline.yaml (${data.events.length} events)`)}\n`);
     });
 
-// --- wkadd author ---
+// --- contributor helpers ---
 
-const addAuthor = new Command("author")
-    .description("Add an author to config.yaml")
-    .argument("<name>", "Author name")
-    .action(async (name: string) => {
-        const projectDir = process.cwd();
-        await assertProject(projectDir);
+async function addContributorToConfig(
+    projectDir: string,
+    name: string,
+    field: string,
+): Promise<void> {
+    const configPath = join(projectDir, "config.yaml");
+    const raw = await readFile(configPath, "utf-8");
+    const cfg = parseYaml(raw) as Record<string, unknown>;
 
-        const configPath = join(projectDir, "config.yaml");
-        const raw = await readFile(configPath, "utf-8");
-        const cfg = parseYaml(raw) as Record<string, unknown>;
-
-        const current = cfg.author;
-        if (Array.isArray(current)) {
-            if (current.includes(name)) {
-                console.log(`\n${icon.warn}  ${c.yellow(`"${name}" is already an author.`)}\n`);
-                return;
-            }
-            current.push(name);
-        } else if (typeof current === "string" && current) {
-            if (current === name) {
-                console.log(`\n${icon.warn}  ${c.yellow(`"${name}" is already an author.`)}\n`);
-                return;
-            }
-            cfg.author = [current, name];
-        } else {
-            cfg.author = name;
+    const current = cfg[field];
+    if (Array.isArray(current)) {
+        if (current.includes(name)) {
+            console.log(`\n${icon.warn}  ${c.yellow(`"${name}" is already listed as ${field}.`)}\n`);
+            return;
         }
+        current.push(name);
+    } else if (typeof current === "string" && current) {
+        if (current === name) {
+            console.log(`\n${icon.warn}  ${c.yellow(`"${name}" is already listed as ${field}.`)}\n`);
+            return;
+        }
+        cfg[field] = [current, name];
+    } else {
+        cfg[field] = name;
+    }
 
-        await writeFile(configPath, stringify(cfg));
-        const authors = Array.isArray(cfg.author) ? cfg.author : [cfg.author];
-        console.log(`\n${icon.character} ${c.green("Added author:")} ${c.bold(name)}\n`);
-        console.log(`  ${c.dim(`Authors: ${authors.join(", ")}`)}\n`);
-    });
+    await writeFile(configPath, stringify(cfg));
+}
+
+async function ensureContributorSheet(
+    projectDir: string,
+    name: string,
+): Promise<boolean> {
+    const dir = join(projectDir, "contributors");
+    await ensureDir(dir);
+    const slug = slugify(name);
+    const file = join(dir, `${slug}.md`);
+
+    if (await fileExists(file)) return false;
+
+    await writeFile(
+        file,
+        frontmatter(
+            { name, roles: [] },
+            `# ${name}\n\nBiography...\n`,
+        ),
+    );
+    return true;
+}
+
+function makeContributorCommand(
+    commandName: string,
+    configField: string,
+    label: string,
+): Command {
+    return new Command(commandName)
+        .description(`Add ${label} to config.yaml and create contributor sheet`)
+        .argument("<name>", `${label} name`)
+        .action(async (name: string) => {
+            const projectDir = process.cwd();
+            await assertProject(projectDir);
+
+            await addContributorToConfig(projectDir, name, configField);
+            const created = await ensureContributorSheet(projectDir, name);
+
+            const slug = slugify(name);
+            console.log(`\n${icon.character} ${c.green(`Added ${label}:`)} ${c.bold(name)}\n`);
+            if (created) {
+                console.log(`  ${c.dim(`contributors/${slug}.md`)}`);
+            }
+            const configPath = join(projectDir, "config.yaml");
+            const raw = await readFile(configPath, "utf-8");
+            const cfg = parseYaml(raw) as Record<string, unknown>;
+            const list = Array.isArray(cfg[configField]) ? cfg[configField] : [cfg[configField]];
+            console.log(`  ${c.dim(`${configField}: ${(list as string[]).join(", ")}`)}\n`);
+        });
+}
+
+// --- wk add author/translator/editor/illustrator ---
+
+const addAuthor = makeContributorCommand("author", "author", "author");
+const addTranslator = makeContributorCommand("translator", "translator", "translator");
+const addEditor = makeContributorCommand("editor", "editor", "editor");
+const addIllustrator = makeContributorCommand("illustrator", "illustrator", "illustrator");
 
 // --- wkadd source ---
 
@@ -330,4 +381,7 @@ addCommand.addCommand(addLocation);
 addCommand.addCommand(addNote);
 addCommand.addCommand(addEvent);
 addCommand.addCommand(addAuthor);
+addCommand.addCommand(addTranslator);
+addCommand.addCommand(addEditor);
+addCommand.addCommand(addIllustrator);
 addCommand.addCommand(addSource);

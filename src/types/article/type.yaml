@@ -2,6 +2,7 @@ name: Article
 description: Article or short non-fiction — the simplest structure
 dirs:
     - manuscript
+    - contributors
     - notes
     - reference
     - assets
@@ -9,6 +10,7 @@ dirs:
 files:
     - style.yaml
     - synopsis.md
+    - backcover.md
 add_commands:
     - chapter
     - note
@@ -18,6 +20,9 @@ schemas:
     manuscript:
         required: [title]
         optional: [draft]
+    contributors:
+        required: [name]
+        optional: [roles]
 sample_files:
     manuscript/01-draft.md:
         frontmatter:

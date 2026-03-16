@@ -3,6 +3,7 @@ description: Anthology of short stories, poems, or essays — per-piece author i
 dirs:
     - outline
     - manuscript
+    - contributors
     - notes
     - reference
     - assets
@@ -10,6 +11,7 @@ dirs:
 files:
     - style.yaml
     - synopsis.md
+    - backcover.md
 add_commands:
     - chapter
     - note
@@ -19,6 +21,9 @@ schemas:
     manuscript:
         required: [title]
         optional: [chapter, author, draft]
+    contributors:
+        required: [name]
+        optional: [roles]
 sample_files:
     outline/contents.md:
         body: "# Contents\n\nList and order of pieces in this collection...\n"

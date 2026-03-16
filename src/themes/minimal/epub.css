@@ -1,0 +1,62 @@
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+  line-height: 1.7;
+  margin: 1em;
+}
+
+h1 {
+  font-size: 1.8em;
+  font-weight: bold;
+  margin-bottom: 1em;
+}
+
+h2 {
+  font-size: 1.3em;
+  font-weight: bold;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+h3 {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+}
+
+p {
+  margin-bottom: 0.8em;
+  text-align: left;
+}
+
+blockquote {
+  margin: 1em 0;
+  padding: 0.3em 1em;
+  border-left: 2px solid #eaeaea;
+  color: #717171;
+}
+
+hr {
+  border: none;
+  text-align: center;
+  margin: 1.5em 0;
+}
+
+hr::after {
+  content: "\2014\2014\2014";
+  color: #eaeaea;
+  letter-spacing: 0.25em;
+}
+
+.colophon {
+  margin-top: 3em;
+  padding-top: 1em;
+  border-top: 1px solid #eaeaea;
+  font-size: 0.85em;
+  color: #717171;
+}
+
+.colophon p {
+  margin-bottom: 0.3em;
+}

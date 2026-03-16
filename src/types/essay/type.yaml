@@ -3,6 +3,7 @@ description: Single essay or long-form non-fiction
 dirs:
     - outline
     - manuscript
+    - contributors
     - notes
     - reference
     - assets
@@ -10,6 +11,7 @@ dirs:
 files:
     - style.yaml
     - synopsis.md
+    - backcover.md
 add_commands:
     - chapter
     - note
@@ -19,6 +21,9 @@ schemas:
     manuscript:
         required: [title]
         optional: [draft]
+    contributors:
+        required: [name]
+        optional: [roles]
 sample_files:
     outline/structure.md:
         body: "# Structure\n\nOutline the argument and sections here...\n"

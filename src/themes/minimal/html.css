@@ -1,0 +1,176 @@
+:root {
+  --text: #1a1a1a;
+  --bg: #ffffff;
+  --accent: #0066cc;
+  --muted: #717171;
+  --border: #eaeaea;
+  --max-width: 38rem;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.7;
+  font-size: 1.125rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Cover --- */
+.cover {
+  text-align: center;
+  padding: 8rem 2rem 6rem;
+  border-bottom: 1px solid var(--border);
+}
+.cover h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.cover .subtitle {
+  font-size: 1.25rem;
+  color: var(--muted);
+  margin-top: 0.75rem;
+  font-weight: 300;
+  font-style: normal;
+}
+.cover .author {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-top: 2.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+/* --- TOC --- */
+.toc {
+  max-width: var(--max-width);
+  margin: 4rem auto;
+  padding: 0 2rem;
+}
+.toc h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+  color: var(--muted);
+}
+.toc ol {
+  list-style: none;
+  counter-reset: toc;
+}
+.toc li {
+  counter-increment: toc;
+  margin-bottom: 0.6rem;
+}
+.toc li::before {
+  content: counter(toc, decimal-leading-zero);
+  display: inline-block;
+  width: 2.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.toc a {
+  color: var(--text);
+  text-decoration: none;
+}
+.toc a:hover {
+  color: var(--accent);
+}
+
+/* --- Chapters --- */
+.chapter {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 5rem 2rem;
+  border-top: 1px solid var(--border);
+}
+.chapter h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 2rem;
+}
+.chapter h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+.chapter h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+.chapter p {
+  margin-bottom: 1.2rem;
+  text-align: left;
+}
+.chapter p + p {
+  text-indent: 0;
+}
+.chapter blockquote {
+  margin: 2rem 0;
+  padding: 0 0 0 1.5rem;
+  border-left: 2px solid var(--border);
+  color: var(--muted);
+  font-style: normal;
+}
+.chapter em { font-style: italic; }
+.chapter strong { font-weight: 600; }
+.chapter hr {
+  border: none;
+  text-align: center;
+  margin: 3rem 0;
+}
+.chapter hr::after {
+  content: "\2014\2014\2014";
+  color: var(--border);
+  letter-spacing: 0.25rem;
+}
+
+/* --- Nav --- */
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.chapter-nav a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.chapter-nav a:hover { text-decoration: underline; }
+
+/* --- Colophon --- */
+.colophon {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 5rem 2rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.colophon h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+.colophon p {
+  margin-bottom: 0.4rem;
+}

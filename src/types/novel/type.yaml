@@ -6,6 +6,7 @@ dirs:
     - manuscript
     - characters
     - world
+    - contributors
     - notes
     - reference
     - assets
@@ -14,6 +15,7 @@ files:
     - style.yaml
     - timeline.yaml
     - synopsis.md
+    - backcover.md
     - outline/plot.md
 add_commands:
     - chapter
@@ -39,6 +41,9 @@ schemas:
     world:
         required: [name, type]
         optional: []
+    contributors:
+        required: [name]
+        optional: [roles]
 sample_files:
     outline/chapters/01.md:
         frontmatter:

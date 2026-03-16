@@ -18,6 +18,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BookConfig, Chapter } from "./parse.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
+import { getLabels } from "./i18n.js";
 
 const FONT = "Georgia";
 
@@ -436,13 +437,14 @@ export async function buildDocx(
     }
 
     // Colophon
+    const labels = getLabels(config.language);
     const colophonLines = buildColophonLines(config);
     if (colophonLines.length > 0) {
         const colophonChildren: Paragraph[] = [
             new Paragraph({
                 heading: HeadingLevel.HEADING_2,
                 children: [
-                    new TextRun({ text: "Colophon", font: FONT, color: "8B4513" }),
+                    new TextRun({ text: labels.colophon, font: FONT, color: "8B4513" }),
                 ],
                 spacing: { before: 600, after: 400 },
             }),

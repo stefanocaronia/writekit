@@ -124,6 +124,7 @@ function buildReadme(options: InitOptions, typeDef: ProjectType): string {
             manuscript: "The actual text",
             characters: "Character sheets",
             world: "Worldbuilding — locations, systems",
+            contributors: "Author/translator/editor bios",
             notes: "Free-form ideas and research",
             reference: "External material",
             assets: "Cover, illustrations",
@@ -147,8 +148,12 @@ function buildReadme(options: InitOptions, typeDef: ProjectType): string {
         lines.push(`wk add ${cmd} ${argName}`);
     }
 
-    lines.push("wk add author <name>  # Add an author");
-    lines.push("wk remove author <name> # Remove an author");
+    lines.push("wk add author <name>        # Add an author");
+    lines.push("wk add translator <name>    # Add a translator");
+    lines.push("wk add editor <name>        # Add an editor");
+    lines.push("wk add illustrator <name>   # Add an illustrator");
+    lines.push("wk remove author <name>     # Remove an author");
+    lines.push("wk sync                     # Sync derived fields");
     lines.push("```");
 
     return lines.join("\n") + "\n";
@@ -228,6 +233,13 @@ export const initCommand = new Command("init")
             );
         }
 
+        if (typeDef.files.includes("backcover.md")) {
+            await writeFile(
+                join(projectDir, "backcover.md"),
+                `# Back Cover\n\nWrite the back cover text here — this is the pitch your reader sees when they pick up the book.\n`,
+            );
+        }
+
         if (typeDef.files.includes("bibliography.yaml")) {
             await writeFile(
                 join(projectDir, "bibliography.yaml"),
@@ -250,6 +262,21 @@ export const initCommand = new Command("init")
                         ],
                     },
                     "# Plot\n\nDescribe the overall story arc here...\n",
+                ),
+            );
+        }
+
+        // Create contributor sheet for author if provided
+        if (options.author) {
+            const { slugify } = await import("../lib/slug.js");
+            const contribDir = join(projectDir, "contributors");
+            await mkdir(contribDir, { recursive: true });
+            const slug = slugify(options.author);
+            await writeFile(
+                join(contribDir, `${slug}.md`),
+                frontmatter(
+                    { name: options.author, roles: ["author"] },
+                    `# ${options.author}\n\nBiography...\n`,
                 ),
             );
         }
