@@ -81,7 +81,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.3.0 — Raffinamento
 
-- [ ] **Strutture dati per tipo** — essay: thesis.md (tesi centrale), arguments/ (claim, evidence, counterargument). Paper: abstract.md, methodology.md. Article: pitch.md. Collection: nessuna aggiunta (usa contributors/).
+- [x] **Strutture dati per tipo** — essay: thesis.md, arguments/, concepts/. Paper: abstract.md, concepts/. `wk add concept`, `wk add argument`. Schema e sample files per tipo.
 - [ ] **Immagini nel manuscript** — `![alt](path)` in HTML ed ePub
 - [ ] **DOCX template custom** — il template .docx (con stili Word: Heading 1, Normal, Quote, ecc.) fa parte del tema in `src/themes/{name}/template.docx`. `wk theme create` lo copia per customizzazione. Il builder lo usa come base. Se assente nel tema, usa stili default
 - [ ] **DOCX Table of Contents** — campo TOC generato dai Heading, Word lo aggiorna all'apertura. Configurabile in config.yaml: `toc: true`, `toc_position: start | end`

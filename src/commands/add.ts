@@ -203,6 +203,72 @@ const addNote = new Command("note")
         console.log(`  ${c.dim(`notes/${slug}.md`)}\n`);
     });
 
+// --- wk add concept ---
+
+const addConcept = new Command("concept")
+    .description("Add a concept/term definition")
+    .argument("<term>", "Concept term")
+    .action(async (term: string) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+        await assertAddCommand(projectDir, "concept");
+
+        const dir = join(projectDir, "concepts");
+        await ensureDir(dir);
+
+        const slug = slugify(term);
+        const file = join(dir, `${slug}.md`);
+
+        if (await fileExists(file)) {
+            console.error(`\nFile already exists: concepts/${slug}.md\n`);
+            process.exit(1);
+        }
+
+        await writeFile(
+            file,
+            frontmatter(
+                { term, related: [] },
+                `# ${term}\n\nDefinition...\n`,
+            ),
+        );
+
+        console.log(`\n${icon.note} ${c.green("Added concept:")} ${c.bold(term)}\n`);
+        console.log(`  ${c.dim(`concepts/${slug}.md`)}\n`);
+    });
+
+// --- wk add argument ---
+
+const addArgument = new Command("argument")
+    .description("Add an argument sheet")
+    .argument("<claim>", "Argument claim")
+    .action(async (claim: string) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+        await assertAddCommand(projectDir, "argument");
+
+        const dir = join(projectDir, "arguments");
+        await ensureDir(dir);
+
+        const slug = slugify(claim);
+        const file = join(dir, `${slug}.md`);
+
+        if (await fileExists(file)) {
+            console.error(`\nFile already exists: arguments/${slug}.md\n`);
+            process.exit(1);
+        }
+
+        await writeFile(
+            file,
+            frontmatter(
+                { claim, related: [] },
+                `# ${claim}\n\n## Support\n\n## Counterpoint\n`,
+            ),
+        );
+
+        console.log(`\n${icon.note} ${c.green("Added argument:")} ${c.bold(claim)}\n`);
+        console.log(`  ${c.dim(`arguments/${slug}.md`)}\n`);
+    });
+
 // --- wkadd event ---
 
 interface TimelineData {
@@ -378,6 +444,8 @@ export const addCommand = new Command("add")
 addCommand.addCommand(addChapter);
 addCommand.addCommand(addCharacter);
 addCommand.addCommand(addLocation);
+addCommand.addCommand(addConcept);
+addCommand.addCommand(addArgument);
 addCommand.addCommand(addNote);
 addCommand.addCommand(addEvent);
 addCommand.addCommand(addAuthor);

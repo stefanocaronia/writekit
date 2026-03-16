@@ -96,6 +96,8 @@ my-novel/
 | `wk add chapter <title>` | Add a new chapter |
 | `wk add character <name>` | Add a character sheet (novel only) |
 | `wk add location <name>` | Add a place to your world (novel only) |
+| `wk add concept <term>` | Add a concept/term definition (essay, paper) |
+| `wk add argument <claim>` | Add an argument sheet (essay only) |
 | `wk add note <title>` | Add a note |
 | `wk add event <description>` | Add a timeline event (novel only) |
 | `wk add author <name>` | Add an author (creates contributor sheet) |

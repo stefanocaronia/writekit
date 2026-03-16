@@ -23,6 +23,10 @@ Read `style.yaml` before writing or reviewing any text. It defines:
 - **characters/** — character sheets (novel/collection only). Read before writing scenes with those characters. Respect their appearance, personality, voice, and arc.
 - **world/** — worldbuilding entries (novel only). Locations, systems, cultures. Be consistent with established facts.
 - **timeline.yaml** — chronological events (novel only). Do not contradict the timeline.
+- **concepts/** — key term definitions (essay, paper). Read before writing to use terminology consistently.
+- **arguments/** — argument sheets with claim, support, counterpoint (essay only). Read before writing to maintain argumentative coherence.
+- **thesis.md** — the central thesis statement (essay only). Every section should support this thesis.
+- **abstract.md** — paper abstract (paper only). 150–300 words summarizing the paper.
 - **contributors/** — bios of authors, translators, editors, illustrators. The `roles` field is auto-derived from config.yaml — do not edit it manually. Edit only the bio text.
 - **notes/** — free-form material. Read for context but do not modify unless asked.
 - **reference/** — external material provided by the author. Read-only.
@@ -42,6 +46,8 @@ Read `style.yaml` before writing or reviewing any text. It defines:
    - `wk add chapter <title>` — add a chapter (manuscript + outline)
    - `wk add character <name>` — add a character sheet (novel only)
    - `wk add location <name>` — add a worldbuilding entry (novel only)
+   - `wk add concept <term>` — add a concept/term definition (essay, paper)
+   - `wk add argument <claim>` — add an argument sheet (essay only)
    - `wk add note <title>` — add a note
    - `wk add event <desc>` — add a timeline event (novel only)
    - `wk add author <name>` — add an author (creates contributor sheet)

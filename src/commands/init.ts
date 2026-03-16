@@ -108,6 +108,10 @@ function buildReadme(options: InitOptions, typeDef: ProjectType): string {
         lines.push("| `timeline.yaml` | Chronological events |");
     if (typeDef.files.includes("synopsis.md"))
         lines.push("| `synopsis.md` | Short summary / pitch |");
+    if (typeDef.files.includes("thesis.md"))
+        lines.push("| `thesis.md` | Central thesis statement |");
+    if (typeDef.files.includes("abstract.md"))
+        lines.push("| `abstract.md` | Paper abstract (150–300 words) |");
     if (typeDef.files.includes("bibliography.yaml"))
         lines.push("| `bibliography.yaml` | Sources and references |");
 
@@ -119,6 +123,8 @@ function buildReadme(options: InitOptions, typeDef: ProjectType): string {
             manuscript: "The actual text",
             characters: "Character sheets",
             world: "Worldbuilding — locations, systems",
+            arguments: "Argument sheets — claim, support, counterpoint",
+            concepts: "Key terms and definitions",
             contributors: "Author/translator/editor bios",
             notes: "Free-form ideas and research",
             reference: "External material",
@@ -225,6 +231,20 @@ export const initCommand = new Command("init")
             await writeFile(
                 join(projectDir, "synopsis.md"),
                 `# ${options.title}\n\nWrite your synopsis here...\n`,
+            );
+        }
+
+        if (typeDef.files.includes("thesis.md")) {
+            await writeFile(
+                join(projectDir, "thesis.md"),
+                `# Thesis\n\nState your central thesis here — the one claim your entire essay supports.\n`,
+            );
+        }
+
+        if (typeDef.files.includes("abstract.md")) {
+            await writeFile(
+                join(projectDir, "abstract.md"),
+                `# Abstract\n\n150–300 words summarizing purpose, method, results, and conclusion.\n`,
             );
         }
 

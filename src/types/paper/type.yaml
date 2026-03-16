@@ -3,6 +3,7 @@ description: Academic paper with bibliography
 dirs:
     - outline
     - manuscript
+    - concepts
     - contributors
     - notes
     - reference
@@ -11,10 +12,12 @@ dirs:
 files:
     - style.yaml
     - synopsis.md
+    - abstract.md
     - backcover.md
     - bibliography.yaml
 add_commands:
     - chapter
+    - concept
     - note
     - source
 reports:
@@ -23,6 +26,9 @@ schemas:
     manuscript:
         required: [title]
         optional: [draft, author]
+    concepts:
+        required: [term]
+        optional: [related]
     contributors:
         required: [name]
         optional: [roles]
@@ -35,5 +41,10 @@ sample_files:
             title: "Introduction"
             draft: 1
         body: "# Introduction\n\nStart writing here...\n"
+    concepts/example.md:
+        frontmatter:
+            term: ""
+            related: []
+        body: "# Concept\n\nDefinition...\n"
     notes/ideas.md:
         body: "# Ideas\n\nFree-form notes, research...\n"
