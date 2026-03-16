@@ -122,6 +122,7 @@ my-novel/
 | `wk build epub` | Build as an ePub ebook |
 | `wk build pdf` | Build as a PDF document |
 | `wk build docx` | Build as a Word document |
+| `wk build md` | Build as a single Markdown file (the complete book) |
 | `wk build all` | Build all formats at once |
 | `wk build` | Build using your preferred formats from config.yaml |
 | `wk build clean` | Delete all generated files |

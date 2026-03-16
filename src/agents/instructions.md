@@ -66,7 +66,7 @@ Read `style.yaml` before writing or reviewing any text. It defines:
    - `wk sync` — synchronize derived fields (contributor roles, agents, reports)
    - `wk stats` — show project statistics (word count, reading time, chapter balance)
    - `wk check` — validate the project
-   - `wk build [format]` — build output (html, epub, pdf, docx, all)
+   - `wk build [format]` — build output (html, epub, pdf, docx, md, all)
 8. **Do not modify config.yaml, style.yaml, or timeline.yaml** unless explicitly asked. Use `wk add` and `wk remove` commands instead.
 9. **For the full command reference**, read the project's `README.md` or `node_modules/writekit/README.md`.
 

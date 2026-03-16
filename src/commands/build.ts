@@ -6,12 +6,13 @@ import { renderBook } from "../lib/html.js";
 import { buildEpub as buildEpubFile } from "../lib/epub.js";
 import { buildPdf as buildPdfFile } from "../lib/pdf.js";
 import { buildDocx as buildDocxFile } from "../lib/docx.js";
+import { renderBookMd } from "../lib/md.js";
 import { loadTheme, type Theme } from "../lib/theme.js";
 import { assertProject, bookFilename } from "../lib/fs-utils.js";
 import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
 
-const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx"] as const;
+const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
 type Format = (typeof SUPPORTED_FORMATS)[number];
 
 function buildFilename(config: BookConfig, ext: string): string {
@@ -79,6 +80,23 @@ async function buildDocx(
     console.log(`  ${chapters.length} chapter(s)`);
 }
 
+async function buildMd(
+    projectDir: string,
+    config: BookConfig,
+    chapters: Chapter[],
+    _theme: Theme,
+): Promise<void> {
+    const contributors = await loadContributors(projectDir);
+    const backcover = await loadBackcover(projectDir);
+    const md = renderBookMd(config, chapters, contributors, backcover);
+    const buildDir = join(projectDir, "build");
+    await mkdir(buildDir, { recursive: true });
+    const outPath = join(buildDir, buildFilename(config, "md"));
+    await writeFile(outPath, md, "utf-8");
+    console.log(`  → ${outPath}`);
+    console.log(`  ${chapters.length} chapter(s), ${md.length} bytes`);
+}
+
 const builders: Record<
     Format,
     (dir: string, config: BookConfig, chapters: Chapter[], theme: Theme) => Promise<void>
@@ -87,6 +105,7 @@ const builders: Record<
     epub: buildEpub,
     pdf: buildPdf,
     docx: buildDocx,
+    md: buildMd,
 };
 
 const ALL_FORMATS = [...SUPPORTED_FORMATS];

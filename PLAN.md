@@ -111,7 +111,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 ## v0.5.0 — Estensioni
 
 - [ ] **Plugin system** — hook pre/post build
-- [ ] **Export Markdown singolo** — tutto in un .md (utile per LLM)
+- [x] **Export Markdown singolo** — `wk build md` genera il libro completo in un unico .md (copertina, indice, capitoli, quarta, about, colophon)
 - [ ] **Import da Markdown** — splitta un .md in capitoli
 - [ ] **Font embedding** — woff2/ttf in HTML e ePub
 - [ ] **Backup command** — `wk backup` crea zip del progetto
