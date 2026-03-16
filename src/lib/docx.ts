@@ -90,13 +90,14 @@ const INLINE_PATTERNS: {
 
 interface FootnoteMap {
     defs: Map<string, string>;       // id -> footnote text
-    idToNum: Map<string, number>;    // id -> sequential number (1-based)
+    idToNum: Map<string, number>;    // id -> sequential number (3+ to avoid Word reserved IDs 1-2)
 }
 
 function extractFootnotes(markdown: string): FootnoteMap {
     const defs = new Map<string, string>();
     const idToNum = new Map<string, number>();
-    let num = 1;
+    // Word reserves footnote IDs 1 (separator) and 2 (continuation separator)
+    let num = 3;
 
     // Extract definitions: [^id]: text
     const defRegex = /^\[\^([^\]]+)\]:\s*(.+)$/gm;
