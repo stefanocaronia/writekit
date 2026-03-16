@@ -398,7 +398,7 @@ function parseMarkdownToDocxBlocks(
                         new TableRow({
                             children: Array.from({ length: colCount }, (_, ci) =>
                                 new TableCell({
-                                    width: { size: Math.floor(9000 / colCount), type: WidthType.DXA },
+                                    width: { size: Math.floor(TABLE_WIDTH / colCount), type: WidthType.DXA },
                                     children: [
                                         new Paragraph({
                                             children: parseInline(cells[ci] || "", footnotes),
@@ -414,7 +414,7 @@ function parseMarkdownToDocxBlocks(
                 blocks.push(
                     new Table({
                         rows,
-                        width: { size: 9000, type: WidthType.DXA },
+                        width: { size: TABLE_WIDTH, type: WidthType.DXA },
                         layout: TableLayoutType.FIXED,
                     }),
                 );
@@ -446,6 +446,8 @@ function parseMarkdownToDocxBlocks(
 // ── Document builder ────────────────────────────────────────────────────────
 
 const PAGE_A5 = { width: 8391, height: 11906 };
+const PAGE_MARGIN = 1440; // 1 inch in twips
+const TABLE_WIDTH = PAGE_A5.width - PAGE_MARGIN * 2; // available content width
 
 export async function buildDocx(
     projectDir: string,
