@@ -9,6 +9,7 @@ import {
     ExternalHyperlink,
     FootnoteReferenceRun,
     ImageRun,
+    TableOfContents,
     Table,
     TableRow,
     TableCell,
@@ -527,6 +528,25 @@ export async function buildDocx(
         children: titleChildren,
     });
 
+    // Table of Contents
+    const labels = getLabels(config.language);
+    sections.push({
+        properties: { page: { size: PAGE_A5 } },
+        children: [
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [
+                    new TextRun({ text: labels.tableOfContents, font: FONT, color: "8B4513" }),
+                ],
+                spacing: { before: 400, after: 400 },
+            }),
+            new TableOfContents("TOC", {
+                hyperlink: true,
+                headingStyleRange: "1-1",
+            }),
+        ],
+    });
+
     // Extract footnotes from all chapters
     const allMarkdown = chapters.map((c) => c.body).join("\n\n");
     const footnotes = extractFootnotes(allMarkdown);
@@ -587,7 +607,6 @@ export async function buildDocx(
     }
 
     // About the author(s)
-    const labels = getLabels(config.language);
     const contribsWithBio = contributors.filter((c) => c.bio);
     if (contribsWithBio.length > 0) {
         const aboutChildren: Paragraph[] = [
