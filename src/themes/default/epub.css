@@ -54,6 +54,13 @@ hr::after {
   letter-spacing: 0.5em;
 }
 
+/* No text-indent on structural pages */
+.about-authors p,
+.backcover p,
+.colophon p {
+  text-indent: 0;
+}
+
 .colophon {
   margin-top: 3em;
   padding-top: 1em;
