@@ -134,7 +134,7 @@ export async function renderBook(
     if (contributors && contributors.length > 0) {
         const bios = contributors
             .filter((c) => c.bio)
-            .map((c) => `<p><strong>${escapeHtml(c.name)}</strong></p>\n      <p>${escapeHtml(c.bio)}</p>`)
+            .map((c) => `<p><strong>${escapeHtml(c.name)}</strong> ${escapeHtml(c.bio)}</p>`)
             .join("\n      ");
         if (bios) {
             aboutSection = `\n    <section class="about-authors">\n      <h2>${escapeHtml(labels.aboutTheAuthor)}</h2>\n      ${bios}\n    </section>`;

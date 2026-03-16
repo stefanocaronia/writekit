@@ -653,15 +653,10 @@ export async function buildDocx(
             aboutChildren.push(
                 new Paragraph({
                     children: [
-                        new TextRun({ text: contrib.name, font: FONT, size: 24, bold: true }),
-                    ],
-                    spacing: { before: 300, after: 100 },
-                }),
-                new Paragraph({
-                    children: [
+                        new TextRun({ text: contrib.name + " ", font: FONT, size: 22, bold: true }),
                         new TextRun({ text: contrib.bio, font: FONT, size: 22 }),
                     ],
-                    spacing: { after: 200 },
+                    spacing: { before: 300, after: 200 },
                 }),
             );
         }

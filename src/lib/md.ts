@@ -54,9 +54,7 @@ export function renderBookMd(
         lines.push(`## ${labels.aboutTheAuthor}`);
         lines.push("");
         for (const c of contribsWithBio) {
-            lines.push(`**${c.name}**`);
-            lines.push("");
-            lines.push(c.bio);
+            lines.push(`**${c.name}** ${c.bio}`);
             lines.push("");
         }
         lines.push("---");

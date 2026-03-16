@@ -196,7 +196,7 @@ function generateAboutAuthors(config: BookConfig, contributors: Contributor[]): 
         const labels = getLabels(config.language);
         const bios = contributors
                 .filter((c) => c.bio)
-                .map((c) => `<p><strong>${escapeXml(c.name)}</strong></p>\n<p>${escapeXml(c.bio)}</p>`)
+                .map((c) => `<p><strong>${escapeXml(c.name)}</strong> ${escapeXml(c.bio)}</p>`)
                 .join("\n");
         if (!bios) return "";
         return wrapXhtml(labels.aboutTheAuthor, `<div class="about-authors">\n<h1>${escapeXml(labels.aboutTheAuthor)}</h1>\n${bios}\n</div>`, config.language || "it");
