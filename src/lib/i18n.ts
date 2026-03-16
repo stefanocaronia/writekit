@@ -391,6 +391,31 @@ const catalog: Record<string, Labels> = {
  */
 export const supportedLanguages = Object.keys(catalog);
 
+const nativeNames: Record<string, string> = {
+    en: "English",
+    it: "Italiano",
+    fr: "Français",
+    de: "Deutsch",
+    es: "Español",
+    pt: "Português",
+    ru: "Русский",
+    ar: "العربية",
+    hi: "हिन्दी",
+    zh: "中文",
+    ko: "한국어",
+    ja: "日本語",
+    nl: "Nederlands",
+    pl: "Polski",
+    tr: "Türkçe",
+    sv: "Svenska",
+    el: "Ελληνικά",
+};
+
+export const languageChoices = supportedLanguages.map((code) => ({
+    value: code,
+    name: nativeNames[code] ?? code,
+}));
+
 export function getLabels(language: string): Labels {
     return catalog[language] ?? catalog["en"];
 }

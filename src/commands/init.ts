@@ -6,6 +6,7 @@ import { stringify } from "yaml";
 import { input, select } from "@inquirer/prompts";
 import { frontmatter } from "../lib/fs-utils.js";
 import { loadType, allTypeNames, type ProjectType, type TypeName } from "../lib/project-type.js";
+import { languageChoices } from "../lib/i18n.js";
 import { ensureAgentsMd } from "../lib/agents.js";
 
 interface InitOptions {
@@ -45,26 +46,8 @@ async function promptOptions(name: string, skip: boolean, typeFlag?: string): Pr
 
     const language = await select({
         message: "Language:",
-        choices: [
-            { value: "en", name: "English" },
-            { value: "it", name: "Italiano" },
-            { value: "fr", name: "Français" },
-            { value: "de", name: "Deutsch" },
-            { value: "es", name: "Español" },
-            { value: "pt", name: "Português" },
-            { value: "ru", name: "Русский" },
-            { value: "ar", name: "العربية" },
-            { value: "hi", name: "हिन्दी" },
-            { value: "zh", name: "中文" },
-            { value: "ko", name: "한국어" },
-            { value: "ja", name: "日本語" },
-            { value: "nl", name: "Nederlands" },
-            { value: "pl", name: "Polski" },
-            { value: "tr", name: "Türkçe" },
-            { value: "sv", name: "Svenska" },
-            { value: "el", name: "Ελληνικά" },
-        ],
-        default: "it",
+        choices: languageChoices,
+        default: "en",
     });
 
     return { title, author, language, type };
