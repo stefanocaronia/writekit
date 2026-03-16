@@ -389,6 +389,8 @@ const catalog: Record<string, Labels> = {
  * Return editorial labels for the given language code.
  * Falls back to English if the language is not supported.
  */
+export const supportedLanguages = Object.keys(catalog);
+
 export function getLabels(language: string): Labels {
     return catalog[language] ?? catalog["en"];
 }

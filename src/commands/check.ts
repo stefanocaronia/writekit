@@ -4,6 +4,7 @@ import { join, extname } from "node:path";
 import { fileExists, dirExists } from "../lib/fs-utils.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
 import { listThemes } from "../lib/theme.js";
+import { supportedLanguages } from "../lib/i18n.js";
 import { loadType, isValidType, allTypeNames, type FrontmatterSchema } from "../lib/project-type.js";
 import {
     validateData,
@@ -132,6 +133,15 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         issues.push(...parseIssues);
         if (data) {
             issues.push(...validateData(data, configSchema, "config.yaml"));
+
+            // Validate language is supported
+            const lang = data.language as string;
+            if (lang && !supportedLanguages.includes(lang)) {
+                issues.push({
+                    level: "warning",
+                    message: `config.yaml: language "${lang}" is not supported for editorial labels — supported: ${supportedLanguages.join(", ")}. English will be used as fallback.`,
+                });
+            }
 
             // Validate theme exists
             const themeName = (data.theme as string) || "default";
