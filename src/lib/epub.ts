@@ -156,19 +156,20 @@ ${items}
 }
 
 function generateTitlePage(config: BookConfig): string {
+        const c = "text-align:center;text-indent:0";
         const lines = [
-                `<p style="font-size:2.8em;font-weight:bold;color:#2c2c2c;margin:0;padding:0;text-align:center">${escapeXml(config.title)}</p>`,
+                `<p style="font-size:2.8em;font-weight:bold;color:#2c2c2c;margin:0;padding:0;${c}">${escapeXml(config.title)}</p>`,
         ];
         if (config.subtitle) {
-                lines.push(`<p style="font-size:1.3em;font-style:italic;color:#666;margin-top:0.8em;text-align:center">${escapeXml(config.subtitle)}</p>`);
+                lines.push(`<p style="font-size:1.3em;font-style:italic;color:#666;margin-top:0.8em;${c}">${escapeXml(config.subtitle)}</p>`);
         }
         if (config.series) {
                 let s = escapeXml(config.series);
                 if (config.volume) s += ` — Vol. ${config.volume}`;
-                lines.push(`<p style="font-size:1em;color:#888;margin-top:0.5em;text-align:center">${s}</p>`);
+                lines.push(`<p style="font-size:1em;color:#888;margin-top:0.5em;${c}">${s}</p>`);
         }
         if (config.author) {
-                lines.push(`<p style="font-size:1.2em;margin-top:4em;color:#444;text-align:center;letter-spacing:0.05em">${escapeXml(formatAuthors(config.author))}</p>`);
+                lines.push(`<p style="font-size:1.2em;margin-top:4em;color:#444;letter-spacing:0.05em;${c}">${escapeXml(formatAuthors(config.author))}</p>`);
         }
 
         return wrapXhtml(config.title, `<div style="margin-top:30%;text-align:center">\n${lines.join("\n")}\n</div>`, config.language || "it");
