@@ -1,6 +1,6 @@
 node_modules/
 dist/
-test*
+sandbox/
 .claude
 .codex
 .gemini
