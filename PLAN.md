@@ -74,8 +74,8 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ### Ancora da fare per v0.2
 
-- [ ] **Build genera pagina "About the Author(s)"** — dal contenuto di contributors/, resa in tutti i formati (HTML, ePub, PDF, DOCX). Nomi in grassetto, bio sotto.
-- [ ] **Build genera quarta di copertina** — da backcover.md, resa in HTML e ePub.
+- [x] **Build genera pagina "About the Author(s)"** — dal contenuto di contributors/, resa in tutti i formati (HTML, ePub, PDF, DOCX). Nomi in grassetto, bio sotto.
+- [x] **Build genera quarta di copertina** — da backcover.md, resa in HTML e ePub.
 
 ---
 
@@ -87,11 +87,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [ ] **DOCX Table of Contents** — campo TOC generato dai Heading, Word lo aggiorna all'apertura. Configurabile in config.yaml: `toc: true`, `toc_position: start | end`
 - [ ] **DOCX temi** — font/colori dal tema attivo
 - [ ] **Doc temi nel README** — documentare il workflow temi: il default è builtin (dentro il package, intoccabile). `wk theme create` copia dal default in `themes/` nel progetto. L'utente modifica solo la copia. Aggiornamenti npm aggiornano il default senza toccare i temi custom
-- [ ] **Footnotes** — sintassi Pandoc/MultiMarkdown: `testo[^1]` + `[^1]: nota`. Estensione marked per il parsing. Resa in tutti i formati:
-  - HTML: sezione note a fondo capitolo/pagina
-  - ePub: popup o fondo capitolo
-  - PDF: fondo pagina nativo
-  - DOCX: footnote nativa Word
+- [x] **Footnotes** — sintassi Pandoc/MultiMarkdown via marked-footnote. HTML/ePub/PDF con CSS, DOCX con FootnoteReferenceRun nativo Word.
 - [ ] **PDF configurabile** — formato pagina (A4/A5/Letter/trim sizes), margini
 - [ ] **Print presets per self-publishing** — configurazione `print:` in config.yaml con `trim` (5x8in, 6x9in, A5), `bleed` (3mm), `gutter` (auto dal numero pagine), `preset` (kdp, ingramspark, lulu, custom). Il preset imposta automaticamente margini, trim e bleed secondo le specifiche della piattaforma
 - [ ] **DOCX template utente** — se `assets/template.docx` è presente, il builder usa quegli stili al posto di quelli del tema. Priorità: template utente > tema > default
