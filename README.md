@@ -169,8 +169,9 @@ Writekit uses Markdown — a simple way to format text that's readable even with
 | `[text](url)` | A clickable link |
 | `` `code` `` | Inline code |
 | `---` | A horizontal line |
+| `![alt](assets/img.jpg)` | An image |
 
-All of these work in every output format (HTML, ePub, PDF, Word).
+All of these work in every output format (HTML, ePub, PDF, Word). Images use local paths relative to the project root (e.g. `assets/photo.jpg`).
 
 ### Frontmatter
 

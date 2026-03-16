@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { marked } from "./markdown.js";
+import { embedImagesAsBase64 } from "./images.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
@@ -37,13 +38,17 @@ export async function renderBook(
     contributors?: Contributor[],
     backcover?: string,
     coverImagePath?: string | null,
+    projectDir?: string,
 ): Promise<string> {
     const labels = getLabels(config.language);
 
     // Render all chapters markdown to HTML
     const renderedChapters: string[] = [];
     for (const chapter of chapters) {
-        const html = await marked(chapter.body);
+        const body = projectDir
+            ? await embedImagesAsBase64(chapter.body, projectDir)
+            : chapter.body;
+        const html = await marked(body);
         renderedChapters.push(html);
     }
 

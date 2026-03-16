@@ -69,7 +69,7 @@ export async function buildPdf(
     await mkdir(buildDir, { recursive: true });
 
     // Generate HTML first
-    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath, projectDir);
     const htmlPath = join(buildDir, "_temp.html");
     await writeFile(htmlPath, html, "utf-8");
 

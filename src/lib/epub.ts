@@ -8,6 +8,7 @@ import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
+import { collectImagePaths, rewriteImagePaths } from "./images.js";
 
 function escapeXml(text: string): string {
         return text
@@ -41,7 +42,7 @@ function generateContainerXml(): string {
 </container>`;
 }
 
-function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string): string {
+function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = []): string {
         const uuid = `urn:uuid:${simpleUuid()}`;
 
         const metadataLines = [
@@ -94,6 +95,14 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcove
         if (hasAbout) {
                 manifestItems.push(`    <item id="about" href="about.xhtml" media-type="application/xhtml+xml" />`);
                 spineItems.push(`    <itemref idref="about" />`);
+        }
+
+        // Add content images
+        const imgMimeMap: Record<string, string> = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml" };
+        for (let i = 0; i < imageFiles.length; i++) {
+                const ext = imageFiles[i].filename.substring(imageFiles[i].filename.lastIndexOf("."));
+                const mime = imgMimeMap[ext] ?? "image/jpeg";
+                manifestItems.push(`    <item id="img-${i + 1}" href="images/${imageFiles[i].filename}" media-type="${mime}" />`);
         }
 
         // Add colophon
@@ -220,17 +229,28 @@ export async function buildEpub(
                 } catch { /* no cover */ }
         }
 
+        // Collect images from all chapters
+        const allBodies = chapters.map((c) => c.body).join("\n");
+        const images = collectImagePaths(allBodies, projectDir);
+        const pathMapping = new Map<string, string>();
+        for (const img of images) {
+                const imgData = await readFile(img.absPath);
+                zip.addBuffer(imgData, `OEBPS/images/${img.filename}`);
+                pathMapping.set(img.src, `images/${img.filename}`);
+        }
+
         // OEBPS
         const hasBackcover = !!backcover;
         const hasAbout = contributors.some((c) => c.bio);
-        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt)), "OEBPS/content.opf");
+        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images)), "OEBPS/content.opf");
         zip.addBuffer(Buffer.from(theme.epubCss), "OEBPS/style.css");
         zip.addBuffer(Buffer.from(generateTitlePage(config)), "OEBPS/titlepage.xhtml");
         zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters)), "OEBPS/toc.xhtml");
 
-        // Chapters
+        // Chapters (with rewritten image paths)
         for (let i = 0; i < chapters.length; i++) {
-                const htmlBody = await marked(chapters[i].body);
+                const body = rewriteImagePaths(chapters[i].body, pathMapping);
+                const htmlBody = await marked(body);
                 const xhtml = wrapXhtml(chapters[i].title, htmlBody, config.language || "it");
                 zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
         }

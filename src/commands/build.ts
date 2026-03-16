@@ -28,7 +28,7 @@ async function buildHtml(
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const html = await renderBook(config, chapters, theme, contributors, backcover, coverPath);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverPath, projectDir);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
