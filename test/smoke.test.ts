@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
 const CLI = `node ${join(ROOT, "dist", "cli.js")}`;
-const TEST_DIR = join(ROOT, "test-smoke");
+const SANDBOX = join(ROOT, "sandbox");
+const TEST_DIR = join(SANDBOX, "test-smoke");
 
 function run(cmd: string, cwd?: string): string {
     return execSync(cmd, {
@@ -18,6 +19,7 @@ function run(cmd: string, cwd?: string): string {
 describe("writekit smoke tests", () => {
     beforeAll(() => {
         rmSync(TEST_DIR, { recursive: true, force: true });
+        mkdirSync(SANDBOX, { recursive: true });
     });
 
     afterAll(() => {
@@ -41,7 +43,7 @@ describe("writekit smoke tests", () => {
     });
 
     it("init creates a project", () => {
-        run(`${CLI} init test-smoke --yes`);
+        run(`${CLI} init test-smoke --yes`, SANDBOX);
         expect(existsSync(join(TEST_DIR, "config.yaml"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "style.yaml"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "timeline.yaml"))).toBe(true);
@@ -56,6 +58,9 @@ describe("writekit smoke tests", () => {
         expect(existsSync(join(TEST_DIR, "build"))).toBe(true);
         expect(existsSync(join(TEST_DIR, ".gitignore"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "README.md"))).toBe(true);
+        expect(existsSync(join(TEST_DIR, "AGENTS.md"))).toBe(true);
+        const agents = readFileSync(join(TEST_DIR, "AGENTS.md"), "utf-8");
+        expect(agents).toContain("writekit:start");
     });
 
     it("check passes on fresh project", () => {
