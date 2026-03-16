@@ -60,3 +60,18 @@ hr::after {
 .colophon p {
   margin-bottom: 0.3em;
 }
+
+.footnotes {
+  margin-top: 2em;
+  padding-top: 1em;
+  border-top: 1px solid #eaeaea;
+  font-size: 0.85em;
+  color: #717171;
+}
+.footnotes li {
+  margin-bottom: 0.3em;
+}
+sup a {
+  color: #0066cc;
+  text-decoration: none;
+}

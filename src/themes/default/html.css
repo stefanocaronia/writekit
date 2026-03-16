@@ -162,3 +162,29 @@ body {
 .colophon p {
   margin-bottom: 0.4rem;
 }
+
+/* --- Footnotes --- */
+.footnotes {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.footnotes ol {
+  padding-left: 1.5rem;
+}
+.footnotes li {
+  margin-bottom: 0.5rem;
+}
+.footnotes li p {
+  margin: 0;
+}
+sup a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: bold;
+}
+sup a:hover {
+  text-decoration: underline;
+}

@@ -1,4 +1,4 @@
-import { marked } from "marked";
+import { marked } from "./markdown.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";

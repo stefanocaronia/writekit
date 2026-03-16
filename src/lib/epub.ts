@@ -1,4 +1,4 @@
-import { marked } from "marked";
+import { marked } from "./markdown.js";
 import crypto from "node:crypto";
 import yazl from "yazl";
 import { createWriteStream } from "node:fs";

@@ -7,6 +7,7 @@ import {
     AlignmentType,
     BorderStyle,
     ExternalHyperlink,
+    FootnoteReferenceRun,
     Table,
     TableRow,
     TableCell,
@@ -76,10 +77,52 @@ const INLINE_PATTERNS: {
     },
 ];
 
+// ── Footnote extraction ─────────────────────────────────────────────────────
+
+interface FootnoteMap {
+    defs: Map<string, string>;       // id -> footnote text
+    idToNum: Map<string, number>;    // id -> sequential number (1-based)
+}
+
+function extractFootnotes(markdown: string): FootnoteMap {
+    const defs = new Map<string, string>();
+    const idToNum = new Map<string, number>();
+    let num = 1;
+
+    // Extract definitions: [^id]: text
+    const defRegex = /^\[\^([^\]]+)\]:\s*(.+)$/gm;
+    let match;
+    while ((match = defRegex.exec(markdown)) !== null) {
+        const id = match[1];
+        defs.set(id, match[2]);
+        if (!idToNum.has(id)) {
+            idToNum.set(id, num++);
+        }
+    }
+
+    // Also scan for references to assign numbers for any not yet seen
+    const refRegex = /\[\^([^\]]+)\]/g;
+    while ((match = refRegex.exec(markdown)) !== null) {
+        const id = match[1];
+        if (!idToNum.has(id)) {
+            idToNum.set(id, num++);
+        }
+    }
+
+    return { defs, idToNum };
+}
+
+function stripFootnoteDefinitions(markdown: string): string {
+    return markdown.replace(/^\[\^[^\]]+\]:\s*.+$/gm, "").trim();
+}
+
+// ── Inline parsing ──────────────────────────────────────────────────────────
+
 function parseInline(
     text: string,
-): (TextRun | ExternalHyperlink)[] {
-    const result: (TextRun | ExternalHyperlink)[] = [];
+    footnotes?: FootnoteMap,
+): (TextRun | ExternalHyperlink | FootnoteReferenceRun)[] {
+    const result: (TextRun | ExternalHyperlink | FootnoteReferenceRun)[] = [];
     let remaining = text;
 
     while (remaining.length > 0) {
@@ -94,6 +137,23 @@ function parseInline(
                 earliestMatch = match;
                 earliestPattern = pattern;
             }
+        }
+
+        // Check for footnote reference [^id]
+        const fnMatch = remaining.match(/\[\^([^\]]+)\]/);
+        const fnIndex = fnMatch?.index ?? Infinity;
+
+        if (fnMatch && fnIndex < earliestIndex && footnotes) {
+            if (fnIndex > 0) {
+                result.push(new TextRun({ text: remaining.slice(0, fnIndex), font: FONT }));
+            }
+            const fnId = fnMatch[1];
+            const fnNum = footnotes.idToNum.get(fnId);
+            if (fnNum !== undefined) {
+                result.push(new FootnoteReferenceRun(fnNum));
+            }
+            remaining = remaining.slice(fnIndex + fnMatch[0].length);
+            continue;
         }
 
         if (!earliestMatch || !earliestPattern) {
@@ -116,7 +176,7 @@ function parseInline(
 
 // ── Block parsing ───────────────────────────────────────────────────────────
 
-function parseMarkdownToDocx(markdown: string): Paragraph[] {
+function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap): Paragraph[] {
     const paragraphs: Paragraph[] = [];
     const lines = markdown.split("\n");
     let i = 0;
@@ -142,7 +202,7 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
             paragraphs.push(
                 new Paragraph({
                     heading: headingMap[level],
-                    children: parseInline(headingMatch[2]),
+                    children: parseInline(headingMatch[2], footnotes),
                     spacing: { before: 400, after: level === 1 ? 300 : 200 },
                 }),
             );
@@ -200,7 +260,7 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
             }
             paragraphs.push(
                 new Paragraph({
-                    children: parseInline(quoteLines.join(" ")),
+                    children: parseInline(quoteLines.join(" "), footnotes),
                     indent: { left: 720 },
                     border: {
                         left: {
@@ -222,7 +282,7 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
                 const text = lines[i].replace(/^\s*[-*+]\s+/, "");
                 paragraphs.push(
                     new Paragraph({
-                        children: parseInline(text),
+                        children: parseInline(text, footnotes),
                         numbering: { reference: "bullet-list", level: 0 },
                         spacing: { after: 80 },
                     }),
@@ -238,7 +298,7 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
                 const text = lines[i].replace(/^\s*\d+\.\s+/, "");
                 paragraphs.push(
                     new Paragraph({
-                        children: parseInline(text),
+                        children: parseInline(text, footnotes),
                         numbering: { reference: "numbered-list", level: 0 },
                         spacing: { after: 80 },
                     }),
@@ -251,7 +311,7 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
         // Regular paragraph
         paragraphs.push(
             new Paragraph({
-                children: parseInline(line),
+                children: parseInline(line, footnotes),
                 alignment: AlignmentType.JUSTIFIED,
                 spacing: { after: 200 },
             }),
@@ -268,9 +328,11 @@ function parseMarkdownToDocx(markdown: string): Paragraph[] {
 
 function parseMarkdownToDocxBlocks(
     markdown: string,
+    footnotes?: FootnoteMap,
 ): (Paragraph | Table)[] {
     const blocks: (Paragraph | Table)[] = [];
-    const lines = markdown.split("\n");
+    const cleaned = footnotes ? stripFootnoteDefinitions(markdown) : markdown;
+    const lines = cleaned.split("\n");
     let i = 0;
 
     while (i < lines.length) {
@@ -303,7 +365,7 @@ function parseMarkdownToDocxBlocks(
                                     width: { size: Math.floor(9000 / colCount), type: WidthType.DXA },
                                     children: [
                                         new Paragraph({
-                                            children: parseInline(cells[ci] || ""),
+                                            children: parseInline(cells[ci] || "", footnotes),
                                             spacing: { before: 40, after: 40 },
                                         }),
                                     ],
@@ -414,6 +476,21 @@ export async function buildDocx(
         children: titleChildren,
     });
 
+    // Extract footnotes from all chapters
+    const allMarkdown = chapters.map((c) => c.body).join("\n\n");
+    const footnotes = extractFootnotes(allMarkdown);
+
+    // Build Document footnotes config
+    const docFootnotes: Record<number, { children: Paragraph[] }> = {};
+    for (const [id, num] of footnotes.idToNum) {
+        const text = footnotes.defs.get(id) ?? "";
+        docFootnotes[num] = {
+            children: [new Paragraph({
+                children: [new TextRun({ text, font: FONT, size: 18 })],
+            })],
+        };
+    }
+
     // Chapters
     for (const chapter of chapters) {
         const children: (Paragraph | Table)[] = [
@@ -429,7 +506,7 @@ export async function buildDocx(
                 ],
                 spacing: { before: 600, after: 400 },
             }),
-            ...parseMarkdownToDocxBlocks(chapter.body),
+            ...parseMarkdownToDocxBlocks(chapter.body, footnotes),
         ];
 
         sections.push({
@@ -547,6 +624,7 @@ export async function buildDocx(
                 },
             ],
         },
+        footnotes: Object.keys(docFootnotes).length > 0 ? docFootnotes : undefined,
         sections,
     });
 
