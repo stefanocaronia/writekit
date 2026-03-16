@@ -129,10 +129,13 @@ describe("writekit smoke tests", () => {
         expect(docxFiles.length).toBeGreaterThan(0);
     });
 
-    it("add author works", () => {
+    it("add author works and creates contributor sheet", () => {
         run(`${CLI} add author "Lucia Bianchi"`, TEST_DIR);
         const config = readFileSync(join(TEST_DIR, "config.yaml"), "utf-8");
         expect(config).toContain("Lucia Bianchi");
+        expect(existsSync(join(TEST_DIR, "contributors", "lucia-bianchi.md"))).toBe(true);
+        const sheet = readFileSync(join(TEST_DIR, "contributors", "lucia-bianchi.md"), "utf-8");
+        expect(sheet).toContain("name: Lucia Bianchi");
     });
 
     it("remove author works", () => {

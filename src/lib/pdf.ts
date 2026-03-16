@@ -2,7 +2,7 @@ import puppeteer from "puppeteer-core";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
-import type { BookConfig, Chapter } from "./parse.js";
+import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { renderBook } from "./html.js";
 
@@ -47,6 +47,8 @@ export async function buildPdf(
     chapters: Chapter[],
     theme: Theme,
     filename = "book.pdf",
+    contributors: Contributor[] = [],
+    backcover = "",
 ): Promise<string> {
     const browserPath = findBrowser();
     if (!browserPath) {
@@ -59,7 +61,7 @@ export async function buildPdf(
     await mkdir(buildDir, { recursive: true });
 
     // Generate HTML first
-    const html = await renderBook(config, chapters, theme);
+    const html = await renderBook(config, chapters, theme, contributors, backcover);
     const htmlPath = join(buildDir, "_temp.html");
     await writeFile(htmlPath, html, "utf-8");
 

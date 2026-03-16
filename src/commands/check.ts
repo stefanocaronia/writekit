@@ -88,12 +88,6 @@ function validateFrontmatter(
 }
 
 export async function checkProject(projectDir: string): Promise<CheckResult> {
-    // Sync derived fields first to resolve stale data
-    try {
-        const { syncProject } = await import("./sync.js");
-        await syncProject(projectDir);
-    } catch { /* sync failure shouldn't block check */ }
-
     const issues: ValidationIssue[] = [];
 
     // Read config to determine project type

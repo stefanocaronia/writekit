@@ -3,11 +3,10 @@ import { watch, type FSWatcher } from "node:fs";
 import { join } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { checkProject, printCheckResults } from "./check.js";
-import { ensureAgentsMd } from "../lib/agents.js";
 import { loadConfig, loadChapters } from "../lib/parse.js";
 import { renderBook } from "../lib/html.js";
 import { buildEpub } from "../lib/epub.js";
-import { generateReports } from "../lib/reports.js";
+import { syncProject } from "./sync.js";
 import { loadTheme } from "../lib/theme.js";
 import { assertProject, bookFilename, dirExists } from "../lib/fs-utils.js";
 import { c, icon } from "../lib/ui.js";
@@ -83,13 +82,10 @@ async function runCycle(
         }
     }
 
-    // Reports
-    const reportStart = Date.now();
-    await generateReports(projectDir);
-    console.log(`${timestamp()} Finished ${c.yellow("reports")} ${c.green("✓")} ${c.dim(elapsed(reportStart))}`);
-
-    // Ensure AGENTS.md
-    await ensureAgentsMd(projectDir);
+    // Sync (reports, agents, contributor roles)
+    const syncStart = Date.now();
+    await syncProject(projectDir);
+    console.log(`${timestamp()} Finished ${c.yellow("sync")} ${c.green("✓")} ${c.dim(elapsed(syncStart))}`);
 
     console.log();
 }

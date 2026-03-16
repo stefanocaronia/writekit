@@ -55,7 +55,9 @@ async function buildPdf(
     chapters: Chapter[],
     theme: Theme,
 ): Promise<void> {
-    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"));
+    const contributors = await loadContributors(projectDir);
+    const backcover = await loadBackcover(projectDir);
+    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"), contributors, backcover);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
