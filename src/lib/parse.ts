@@ -3,6 +3,7 @@ import { join, extname } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 export interface BookConfig {
+    type?: string;
     title: string;
     subtitle?: string;
     series?: string;

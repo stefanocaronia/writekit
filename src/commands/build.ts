@@ -165,7 +165,7 @@ export const buildCommand = new Command("build")
         }
 
         console.log(`\n${icon.report} ${c.bold("Generating reports...")}\n`);
-        await generateReports(projectDir);
-        console.log(`  ${c.dim("→ build/reports/ (status, cast, locations, timeline)")}`);
+        const generated = await generateReports(projectDir);
+        console.log(`  ${c.dim(`→ build/reports/ (${generated.join(", ")})`)}`);
         console.log(`\n${icon.done} ${c.green("Done!")}\n`);
     });

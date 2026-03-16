@@ -2,6 +2,7 @@ import { readdir, readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { parseFrontmatter, loadConfig, loadChapters } from "./parse.js";
+import { loadType, isValidType } from "./project-type.js";
 
 interface OutlineChapter {
     chapter: number;
@@ -279,21 +280,33 @@ ${rows.join("\n")}
 
 // --- Generate all reports ---
 
-export async function generateReports(projectDir: string): Promise<void> {
+const REPORT_GENERATORS: Record<string, (dir: string) => Promise<string>> = {
+    status: generateStatus,
+    cast: generateCast,
+    locations: generateLocations,
+    timeline: generateTimeline,
+};
+
+export async function generateReports(projectDir: string): Promise<string[]> {
     const reportsDir = join(projectDir, "build", "reports");
     await mkdir(reportsDir, { recursive: true });
 
-    const [status, cast, locations, timeline] = await Promise.all([
-        generateStatus(projectDir),
-        generateCast(projectDir),
-        generateLocations(projectDir),
-        generateTimeline(projectDir),
-    ]);
+    // Determine which reports this type needs
+    const config = await loadConfig(projectDir);
+    const typeName = config.type || "novel";
+    const typeDef = isValidType(typeName) ? await loadType(typeName) : await loadType("novel");
+    const activeReports = typeDef.reports;
 
-    await Promise.all([
-        writeFile(join(reportsDir, "status.md"), status),
-        writeFile(join(reportsDir, "cast.md"), cast),
-        writeFile(join(reportsDir, "locations.md"), locations),
-        writeFile(join(reportsDir, "timeline.md"), timeline),
-    ]);
+    const generated: string[] = [];
+
+    for (const reportName of activeReports) {
+        const generator = REPORT_GENERATORS[reportName];
+        if (generator) {
+            const content = await generator(projectDir);
+            await writeFile(join(reportsDir, `${reportName}.md`), content);
+            generated.push(reportName);
+        }
+    }
+
+    return generated;
 }

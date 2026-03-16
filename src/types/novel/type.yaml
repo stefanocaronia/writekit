@@ -1,0 +1,71 @@
+name: Novel
+description: Novel, novella, or long-form fiction
+dirs:
+    - outline
+    - outline/chapters
+    - manuscript
+    - characters
+    - world
+    - notes
+    - reference
+    - assets
+    - build
+files:
+    - style.yaml
+    - timeline.yaml
+    - synopsis.md
+    - outline/plot.md
+add_commands:
+    - chapter
+    - character
+    - location
+    - note
+    - event
+reports:
+    - status
+    - cast
+    - locations
+    - timeline
+schemas:
+    manuscript:
+        required: [chapter, title]
+        optional: [pov, draft, author]
+    outline/chapters:
+        required: [chapter, title]
+        optional: [pov, characters, location]
+    characters:
+        required: [name, role]
+        optional: [age, relationships]
+    world:
+        required: [name, type]
+        optional: []
+sample_files:
+    outline/chapters/01.md:
+        frontmatter:
+            chapter: 1
+            title: "Chapter One"
+            pov: ""
+            characters: []
+            location: ""
+        body: "# Chapter 1 — Outline\n\nWhat happens in this chapter...\n"
+    manuscript/01-chapter-one.md:
+        frontmatter:
+            chapter: 1
+            title: "Chapter One"
+            pov: ""
+            draft: 1
+        body: "# Chapter One\n\nStart writing here...\n"
+    characters/protagonist.md:
+        frontmatter:
+            name: ""
+            role: protagonist
+            age: ""
+            relationships: []
+        body: "# Character Name\n\n## Appearance\n\n## Personality\n\n## Backstory\n\n## Arc\n\n## Notes\n"
+    world/example-location.md:
+        frontmatter:
+            name: ""
+            type: location
+        body: "# Location Name\n\n## Description\n\n## Details\n\n## Notes\n"
+    notes/ideas.md:
+        body: "# Ideas\n\nFree-form notes, ideas, research...\n"

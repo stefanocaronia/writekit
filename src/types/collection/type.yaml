@@ -1,0 +1,33 @@
+name: Collection
+description: Anthology of short stories, poems, or essays — per-piece author in frontmatter
+dirs:
+    - outline
+    - manuscript
+    - notes
+    - reference
+    - assets
+    - build
+files:
+    - style.yaml
+    - synopsis.md
+add_commands:
+    - chapter
+    - note
+reports:
+    - status
+schemas:
+    manuscript:
+        required: [title]
+        optional: [chapter, author, draft]
+sample_files:
+    outline/contents.md:
+        body: "# Contents\n\nList and order of pieces in this collection...\n"
+    manuscript/01-untitled.md:
+        frontmatter:
+            chapter: 1
+            title: "Untitled"
+            author: ""
+            draft: 1
+        body: "# Untitled\n\nStart writing here...\n"
+    notes/ideas.md:
+        body: "# Ideas\n\nFree-form notes, ideas, research...\n"

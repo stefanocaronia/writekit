@@ -3,18 +3,13 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { fileExists, dirExists } from "../lib/fs-utils.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
-import { parseFrontmatter } from "../lib/parse.js";
 import { listThemes } from "../lib/theme.js";
+import { loadType, isValidType, allTypeNames, type FrontmatterSchema } from "../lib/project-type.js";
 import {
     validateData,
     configSchema,
     styleSchema,
     timelineSchema,
-    manuscriptSchema,
-    outlineChapterSchema,
-    characterSchema,
-    worldSchema,
-    type Schema,
     type ValidationIssue,
 } from "../lib/schema.js";
 
@@ -22,31 +17,6 @@ interface CheckResult {
     warnings: string[];
     errors: string[];
 }
-
-const REQUIRED_FILES = [
-    "config.yaml",
-    "style.yaml",
-    "timeline.yaml",
-    "synopsis.md",
-];
-
-const REQUIRED_DIRS = [
-    "outline",
-    "manuscript",
-    "characters",
-    "world",
-    "notes",
-    "reference",
-    "assets",
-    "build",
-];
-
-const FRONTMATTER_SCHEMAS: Record<string, Schema> = {
-    manuscript: manuscriptSchema,
-    "outline/chapters": outlineChapterSchema,
-    characters: characterSchema,
-    world: worldSchema,
-};
 
 async function getMdFiles(dir: string): Promise<string[]> {
     try {
@@ -72,7 +42,6 @@ function tryParseYaml(
         return { data, issues: [] };
     } catch (e) {
         if (e instanceof YAMLParseError) {
-            // Extract line number from YAML error
             const lineMatch = e.message.match(/at line (\d+)/);
             const line = lineMatch ? ` (line ${lineMatch[1]})` : "";
             return {
@@ -87,18 +56,70 @@ function tryParseYaml(
     }
 }
 
+function validateFrontmatter(
+    data: Record<string, unknown>,
+    schema: FrontmatterSchema,
+    filePath: string,
+): ValidationIssue[] {
+    const issues: ValidationIssue[] = [];
+
+    for (const field of schema.required) {
+        if (!(field in data)) {
+            issues.push({
+                level: "warning",
+                message: `${filePath}: missing required field "${field}"`,
+            });
+        }
+    }
+
+    // Warn about unknown fields
+    const knownFields = new Set([...schema.required, ...schema.optional]);
+    for (const key of Object.keys(data)) {
+        if (!knownFields.has(key)) {
+            issues.push({
+                level: "warning",
+                message: `${filePath}: unknown field "${key}"`,
+            });
+        }
+    }
+
+    return issues;
+}
+
 export async function checkProject(projectDir: string): Promise<CheckResult> {
     const issues: ValidationIssue[] = [];
 
-    // Check required files
-    for (const file of REQUIRED_FILES) {
+    // Read config to determine project type
+    let projectTypeName = "novel";
+    if (await fileExists(join(projectDir, "config.yaml"))) {
+        try {
+            const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
+            const cfg = parseYaml(raw) as Record<string, unknown>;
+            if (cfg.type && typeof cfg.type === "string") {
+                if (isValidType(cfg.type)) {
+                    projectTypeName = cfg.type;
+                } else {
+                    issues.push({
+                        level: "error",
+                        message: `config.yaml: unknown type "${cfg.type}" — valid types: ${allTypeNames().join(", ")}`,
+                    });
+                }
+            }
+        } catch { /* will be caught by config validation below */ }
+    }
+
+    const typeDef = await loadType(projectTypeName);
+
+    // Check required files (config.yaml always + type-specific files)
+    const requiredFiles = ["config.yaml", ...typeDef.files];
+    for (const file of requiredFiles) {
         if (!(await fileExists(join(projectDir, file)))) {
             issues.push({ level: "error", message: `Missing required file: ${file}` });
         }
     }
 
     // Check required directories
-    for (const dir of REQUIRED_DIRS) {
+    for (const dir of typeDef.dirs) {
         if (!(await dirExists(join(projectDir, dir)))) {
             issues.push({ level: "error", message: `Missing required directory: ${dir}/` });
         }
@@ -125,8 +146,8 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         }
     }
 
-    // Validate style.yaml
-    if (await fileExists(join(projectDir, "style.yaml"))) {
+    // Validate style.yaml (if type requires it)
+    if (typeDef.files.includes("style.yaml") && await fileExists(join(projectDir, "style.yaml"))) {
         const raw = await readFile(join(projectDir, "style.yaml"), "utf-8");
         const { data, issues: parseIssues } = tryParseYaml(raw, "style.yaml");
         issues.push(...parseIssues);
@@ -135,8 +156,8 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         }
     }
 
-    // Validate timeline.yaml
-    if (await fileExists(join(projectDir, "timeline.yaml"))) {
+    // Validate timeline.yaml (if type requires it)
+    if (typeDef.files.includes("timeline.yaml") && await fileExists(join(projectDir, "timeline.yaml"))) {
         const raw = await readFile(join(projectDir, "timeline.yaml"), "utf-8");
         const { data, issues: parseIssues } = tryParseYaml(raw, "timeline.yaml");
         issues.push(...parseIssues);
@@ -145,8 +166,8 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         }
     }
 
-    // Validate frontmatter in md files
-    for (const [folder, schema] of Object.entries(FRONTMATTER_SCHEMAS)) {
+    // Validate frontmatter using type-defined schemas
+    for (const [folder, schema] of Object.entries(typeDef.schemas)) {
         const dir = join(projectDir, folder);
         const files = await getMdFiles(dir);
 
@@ -175,7 +196,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
             );
 
             if (data) {
-                issues.push(...validateData(data, schema, filePath));
+                issues.push(...validateFrontmatter(data, schema, filePath));
             }
         }
     }
@@ -191,20 +212,25 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         }
     }
 
-    // Check outline/chapters naming convention (NN.md)
-    const outlineChapterFiles = await getMdFiles(join(projectDir, "outline", "chapters"));
-    for (const file of outlineChapterFiles) {
-        if (!/^\d{2,}\.md$/.test(file)) {
-            issues.push({
-                level: "warning",
-                message: `outline/chapters/${file}: doesn't follow naming convention NN.md`,
-            });
+    // Check outline/chapters naming convention (NN.md) — only if type has it
+    if (typeDef.dirs.includes("outline/chapters")) {
+        const outlineChapterFiles = await getMdFiles(join(projectDir, "outline", "chapters"));
+        for (const file of outlineChapterFiles) {
+            if (!/^\d{2,}\.md$/.test(file)) {
+                issues.push({
+                    level: "warning",
+                    message: `outline/chapters/${file}: doesn't follow naming convention NN.md`,
+                });
+            }
         }
     }
 
-    // Check outline/plot.md exists
-    if (!(await fileExists(join(projectDir, "outline", "plot.md")))) {
-        issues.push({ level: "warning", message: "outline/plot.md is missing" });
+    // Check type-specific required files
+    for (const file of typeDef.files) {
+        const fullPath = join(projectDir, file);
+        if (file.endsWith(".md") && await fileExists(fullPath)) {
+            // Already checked above
+        }
     }
 
     // Split into errors and warnings

@@ -1,0 +1,32 @@
+name: Essay
+description: Single essay or long-form non-fiction
+dirs:
+    - outline
+    - manuscript
+    - notes
+    - reference
+    - assets
+    - build
+files:
+    - style.yaml
+    - synopsis.md
+add_commands:
+    - chapter
+    - note
+reports:
+    - status
+schemas:
+    manuscript:
+        required: [title]
+        optional: [draft]
+sample_files:
+    outline/structure.md:
+        body: "# Structure\n\nOutline the argument and sections here...\n"
+    manuscript/01-introduction.md:
+        frontmatter:
+            chapter: 1
+            title: "Introduction"
+            draft: 1
+        body: "# Introduction\n\nStart writing here...\n"
+    notes/ideas.md:
+        body: "# Ideas\n\nFree-form notes, ideas, research...\n"

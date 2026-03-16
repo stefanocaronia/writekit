@@ -11,6 +11,7 @@ export type Schema = Record<string, FieldDef>;
 // --- YAML file schemas ---
 
 export const configSchema: Schema = {
+    type: { type: "string" },
     title: { type: "string", required: true },
     subtitle: { type: "string" },
     series: { type: "string" },
@@ -21,11 +22,13 @@ export const configSchema: Schema = {
     illustrator: { type: "string" },
     language: { type: "string", required: true },
     genre: { type: "string" },
+    doi: { type: "string" },
     isbn: { type: "string" },
     publisher: { type: "string" },
     edition: { type: "number" },
     date: { type: "string" },
     build_formats: { type: "array" },
+    theme: { type: "string" },
     license: { type: "string" },
     license_url: { type: "string" },
     copyright: { type: "string" },

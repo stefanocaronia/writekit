@@ -1,0 +1,28 @@
+name: Article
+description: Article or short non-fiction — the simplest structure
+dirs:
+    - manuscript
+    - notes
+    - reference
+    - assets
+    - build
+files:
+    - style.yaml
+    - synopsis.md
+add_commands:
+    - chapter
+    - note
+reports:
+    - status
+schemas:
+    manuscript:
+        required: [title]
+        optional: [draft]
+sample_files:
+    manuscript/01-draft.md:
+        frontmatter:
+            title: "Draft"
+            draft: 1
+        body: "# Draft\n\nStart writing here...\n"
+    notes/ideas.md:
+        body: "# Ideas\n\nFree-form notes, research...\n"

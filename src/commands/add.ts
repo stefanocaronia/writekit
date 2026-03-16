@@ -4,10 +4,29 @@ import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
 import { slugify, padNumber } from "../lib/slug.js";
 import { fileExists, assertProject, frontmatter } from "../lib/fs-utils.js";
+import { loadType, isValidType } from "../lib/project-type.js";
 import { c, icon } from "../lib/ui.js";
 
 async function ensureDir(dir: string): Promise<void> {
     await mkdir(dir, { recursive: true });
+}
+
+async function assertAddCommand(projectDir: string, command: string): Promise<void> {
+    try {
+        const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
+        const cfg = parseYaml(raw) as Record<string, unknown>;
+        const typeName = (cfg.type as string) || "novel";
+        if (isValidType(typeName)) {
+            const typeDef = await loadType(typeName);
+            if (!typeDef.add_commands.includes(command)) {
+                console.error(
+                    `\n${icon.error} ${c.red(`"wk add ${command}" is not available for ${typeDef.name} projects.`)}`,
+                );
+                console.error(`  ${c.dim(`Available: ${typeDef.add_commands.join(", ")}`)}\n`);
+                process.exit(1);
+            }
+        }
+    } catch { /* config not readable, let other commands handle it */ }
 }
 
 async function countMdFiles(dir: string): Promise<number> {
@@ -88,6 +107,7 @@ const addCharacter = new Command("character")
     .action(async (name: string, opts: { role: string }) => {
         const projectDir = process.cwd();
         await assertProject(projectDir);
+        await assertAddCommand(projectDir, "character");
 
         const dir = join(projectDir, "characters");
         await ensureDir(dir);
@@ -127,6 +147,7 @@ const addLocation = new Command("location")
     .action(async (name: string, opts: { type: string }) => {
         const projectDir = process.cwd();
         await assertProject(projectDir);
+        await assertAddCommand(projectDir, "location");
 
         const dir = join(projectDir, "world");
         await ensureDir(dir);
@@ -196,6 +217,7 @@ const addEvent = new Command("event")
     .action(async (description: string, opts: { date: string; chapter: string }) => {
         const projectDir = process.cwd();
         await assertProject(projectDir);
+        await assertAddCommand(projectDir, "event");
 
         const timelinePath = join(projectDir, "timeline.yaml");
         let data: TimelineData;
