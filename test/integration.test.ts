@@ -408,13 +408,12 @@ In an age of constant noise, what have we lost?
         expect(out).toMatch(/0 error|All good/);
     });
 
-    it("build html and md work", () => {
-        run(`${CLI} build html`, DIR);
-        run(`${CLI} build md`, DIR);
-        const htmlFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".html"));
-        const mdFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".md"));
-        expect(htmlFiles.length).toBeGreaterThan(0);
-        expect(mdFiles.length).toBeGreaterThan(0);
+    it("build all formats", { timeout: 30_000 }, () => {
+        for (const fmt of ["html", "epub", "docx", "md"]) {
+            run(`${CLI} build ${fmt}`, DIR);
+            const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(`.${fmt}`));
+            expect(files.length, `expected ${fmt} file`).toBeGreaterThan(0);
+        }
     });
 
     it("stats works", () => {
@@ -518,13 +517,12 @@ We conducted a systematic review following PRISMA guidelines. Databases searched
         expect(out).toMatch(/0 error|All good/);
     });
 
-    it("build html and docx work", () => {
-        run(`${CLI} build html`, DIR);
-        run(`${CLI} build docx`, DIR);
-        const htmlFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".html"));
-        const docxFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".docx"));
-        expect(htmlFiles.length).toBeGreaterThan(0);
-        expect(docxFiles.length).toBeGreaterThan(0);
+    it("build all formats", { timeout: 30_000 }, () => {
+        for (const fmt of ["html", "epub", "docx", "md"]) {
+            run(`${CLI} build ${fmt}`, DIR);
+            const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(`.${fmt}`));
+            expect(files.length, `expected ${fmt} file`).toBeGreaterThan(0);
+        }
     });
 });
 
@@ -610,10 +608,12 @@ The tool doesn't matter. **Consistency matters.**
         expect(out).toMatch(/0 error|All good/);
     });
 
-    it("build works", () => {
-        run(`${CLI} build html`, DIR);
-        const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".html"));
-        expect(files.length).toBeGreaterThan(0);
+    it("build all formats", { timeout: 30_000 }, () => {
+        for (const fmt of ["html", "epub", "docx", "md"]) {
+            run(`${CLI} build ${fmt}`, DIR);
+            const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(`.${fmt}`));
+            expect(files.length, `expected ${fmt} file`).toBeGreaterThan(0);
+        }
     });
 });
 
@@ -758,13 +758,12 @@ Yuki Tanaka is a poet and short story writer from Kyoto, now living in New York.
         expect(out).toMatch(/0 error|All good/);
     });
 
-    it("build html and epub work", () => {
-        run(`${CLI} build html`, DIR);
-        run(`${CLI} build epub`, DIR);
-        const htmlFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".html"));
-        const epubFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".epub"));
-        expect(htmlFiles.length).toBeGreaterThan(0);
-        expect(epubFiles.length).toBeGreaterThan(0);
+    it("build all formats", { timeout: 30_000 }, () => {
+        for (const fmt of ["html", "epub", "docx", "md"]) {
+            run(`${CLI} build ${fmt}`, DIR);
+            const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(`.${fmt}`));
+            expect(files.length, `expected ${fmt} file`).toBeGreaterThan(0);
+        }
     });
 
     it("html contains all authors", () => {
