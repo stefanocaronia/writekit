@@ -18,7 +18,16 @@ function escapeXml(text: string): string {
                 .replace(/"/g, "&quot;");
 }
 
+/** Fix bare boolean attributes for XHTML compliance */
+function fixXhtmlAttrs(html: string): string {
+        // data-footnote-ref (no value) → data-footnote-ref="true"
+        return html
+                .replace(/\sdata-footnote-ref(?=[\s>\/])/g, ' data-footnote-ref="true"')
+                .replace(/\sdata-footnote-backref(?=[\s>\/])/g, ' data-footnote-backref="true"');
+}
+
 function wrapXhtml(title: string, body: string, lang: string): string {
+        const fixedBody = fixXhtmlAttrs(body);
         return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="${lang}" lang="${lang}">
@@ -28,7 +37,7 @@ function wrapXhtml(title: string, body: string, lang: string): string {
     <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
-${body}
+${fixedBody}
 </body>
 </html>`;
 }
