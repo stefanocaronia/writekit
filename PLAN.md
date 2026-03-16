@@ -1,0 +1,167 @@
+---
+project: writekit
+version: 0.2.0
+last_updated: 2026-03-16
+status: v0.2 complete, npm publish pending
+last_published_npm: 0.1.0
+types_planned: [novel, collection, essay, paper, article]
+---
+
+# writekit — Roadmap
+
+## Context
+
+writekit è un CLI Node.js/TypeScript per creare testi strutturati (romanzi, saggi, paper, articoli, raccolte, poesia). Stato attuale: v0.1 funzionante con scaffolding, validazione, build 4 formati (HTML, ePub, PDF, DOCX), watcher, comandi add, sistema temi, report auto-generati.
+
+---
+
+## v0.1.0 — Rilascio iniziale
+
+- [x] **Rename repo GitHub** — novel-maker → writekit
+- [x] **Test suite minima** — 15 smoke test (vitest), tutti i comandi coperti
+- [x] **npm publish prep** — `npm pack` verificato, temi inclusi, 43 file
+- [x] **CI** — GitHub Actions `.github/workflows/ci.yml`: build + test su push/PR. Publish manuale via `npm publish`
+- [x] **Markdown completo in tutti i formati** — blockquote, tabelle, liste ol/ul, codice, grassetto/corsivo, link, hr in HTML, ePub, PDF, DOCX
+- [x] **Code review SOLID** — UUID fixato (crypto.randomUUID), duplicazioni eliminate, regex YAML rimosso, cast type rimosso
+- [x] **README.md del package** — scritto per scrittori non tecnici, include guida markdown e configurazione
+- [x] **Doc: workflow di esempio** — nel README: deploy HTML su GitHub Pages, allegare ePub a GitHub Release
+- [x] **LICENSE** — MIT (Stefano Caronia)
+
+---
+
+## v0.2.0 — Project Types
+
+Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init my-essay --type essay`).
+
+### Tipi
+
+| Tipo | Cartelle extra oltre il core | Note |
+|---|---|---|
+| **novel** (default) | characters/, world/, outline/, timeline.yaml | Struttura completa |
+| **collection** | outline/ | Racconti, poesie, saggi brevi. Più autori possibili |
+| **essay** | outline/ | Saggio singolo |
+| **paper** | outline/, bibliography.yaml | Accademico |
+| **article** | — (solo core) | Il più snello |
+
+> **poetry** rimossa come tipo: una raccolta di poesie usa `collection`.
+
+### Core condiviso (tutti i tipi)
+
+- config.yaml, style.yaml, synopsis.md, backcover.md
+- manuscript/, notes/, reference/, assets/, contributors/, build/
+
+### Impatto sul codice
+
+- [x] **Campo `type` in config.yaml** — determina scaffolding, validazione, comandi disponibili
+- [x] **Init per tipo** — `wk init` chiede il tipo (o `--type` flag)
+- [x] **Check per tipo** — il validator legge schemas dal type.yaml, valida solo dirs/files del tipo
+- [x] **Add per tipo** — `wk add character` bloccato su essay/paper/article
+- [x] **Reports per tipo** — ogni tipo definisce quali report generare (novel: tutti, essay: solo status)
+- [x] **Tipi modulari** — ogni tipo in `src/types/{type}/type.yaml` con dirs, files, schemas, reports, add_commands, sample_files
+- [x] **Frontmatter schemas per tipo** — required/optional fields definiti nel type.yaml, non hardcoded
+- [x] **Autori multipli** — config.yaml `author` accetta stringa o array. `wk add author` / `wk remove author`. Per-chapter author nel frontmatter. Cross-validation nel check. formatAuthors() in tutti i formati di build. Metadati Word nel DOCX.
+- [x] **bibliography.yaml** — `wk add source` per paper. Schema: author, title, year, url.
+- [x] **Agent instructions** — `AGENTS.md` generato all'init, rigenerato al build/watch. Istruzioni embedded in `node_modules/writekit/agents/` con file per tipo.
+- [x] **i18n label** — 17 lingue (it, en, fr, de, es, pt, ru, ar, hi, zh, ko, ja, nl, pl, tr, sv, el). Label editoriali in html, epub, docx, metadata.
+- [x] **Secondo tema builtin** — "minimal" (sans-serif, modern, system-ui)
+- [x] **Test per tutti i tipi** — 46 smoke test, copertura essay/paper/article/collection
+
+- [x] **contributors/** — cartella nel core di tutti i tipi. Schede con bio, roles auto-derivati dal config. Check bidirezionale config ↔ contributors.
+- [x] **backcover.md** — quarta di copertina nel core di tutti i tipi.
+- [x] **`wk sync`** — sincronizza campi derivati (roles, AGENTS.md, report). Chiamato automaticamente da build e check.
+- [x] **`wk add translator/editor/illustrator`** — crea scheda contributors + aggiorna config.
+- [x] **Validazione lingua** — check avvisa se lingua non supportata per i18n.
+
+### Ancora da fare per v0.2
+
+- [ ] **Build genera pagina "About the Author(s)"** — dal contenuto di contributors/, resa in tutti i formati (HTML, ePub, PDF, DOCX). Nomi in grassetto, bio sotto.
+- [ ] **Build genera quarta di copertina** — da backcover.md, resa in HTML e ePub.
+
+---
+
+## v0.3.0 — Raffinamento
+
+- [ ] **Strutture dati per tipo** — essay: thesis.md (tesi centrale), arguments/ (claim, evidence, counterargument). Paper: abstract.md, methodology.md. Article: pitch.md. Collection: nessuna aggiunta (usa contributors/).
+- [ ] **Immagini nel manuscript** — `![alt](path)` in HTML ed ePub
+- [ ] **DOCX template custom** — il template .docx (con stili Word: Heading 1, Normal, Quote, ecc.) fa parte del tema in `src/themes/{name}/template.docx`. `wk theme create` lo copia per customizzazione. Il builder lo usa come base. Se assente nel tema, usa stili default
+- [ ] **DOCX Table of Contents** — campo TOC generato dai Heading, Word lo aggiorna all'apertura. Configurabile in config.yaml: `toc: true`, `toc_position: start | end`
+- [ ] **DOCX temi** — font/colori dal tema attivo
+- [ ] **Doc temi nel README** — documentare il workflow temi: il default è builtin (dentro il package, intoccabile). `wk theme create` copia dal default in `themes/` nel progetto. L'utente modifica solo la copia. Aggiornamenti npm aggiornano il default senza toccare i temi custom
+- [ ] **Footnotes** — sintassi Pandoc/MultiMarkdown: `testo[^1]` + `[^1]: nota`. Estensione marked per il parsing. Resa in tutti i formati:
+  - HTML: sezione note a fondo capitolo/pagina
+  - ePub: popup o fondo capitolo
+  - PDF: fondo pagina nativo
+  - DOCX: footnote nativa Word
+- [ ] **PDF configurabile** — formato pagina (A4/A5/Letter/trim sizes), margini
+- [ ] **Print presets per self-publishing** — configurazione `print:` in config.yaml con `trim` (5x8in, 6x9in, A5), `bleed` (3mm), `gutter` (auto dal numero pagine), `preset` (kdp, ingramspark, lulu, custom). Il preset imposta automaticamente margini, trim e bleed secondo le specifiche della piattaforma
+- [ ] **DOCX template utente** — se `assets/template.docx` è presente, il builder usa quegli stili al posto di quelli del tema. Priorità: template utente > tema > default
+- [ ] **Incremental build nel watch** — solo capitoli cambiati
+- [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)
+- [ ] **`wk remove`** — rimuovere file con conferma
+- [ ] **`wk rename character/location`** — rinomina file, aggiorna frontmatter `name`, cerca/sostituisce nei capitoli e outline
+- [x] **Copertina** — immagine da `assets/cover.{jpg,png}` resa in tutti i formati: HTML (hero image), ePub (cover page), PDF (prima pagina), DOCX (prima pagina con immagine). Configurabile in config.yaml: `cover: assets/cover.jpg`
+
+---
+
+## v0.4.0 — Analisi e intelligenza
+
+- [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?
+- [ ] **Grafo relazioni** — report relazioni personaggi
+- [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
+- [ ] **Draft tracking** — stato draft per capitolo
+- [ ] **Changelog automatico** — diff tra build
+
+---
+
+## v0.5.0 — Estensioni
+
+- [ ] **Plugin system** — hook pre/post build
+- [ ] **Export Markdown singolo** — tutto in un .md (utile per LLM)
+- [ ] **Import da Markdown** — splitta un .md in capitoli
+- [ ] **Font embedding** — woff2/ttf in HTML e ePub
+- [ ] **Backup command** — `wk backup` crea zip del progetto
+
+---
+
+## Architettura
+
+### File critici
+- Comandi: `src/commands/*.ts`
+- Build: `src/lib/html.ts`, `src/lib/epub.ts`, `src/lib/pdf.ts`, `src/lib/docx.ts`
+- Validazione: `src/commands/check.ts`, `src/lib/schema.ts`
+- Report: `src/lib/reports.ts`
+- Temi: `src/lib/theme.ts`, `src/themes/*/`
+- Tipi: `src/lib/project-type.ts`, `src/types/*/type.yaml`
+- Parsing: `src/lib/parse.ts`, `src/lib/metadata.ts`
+
+### Utility condivise
+- `src/lib/fs-utils.ts` — fileExists, dirExists, assertProject, frontmatter, bookFilename
+- `src/lib/metadata.ts` — buildColophonLines
+- `src/lib/slug.ts` — slugify, padNumber
+- `src/lib/ui.ts` — colori e icone
+- `src/lib/schema.ts` — validateData (config, style, timeline)
+- `src/lib/project-type.ts` — loadType, isValidType, allTypeNames
+
+### Pre-release checklist
+
+For every new feature, command, or structural change, verify ALL of the following:
+
+- [ ] **Type definitions** — `src/types/*/type.yaml` updated (dirs, files, schemas, add_commands, reports, sample_files)
+- [ ] **Init** — `src/commands/init.ts` generates new files/dirs, README tree includes them
+- [ ] **Add** — `src/commands/add.ts` new subcommand if needed, registered in parent
+- [ ] **Remove** — `src/commands/remove.ts` updated if reversible
+- [ ] **Check** — `src/commands/check.ts` validates new files/fields/cross-references
+- [ ] **Sync** — `src/commands/sync.ts` handles any new derived fields
+- [ ] **Build** — `src/lib/html.ts`, `epub.ts`, `pdf.ts`, `docx.ts` render new content if applicable
+- [ ] **Watch** — `src/commands/watch.ts` picks up new file patterns if needed
+- [ ] **Schema** — `src/lib/schema.ts` updated for new config/style/timeline fields
+- [ ] **i18n** — `src/lib/i18n.ts` new labels added if there are new rendered strings
+- [ ] **Reports** — `src/lib/reports.ts` includes new data in relevant reports
+- [ ] **Agent instructions** — `src/agents/instructions.md` and `src/agents/types/*.md` updated
+- [ ] **CLI registration** — `src/cli.ts` imports and registers new commands
+- [ ] **README.md** — package README updated (commands table, project structure, features)
+- [ ] **Tests** — `test/smoke.test.ts` covers the new feature
+- [ ] **Build passes** — `npm run build` no errors
+- [ ] **Tests pass** — `npm test` all green
+- [ ] **PLAN.md** — feature marked as done, new ideas captured
+- [ ] **Pre-release checklist** — update this Pre-release checklist
