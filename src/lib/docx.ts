@@ -469,24 +469,35 @@ export async function buildDocx(
     await mkdir(buildDir, { recursive: true });
 
     const sections: {
-        properties: { page: { size: typeof PAGE_A5 } };
+        properties: { page: { size: typeof PAGE_A5; margin?: { top: number; bottom: number; left: number; right: number } } };
         children: (Paragraph | Table)[];
     }[] = [];
 
-    // Cover image page
+    // Cover image page — full bleed, no margins
     if (coverImagePath) {
         try {
-            const { ImageRun } = await import("docx");
             const imgData = await readFile(coverImagePath);
+            // A5 in EMU: 1 inch = 914400 EMU, A5 = 5.83 x 8.27 inches
+            // Page size in twips: PAGE_A5 = { width: 8391, height: 11906 }
+            // Convert twips to points for image: 1 twip = 1/20 pt, image uses pt-like units
+            // Width in px-like units for docx: A5 ≈ 420 x 595 points
+            const coverWidth = Math.round(PAGE_A5.width / 20 * 1.33); // twips to approx pixels
+            const coverHeight = Math.round(PAGE_A5.height / 20 * 1.33);
             sections.push({
-                properties: { page: { size: PAGE_A5 } },
+                properties: {
+                    page: {
+                        size: PAGE_A5,
+                        margin: { top: 0, bottom: 0, left: 0, right: 0 },
+                    },
+                },
                 children: [
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
+                        spacing: { before: 0, after: 0 },
                         children: [
                             new ImageRun({
                                 data: imgData,
-                                transformation: { width: 400, height: 580 },
+                                transformation: { width: coverWidth, height: coverHeight },
                                 type: "jpg",
                             }),
                         ],
