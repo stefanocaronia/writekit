@@ -50,6 +50,10 @@ Read `style.yaml` before writing or reviewing any text. It defines:
    - `wk add illustrator <name>` — add an illustrator (creates contributor sheet)
    - `wk add source <title>` — add a bibliography source (paper only)
    - `wk remove author <name>` — remove an author
+   - `wk remove chapter <number>` — remove a chapter and renumber remaining
+   - `wk remove character <name>` — remove a character sheet (novel only)
+   - `wk remove location <name>` — remove a worldbuilding entry (novel only)
+   - `wk remove note <name>` — remove a note
    - `wk sync` — synchronize derived fields (contributor roles, agents, reports)
    - `wk stats` — show project statistics (word count, reading time, chapter balance)
    - `wk check` — validate the project

@@ -144,6 +144,20 @@ describe("writekit smoke tests", () => {
         expect(config).not.toContain("Lucia Bianchi");
     });
 
+    it("remove character works", () => {
+        expect(existsSync(join(TEST_DIR, "characters", "marco-polo.md"))).toBe(true);
+        run(`${CLI} remove character "Marco Polo"`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "characters", "marco-polo.md"))).toBe(false);
+    });
+
+    it("remove chapter works and renumbers", () => {
+        // We have chapters 01 and 02. Remove 01, 02 becomes 01.
+        run(`${CLI} remove chapter 1`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "01-capitolo-primo.md"))).toBe(false);
+        // The former 02-la-tempesta.md should now be 01-la-tempesta.md
+        expect(existsSync(join(TEST_DIR, "manuscript", "01-la-tempesta.md"))).toBe(true);
+    });
+
     it("theme list works", () => {
         const out = run(`${CLI} theme list`, TEST_DIR);
         expect(out.toLowerCase()).toContain("default");

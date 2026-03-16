@@ -104,6 +104,10 @@ my-novel/
 | `wk add illustrator <name>` | Add an illustrator (creates contributor sheet) |
 | `wk add source <title>` | Add a bibliography source (paper only) |
 | `wk remove author <name>` | Remove an author from the project |
+| `wk remove chapter <number>` | Remove a chapter and renumber remaining |
+| `wk remove character <name>` | Remove a character sheet |
+| `wk remove location <name>` | Remove a worldbuilding entry |
+| `wk remove note <name>` | Remove a note |
 
 ### Building your book
 
