@@ -65,6 +65,7 @@ my-novel/
 ├── style.yaml          Writing rules — point of view, tense, tone
 ├── timeline.yaml       Key events in chronological order
 ├── synopsis.md         A short summary of your book
+├── backcover.md        Back cover text — the reader-facing pitch
 │
 ├── outline/            Plan your story before writing
 │   ├── plot.md         The overall arc (acts, major beats)
@@ -73,6 +74,7 @@ my-novel/
 ├── manuscript/         Your actual text — one file per chapter
 ├── characters/         Character sheets (name, role, backstory)
 ├── world/              Locations, cultures, systems
+├── contributors/       Author, translator, editor bios
 ├── notes/              Free-form ideas, research, anything
 ├── reference/          External material (images, PDFs, sources)
 ├── assets/             Cover art, illustrations
@@ -96,7 +98,10 @@ my-novel/
 | `wk add location <name>` | Add a place to your world (novel only) |
 | `wk add note <title>` | Add a note |
 | `wk add event <description>` | Add a timeline event (novel only) |
-| `wk add author <name>` | Add an author to the project |
+| `wk add author <name>` | Add an author (creates contributor sheet) |
+| `wk add translator <name>` | Add a translator (creates contributor sheet) |
+| `wk add editor <name>` | Add an editor (creates contributor sheet) |
+| `wk add illustrator <name>` | Add an illustrator (creates contributor sheet) |
 | `wk add source <title>` | Add a bibliography source (paper only) |
 | `wk remove author <name>` | Remove an author from the project |
 
@@ -118,6 +123,7 @@ my-novel/
 |---|---|
 | `wk check` | Validate your project — checks for missing files, broken YAML, and formatting issues |
 | `wk watch` | Watch your files and automatically rebuild when you save. Also runs validation on every change |
+| `wk sync` | Synchronize derived fields — contributor roles, AGENTS.md, reports |
 
 ### Themes
 
@@ -129,7 +135,12 @@ Themes control how your book looks in HTML and ePub formats.
 | `wk theme use <name>` | Switch to a different theme |
 | `wk theme create <name>` | Create your own theme (copies the default as a starting point) |
 
-The default theme is built into writekit and cannot be modified. When you create a custom theme, you get a copy in your project's `themes/` folder that you can edit freely. Updates to writekit will refresh the default theme without touching your custom themes.
+Writekit ships with two themes:
+
+- **default** — serif, traditional book typography (Georgia)
+- **minimal** — clean sans-serif, modern (system-ui)
+
+The built-in themes cannot be modified. When you create a custom theme, you get a copy in your project's `themes/` folder that you can edit freely. Updates to writekit will refresh the built-in themes without touching your custom themes.
 
 ## Writing in Markdown
 
@@ -186,6 +197,8 @@ theme: default       # Which theme to use
 ```
 
 Other fields (subtitle, genre, ISBN, publisher, etc.) are optional and used in the book's colophon page.
+
+The `language` field also controls the editorial labels in your book — "Table of Contents", "Colophon", etc. are automatically translated. Supported: English, Italian, French, German, Spanish, Portuguese, Russian, Arabic, Hindi, Chinese, Korean, Japanese, Dutch, Polish, Turkish, Swedish, Greek.
 
 ### style.yaml
 

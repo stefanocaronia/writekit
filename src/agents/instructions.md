@@ -23,9 +23,11 @@ Read `style.yaml` before writing or reviewing any text. It defines:
 - **characters/** — character sheets (novel/collection only). Read before writing scenes with those characters. Respect their appearance, personality, voice, and arc.
 - **world/** — worldbuilding entries (novel only). Locations, systems, cultures. Be consistent with established facts.
 - **timeline.yaml** — chronological events (novel only). Do not contradict the timeline.
+- **contributors/** — bios of authors, translators, editors, illustrators. The `roles` field is auto-derived from config.yaml — do not edit it manually. Edit only the bio text.
 - **notes/** — free-form material. Read for context but do not modify unless asked.
 - **reference/** — external material provided by the author. Read-only.
 - **synopsis.md** — the overall summary. Align your writing with it.
+- **backcover.md** — the back cover pitch. Helps understand the book's intended audience and angle.
 
 ## Writing rules
 
@@ -41,9 +43,13 @@ Read `style.yaml` before writing or reviewing any text. It defines:
    - `wk add location <name>` — add a worldbuilding entry (novel only)
    - `wk add note <title>` — add a note
    - `wk add event <desc>` — add a timeline event (novel only)
-   - `wk add author <name>` — add an author to config.yaml
+   - `wk add author <name>` — add an author (creates contributor sheet)
+   - `wk add translator <name>` — add a translator (creates contributor sheet)
+   - `wk add editor <name>` — add an editor (creates contributor sheet)
+   - `wk add illustrator <name>` — add an illustrator (creates contributor sheet)
    - `wk add source <title>` — add a bibliography source (paper only)
    - `wk remove author <name>` — remove an author
+   - `wk sync` — synchronize derived fields (contributor roles, agents, reports)
    - `wk check` — validate the project
    - `wk build [format]` — build output (html, epub, pdf, docx, all)
 8. **Do not modify config.yaml, style.yaml, or timeline.yaml** unless explicitly asked. Use `wk add` and `wk remove` commands instead.
