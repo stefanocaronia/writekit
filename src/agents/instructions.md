@@ -50,6 +50,7 @@ Read `style.yaml` before writing or reviewing any text. It defines:
    - `wk add source <title>` — add a bibliography source (paper only)
    - `wk remove author <name>` — remove an author
    - `wk sync` — synchronize derived fields (contributor roles, agents, reports)
+   - `wk stats` — show project statistics (word count, reading time, chapter balance)
    - `wk check` — validate the project
    - `wk build [format]` — build output (html, epub, pdf, docx, all)
 8. **Do not modify config.yaml, style.yaml, or timeline.yaml** unless explicitly asked. Use `wk add` and `wk remove` commands instead.

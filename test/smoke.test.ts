@@ -149,6 +149,12 @@ describe("writekit smoke tests", () => {
         expect(out.toLowerCase()).toContain("default");
     });
 
+    it("stats works", () => {
+        const out = run(`${CLI} stats`, TEST_DIR);
+        expect(out).toContain("Chapters");
+        expect(out).toContain("Total words");
+    });
+
     it("build clean works", () => {
         run(`${CLI} build clean`, TEST_DIR);
         const buildDir = join(TEST_DIR, "build");
