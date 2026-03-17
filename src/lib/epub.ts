@@ -9,6 +9,8 @@ import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import { collectImagePaths, rewriteImagePaths } from "./images.js";
+import { loadTypography } from "./typography.js";
+import { typographyClasses, typographyCssVars } from "./typography.js";
 
 function escapeXml(text: string): string {
         return text
@@ -29,7 +31,7 @@ function fixXhtml(html: string): string {
                 .replace(/<(img|br|hr|input|meta|link)(\s[^>]*?)?\s*(?<!\/)>/g, '<$1$2 />');
 }
 
-function wrapXhtml(title: string, body: string, lang: string): string {
+function wrapXhtml(title: string, body: string, lang: string, bodyClass = ""): string {
         const fixedBody = fixXhtml(body);
         return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
@@ -39,7 +41,7 @@ function wrapXhtml(title: string, body: string, lang: string): string {
     <title>${escapeXml(title)}</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
-<body>
+<body${bodyClass ? ` class="${bodyClass}"` : ""}>
 ${fixedBody}
 </body>
 </html>`;
@@ -227,6 +229,10 @@ export async function buildEpub(
         await mkdir(buildDir, { recursive: true });
         const outPath = join(buildDir, filename);
 
+        const typo = await loadTypography(projectDir);
+        const typoClass = typographyClasses(typo);
+        const typoVars = typographyCssVars(typo);
+
         const zip = new yazl.ZipFile();
 
         // mimetype must be first, uncompressed
@@ -262,7 +268,9 @@ export async function buildEpub(
         const hasBackcover = !!backcover;
         const hasAbout = contributors.some((c) => c.bio);
         zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images)), "OEBPS/content.opf");
-        zip.addBuffer(Buffer.from(theme.epubCss), "OEBPS/style.css");
+        // Prepend typography CSS variables to theme CSS
+        const epubCss = `:root { ${typoVars} }\n${theme.epubCss}`;
+        zip.addBuffer(Buffer.from(epubCss), "OEBPS/style.css");
         zip.addBuffer(Buffer.from(generateTitlePage(config)), "OEBPS/titlepage.xhtml");
         zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters)), "OEBPS/toc.xhtml");
 
@@ -270,7 +278,7 @@ export async function buildEpub(
         for (let i = 0; i < chapters.length; i++) {
                 const body = rewriteImagePaths(chapters[i].body, pathMapping);
                 const htmlBody = `<h1>${escapeXml(chapters[i].title)}</h1>\n` + await marked(body);
-                const xhtml = wrapXhtml(chapters[i].title, htmlBody, config.language || "it");
+                const xhtml = wrapXhtml(chapters[i].title, htmlBody, config.language || "it", typoClass);
                 zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
         }
 

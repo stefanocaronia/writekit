@@ -11,6 +11,7 @@ import { loadTheme, type Theme } from "../lib/theme.js";
 import { assertProject, bookFilename } from "../lib/fs-utils.js";
 import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
+import { loadTypography } from "../lib/typography.js";
 
 const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
 type Format = (typeof SUPPORTED_FORMATS)[number];
@@ -28,7 +29,8 @@ async function buildHtml(
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const html = await renderBook(config, chapters, theme, contributors, backcover, coverPath, projectDir);
+    const typography = await loadTypography(projectDir);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverPath, projectDir, typography);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 

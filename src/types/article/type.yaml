@@ -1,5 +1,17 @@
 name: Article
 description: Article or short non-fiction — the simplest structure
+typography:
+    paragraph_indent: "0"
+    paragraph_spacing: 0.3rem
+    text_align: left
+    first_paragraph_indent: false
+    heading_style: bold
+    blockquote_style: indent
+    scene_break: "---"
+    chapter_opening: small
+    line_height: "1.5"
+    hyphenation: false
+    orphans_widows: 2
 dirs:
     - manuscript
     - contributors

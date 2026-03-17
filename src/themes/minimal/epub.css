@@ -26,9 +26,17 @@ h3 {
 }
 
 p {
-  margin: 0 0 0.3em 0;
-  text-align: left;
+  margin: 0;
+  margin-bottom: var(--paragraph-spacing, 0);
+  line-height: var(--line-height, 1.6);
 }
+.typo-justify p { text-align: justify; }
+.typo-left p { text-align: left; }
+.typo-indent p + p { text-indent: var(--paragraph-indent, 1.5em); }
+.typo-no-indent p + p { text-indent: 0; }
+.typo-no-first-indent h1 + p,
+.typo-no-first-indent h2 + p,
+.typo-no-first-indent h3 + p { text-indent: 0 !important; }
 
 blockquote {
   margin: 1em 0;

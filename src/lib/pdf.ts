@@ -6,6 +6,7 @@ import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { renderBook } from "./html.js";
 import { getPreset, DEFAULT_PRESET, type PrintPreset } from "./print-presets.js";
+import { loadTypography } from "./typography.js";
 
 const CHROME_PATHS_WIN = [
     process.env.PROGRAMFILES + "\\Google\\Chrome\\Application\\chrome.exe",
@@ -69,7 +70,8 @@ export async function buildPdf(
     await mkdir(buildDir, { recursive: true });
 
     // Generate HTML first
-    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath, projectDir);
+    const typography = await loadTypography(projectDir);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath, projectDir, typography);
     const htmlPath = join(buildDir, "_temp.html");
     await writeFile(htmlPath, html, "utf-8");
 

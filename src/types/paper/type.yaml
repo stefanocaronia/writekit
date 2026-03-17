@@ -1,5 +1,17 @@
 name: Paper
 description: Academic paper with bibliography
+typography:
+    paragraph_indent: "0"
+    paragraph_spacing: 0.5rem
+    text_align: justify
+    first_paragraph_indent: false
+    heading_style: bold
+    blockquote_style: indent
+    scene_break: "---"
+    chapter_opening: small
+    line_height: "2.0"
+    hyphenation: true
+    orphans_widows: 3
 dirs:
     - outline
     - manuscript

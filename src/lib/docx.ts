@@ -25,6 +25,7 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
 import type { DocxStyle } from "./theme.js";
+import { loadTypography } from "./typography.js";
 // Template support removed — externalStyles doesn't work reliably. See PLAN.md.
 
 // Module-level style, set by buildDocx before rendering
@@ -32,6 +33,9 @@ let FONT = "Georgia";
 let ACCENT = "8B4513";
 let TEXT_COLOR = "2C2C2C";
 let MUTED = "666666";
+let TYPO_INDENT = convertInchesToTwip(0.3);
+let TYPO_SPACING = 0;
+let TYPO_ALIGN: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.JUSTIFIED;
 
 // ── Inline parsing ──────────────────────────────────────────────────────────
 
@@ -344,12 +348,13 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageDat
             }
         }
 
-        // Regular paragraph — book style: no inter-paragraph spacing, indent on p+p
+        // Regular paragraph — typography-driven
         paragraphs.push(
             new Paragraph({
                 children: parseInline(line, footnotes),
-                alignment: AlignmentType.JUSTIFIED,
-                indent: lastWasParagraph ? { firstLine: convertInchesToTwip(0.3) } : undefined,
+                alignment: TYPO_ALIGN,
+                indent: lastWasParagraph && TYPO_INDENT > 0 ? { firstLine: TYPO_INDENT } : undefined,
+                spacing: TYPO_SPACING > 0 ? { after: TYPO_SPACING } : undefined,
             }),
         );
         lastWasParagraph = true;
@@ -461,6 +466,12 @@ export async function buildDocx(
     coverImagePath?: string | null,
     docxStyle?: DocxStyle,
 ): Promise<string> {
+    // Load typography and set module-level vars
+    const typo = await loadTypography(projectDir);
+    TYPO_INDENT = typo.paragraphIndent === "0" ? 0 : convertInchesToTwip(0.3);
+    TYPO_SPACING = typo.paragraphSpacing === "0" ? 0 : 200;
+    TYPO_ALIGN = typo.textAlign === "left" ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
+
     // Apply theme style
     if (docxStyle) {
         FONT = docxStyle.font;

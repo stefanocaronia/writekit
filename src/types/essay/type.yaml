@@ -1,5 +1,17 @@
 name: Essay
 description: Single essay or long-form non-fiction
+typography:
+    paragraph_indent: 1.5rem
+    paragraph_spacing: "0"
+    text_align: justify
+    first_paragraph_indent: false
+    heading_style: serif
+    blockquote_style: italic
+    scene_break: "---"
+    chapter_opening: medium
+    line_height: "1.6"
+    hyphenation: true
+    orphans_widows: 2
 dirs:
     - outline
     - manuscript

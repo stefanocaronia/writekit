@@ -6,6 +6,8 @@ import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
+import type { Typography } from "./typography.js";
+import { typographyClasses, typographyCssVars } from "./typography.js";
 
 const JS = `
     // Smooth scroll for TOC links
@@ -39,6 +41,7 @@ export async function renderBook(
     backcover?: string,
     coverImagePath?: string | null,
     projectDir?: string,
+    typography?: Typography,
 ): Promise<string> {
     const labels = getLabels(config.language);
 
@@ -153,7 +156,7 @@ export async function renderBook(
     <title>${escapeHtml(config.title)}</title>
     <style>${theme.htmlCss}</style>
 </head>
-<body>
+<body class="${typography ? typographyClasses(typography) : ""}" style="${typography ? typographyCssVars(typography) : ""}">
     ${coverImageSection}
     ${cover}${showToc ? `\n    <div id="toc">${toc}</div>` : ""}
     ${chapterSections}${backcoverSection}${aboutSection}${colophon}

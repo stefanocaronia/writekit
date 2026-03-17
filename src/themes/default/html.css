@@ -116,15 +116,33 @@ body {
   margin-top: 2rem;
   margin-bottom: 0.75rem;
 }
+/* Typography-driven paragraph styles */
 .chapter p {
   margin: 0;
-  text-align: justify;
-  hyphens: auto;
-  line-height: 1.7;
+  margin-bottom: var(--paragraph-spacing, 0);
+  line-height: var(--line-height, 1.6);
+  orphans: var(--orphans, 2);
+  widows: var(--widows, 2);
 }
-.chapter p + p {
-  text-indent: 1.5rem;
-}
+.typo-justify .chapter p { text-align: justify; }
+.typo-left .chapter p { text-align: left; }
+.typo-hyphens .chapter p { hyphens: auto; }
+.typo-no-hyphens .chapter p { hyphens: none; }
+.typo-indent .chapter p + p { text-indent: var(--paragraph-indent, 1.5rem); }
+.typo-no-indent .chapter p + p { text-indent: 0; }
+.typo-no-first-indent .chapter h1 + p,
+.typo-no-first-indent .chapter h2 + p,
+.typo-no-first-indent .chapter h3 + p { text-indent: 0 !important; }
+/* Chapter opening */
+.typo-opening-large .chapter { padding-top: 35vh; }
+.typo-opening-medium .chapter { padding-top: 20vh; }
+.typo-opening-small .chapter { padding-top: 2rem; }
+/* Scene breaks */
+.chapter hr { border: none; text-align: center; margin: 2rem 0; }
+.typo-scene-stars .chapter hr::after { content: "* * *"; color: var(--muted); letter-spacing: 0.5em; }
+.typo-scene-dash .chapter hr { border-top: 1px solid var(--border); }
+/* Blockquote styles */
+.typo-blockquote-italic .chapter blockquote { font-style: italic; }
 .chapter blockquote {
   margin: 1.5rem 0;
   padding: 0.5rem 1.5rem;
