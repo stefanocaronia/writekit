@@ -8,7 +8,7 @@ body {
 h1 {
   font-size: 1.8em;
   font-weight: normal;
-  color: #8b4513;
+  color: #1a1a1a;
   margin-bottom: 1em;
 }
 
@@ -37,8 +37,8 @@ p + p {
 blockquote {
   margin: 1em 0;
   padding: 0.3em 1em;
-  border-left: 3px solid #e0ddd5;
-  color: #666;
+  border-left: 3px solid #ccc;
+  color: #555;
   font-style: italic;
 }
 
@@ -50,7 +50,7 @@ hr {
 
 hr::after {
   content: "* * *";
-  color: #666;
+  color: #555;
   letter-spacing: 0.5em;
 }
 
@@ -64,9 +64,9 @@ hr::after {
 .colophon {
   margin-top: 3em;
   padding-top: 1em;
-  border-top: 1px solid #e0ddd5;
+  border-top: 1px solid #ccc;
   font-size: 0.85em;
-  color: #666;
+  color: #555;
 }
 
 .colophon p {
@@ -83,14 +83,14 @@ hr::after {
 .footnotes {
   margin-top: 2em;
   padding-top: 1em;
-  border-top: 1px solid #e0ddd5;
+  border-top: 1px solid #ccc;
   font-size: 0.85em;
-  color: #666;
+  color: #555;
 }
 .footnotes li {
   margin-bottom: 0.3em;
 }
 sup a {
-  color: #8b4513;
+  color: #1a1a1a;
   text-decoration: none;
 }
