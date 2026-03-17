@@ -14,7 +14,7 @@ You need [Node.js](https://nodejs.org/) (version 18 or later). Then open a termi
 npm install -g writekit
 ```
 
-This gives you the `wk` command.
+This gives you the `writekit` command. You can also use the shorter alias `wk`.
 
 ### 2. Create a project
 
