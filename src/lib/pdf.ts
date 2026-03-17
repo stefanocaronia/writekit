@@ -111,9 +111,9 @@ export async function buildPdf(
                 justify-content: center;
             }
             .cover-page .cover-image {
-                max-width: ${preset.width}mm;
-                max-height: ${preset.height}mm;
-                object-fit: contain;
+                width: ${preset.width}mm;
+                height: ${preset.height}mm;
+                object-fit: fill;
             }`,
         });
 
