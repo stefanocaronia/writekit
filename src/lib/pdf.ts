@@ -102,18 +102,17 @@ export async function buildPdf(
 
             /* Cover page: full bleed, no padding */
             .cover-page {
-                padding: 0;
-                margin: 0;
-                width: ${preset.width}mm;
-                height: ${preset.height}mm;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: none !important;
+                text-align: center;
             }
             .cover-page .cover-image {
-                width: ${preset.width}mm;
-                height: ${preset.height}mm;
-                object-fit: fill;
+                width: ${preset.width}mm !important;
+                height: ${preset.height}mm !important;
+                max-width: none !important;
+                max-height: none !important;
+                display: block;
             }`,
         });
 
