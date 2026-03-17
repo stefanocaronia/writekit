@@ -239,3 +239,54 @@ sup a {
 sup a:hover {
   text-decoration: underline;
 }
+
+/* --- Print / PDF --- */
+@media print {
+  :root {
+    --bg: #ffffff;
+  }
+  body {
+    background: #fff;
+  }
+  .cover {
+    page-break-after: always;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    border: none;
+  }
+  .cover-image {
+    max-width: 100%;
+    max-height: 100vh;
+    width: auto;
+    height: auto;
+    box-shadow: none;
+  }
+  #toc {
+    page-break-after: always;
+  }
+  .chapter {
+    page-break-before: always;
+    border: none;
+  }
+  .backcover {
+    page-break-before: always;
+    border: none;
+  }
+  .about-authors {
+    page-break-before: always;
+    border: none;
+  }
+  .colophon {
+    page-break-before: always;
+    border: none;
+  }
+  .chapter-nav {
+    display: none;
+  }
+}
