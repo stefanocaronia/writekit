@@ -25,8 +25,8 @@ function fixXhtml(html: string): string {
                 .replace(/\sdata-footnote-ref(?=[\s>\/])/g, ' data-footnote-ref="true"')
                 .replace(/\sdata-footnote-backref(?=[\s>\/])/g, ' data-footnote-backref="true"')
                 .replace(/\sdata-footnotes(?=[\s>\/])/g, ' data-footnotes="true"')
-                // Self-close void elements: <img ...> → <img ... />
-                .replace(/<(img|br|hr|input|meta|link)(\s[^>]*?)?>/g, '<$1$2 />');
+                // Self-close void elements: <img ...> → <img ... /> (skip already closed)
+                .replace(/<(img|br|hr|input|meta|link)(\s[^>]*?)?\s*(?<!\/)>/g, '<$1$2 />');
 }
 
 function wrapXhtml(title: string, body: string, lang: string): string {
