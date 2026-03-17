@@ -290,6 +290,17 @@ From reluctant ally to active participant in uncovering the truth.
         expect(out).toMatch(/0 error|All good/);
     });
 
+    it("rename character works", () => {
+        run(`${CLI} rename character "Giovanni Bellini" "Giovanni Moretti"`, DIR);
+        expect(existsSync(join(DIR, "characters", "giovanni-moretti.md"))).toBe(true);
+        expect(existsSync(join(DIR, "characters", "giovanni-bellini.md"))).toBe(false);
+    });
+
+    it("remove chapter works and renumbers", () => {
+        run(`${CLI} remove chapter 3`, DIR);
+        expect(existsSync(join(DIR, "manuscript", "03-the-secret.md"))).toBe(false);
+    });
+
     it("stats works", () => {
         const out = run(`${CLI} stats`, DIR);
         expect(out).toContain("The Fountain of Secrets");
@@ -334,17 +345,6 @@ From reluctant ally to active participant in uncovering the truth.
         expect(existsSync(join(DIR, "build", "reports", "cast.md"))).toBe(true);
         expect(existsSync(join(DIR, "build", "reports", "locations.md"))).toBe(true);
         expect(existsSync(join(DIR, "build", "reports", "timeline.md"))).toBe(true);
-    });
-
-    it("rename character works", () => {
-        run(`${CLI} rename character "Giovanni Bellini" "Giovanni Moretti"`, DIR);
-        expect(existsSync(join(DIR, "characters", "giovanni-moretti.md"))).toBe(true);
-        expect(existsSync(join(DIR, "characters", "giovanni-bellini.md"))).toBe(false);
-    });
-
-    it("remove chapter works and renumbers", () => {
-        run(`${CLI} remove chapter 3`, DIR);
-        expect(existsSync(join(DIR, "manuscript", "03-the-secret.md"))).toBe(false);
     });
 
     it("theme list works", () => {
