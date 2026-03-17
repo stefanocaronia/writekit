@@ -670,13 +670,7 @@ export async function buildDocx(
     const colophonLines = buildColophonLines(config);
     if (colophonLines.length > 0) {
         const colophonChildren: Paragraph[] = [
-            new Paragraph({
-                heading: HeadingLevel.HEADING_2,
-                children: [
-                    new TextRun({ text: labels.colophon, font: FONT, color: ACCENT }),
-                ],
-                spacing: { before: 600, after: 400 },
-            }),
+            new Paragraph({ spacing: { before: 600 } }),
         ];
 
         for (const line of colophonLines) {

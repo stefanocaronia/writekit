@@ -64,7 +64,7 @@ export function renderBookMd(
     // Colophon
     const colophonLines = buildColophonLines(config);
     if (colophonLines.length > 0) {
-        lines.push(`## ${labels.colophon}`);
+        lines.push("---");
         lines.push("");
         for (const line of colophonLines) {
             lines.push(line);

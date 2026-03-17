@@ -8,19 +8,23 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, copyFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, copyFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
 const CLI = `node ${join(ROOT, "dist", "cli.js")}`;
 const SANDBOX = join(ROOT, "sandbox");
 const COVER_MOCKUP = join(ROOT, "assets", "cover-mockup.png");
+const IMAGE_MOCKUP = join(ROOT, "assets", "image-mockup.png");
 
 function installCover(projectDir: string): void {
     const assetsDir = join(projectDir, "assets");
     mkdirSync(assetsDir, { recursive: true });
     if (existsSync(COVER_MOCKUP)) {
         copyFileSync(COVER_MOCKUP, join(assetsDir, "cover.png"));
+    }
+    if (existsSync(IMAGE_MOCKUP)) {
+        copyFileSync(IMAGE_MOCKUP, join(assetsDir, "image.png"));
     }
 }
 
@@ -31,6 +35,18 @@ function run(cmd: string, cwd?: string): string {
         timeout: 60_000,
     });
 }
+
+// Reusable text blocks for bulk content
+const LOREM = [
+    "The city stretched out below them like a map drawn by a drunk cartographer — streets that curved when they should have been straight, alleys that dead-ended into walls covered in graffiti and climbing jasmine. From up here, on the roof of the old observatory, you could see the entire valley: the river winding through its center like a silver thread, the bridges crossing it at irregular intervals, the clusters of terracotta roofs interrupted by the occasional glass tower.",
+    "There was a time, not so long ago, when all of this had been fields. Wheat fields, mostly, with the occasional vineyard breaking the monotony of gold with streaks of deep green. The old photographs in the municipal archive showed a landscape that was almost unrecognizable — vast and empty and silent, with only the church steeple and the water tower rising above the horizon line.",
+    "Professor Marchetti had spent forty years studying the transformation. She had measured it in census data and building permits, in water consumption records and electricity usage patterns. She had mapped the expansion year by year, decade by decade, watching the city grow like an organism — first slowly, then with alarming speed, consuming the countryside the way a fire consumes dry grass.",
+    "But numbers, she knew, told only part of the story. The real transformation was happening at a level that no statistic could capture — in the way people walked through the streets, in the conversations they had in cafés, in the dreams they dreamed at night. The city was not just growing; it was *becoming* something. Something new and strange and not entirely human.",
+    "The question that kept her awake at night, the question she had been circling for four decades without ever quite reaching its center, was simple: *What was it becoming?* And the corollary, which was perhaps even more troubling: *Was there anything anyone could do to stop it?*",
+    "In the basement of the university library, behind a locked door that required three separate keys and a six-digit code, there was a room that contained the answer. Or at least, it contained the closest thing to an answer that anyone had ever found. The room was small — barely large enough for a desk, a chair, and a single filing cabinet — and it smelled of dust and old paper and something else, something faintly chemical, like the residue of a long-extinguished fire.",
+    "The filing cabinet held seven folders. Each folder contained exactly thirteen pages. Each page was covered in handwriting so small and dense that it required a magnifying glass to read. The handwriting belonged to a man named Alessandro Ferretti, who had been the city's chief urban planner from 1952 to 1971, and who had disappeared one Tuesday morning in November of that year without leaving any trace except these ninety-one pages of closely written text.",
+    "What the pages described was, depending on your perspective, either the most brilliant piece of urban theory ever written or the ravings of a man who had lost his mind. Marchetti had read them seventeen times. Each time, she came away with a different understanding. Each time, she was more convinced that Ferretti had been right about everything.",
+].join("\n\n");
 
 function writeContent(projectDir: string, path: string, content: string): void {
     writeFileSync(join(projectDir, path), content);
@@ -45,9 +61,8 @@ describe("integration: novel", () => {
 
     beforeAll(() => {
         mkdirSync(SANDBOX, { recursive: true });
-        if (!existsSync(DIR)) {
-            run(`${CLI} init int-novel --yes --type novel`, SANDBOX);
-        }
+        rmSync(DIR, { recursive: true, force: true });
+        run(`${CLI} init int-novel --yes --type novel`, SANDBOX);
         installCover(DIR);
     });
 
@@ -72,6 +87,8 @@ He remembered his grandmother's words. She had been right about many things — 
 
 ## The Meeting
 
+![The old door](assets/image.png)
+
 Marco reached the heavy wooden door and knocked three times.
 
 - First knock: silence
@@ -79,6 +96,20 @@ Marco reached the heavy wooden door and knocked three times.
 - Third knock: the door creaked open
 
 "You're late," whispered Elena. "Come in before someone sees you."
+
+The apartment smelled of old books and coffee. Elena had always surrounded herself with words — shelves of them, stacks of them, towers of them that threatened to topple at the slightest breeze. Marco navigated the narrow passage between two particularly precarious columns of paperbacks and settled into the worn armchair by the window.
+
+"Tell me everything," she said, pouring him a glass of wine without asking whether he wanted one. "Start from the beginning. Don't leave anything out."
+
+Marco took a deep breath. Where to begin? With the letter, perhaps. The letter that had arrived three weeks ago, postmarked from a city that no longer existed on any map. The letter written in his grandmother's handwriting, despite the fact that she had been dead for fifteen years.
+
+"It started with a letter," he said. And then he told her everything.
+
+The rain continued to fall outside, drumming against the windows in an irregular rhythm that seemed almost deliberate, as if the city itself were trying to listen to his story. Elena sat perfectly still throughout, her wine untouched, her eyes fixed on some point beyond the wall, as if she could see the events unfolding in the plaster.
+
+When he finished, the silence that followed was not empty but full — full of implications, full of questions, full of the weight of secrets that had been buried for decades and were now clawing their way back to the surface.
+
+"The fountain," Elena said at last. "It always comes back to the fountain."
 
 [^1]: It was actually a Tuesday, but the weather didn't care about the day of the week.
 `);
@@ -108,6 +139,20 @@ Elena watched Marco shake the rain from his coat. He looked older than she remem
 | Giovanni | Unknown | Missing |
 
 [^1]: Then again, hiding from the authorities tends to age a person.
+
+The streets were empty now, washed clean by the deluge. Water ran in rivers along the gutters, carrying with it the debris of the day — a newspaper, a crushed cigarette packet, a single red rose that someone had dropped or discarded. Elena watched it all from her window, the glass fogging with her breath.
+
+She had known Marco would come back eventually. They always came back, the ones who had left. The city had a way of calling its children home, a gravitational pull that no amount of distance or time could weaken. She had felt it herself, during those years in London, a persistent tug at the base of her skull, a whisper in a language she could not quite hear but could not ignore.
+
+"What do you know about the catacombs?" Marco asked suddenly.
+
+Elena turned from the window. "More than I should," she said. "And less than I need to."
+
+The storm was passing now, moving east towards the mountains. In its wake, the city seemed to exhale, releasing the tension that had built up over days of oppressive heat. Somewhere in the distance, a church bell began to ring — not the hour, but something else. A signal, perhaps. A warning.
+
+Marco recognized the pattern. Three short, one long, three short. The same sequence his grandmother used to tap on the kitchen table when she wanted his attention.
+
+"We need to go," he said. "Now."
 `);
 
         // Synopsis
@@ -281,7 +326,7 @@ From reluctant ally to active participant in uncovering the truth.
         const md = readFileSync(join(DIR, "build", files[0]), "utf-8");
         expect(md).toContain("Table of Contents");
         expect(md).toContain("The Fountain");
-        expect(md).toContain("Colophon");
+        expect(md).toContain("2026");
     });
 
     it("reports generated", () => {
@@ -318,9 +363,8 @@ describe("integration: essay", () => {
 
     beforeAll(() => {
         mkdirSync(SANDBOX, { recursive: true });
-        if (!existsSync(DIR)) {
-            run(`${CLI} init int-essay --yes --type essay`, SANDBOX);
-        }
+        rmSync(DIR, { recursive: true, force: true });
+        run(`${CLI} init int-essay --yes --type essay`, SANDBOX);
         installCover(DIR);
     });
 
@@ -362,6 +406,8 @@ When was the last time you experienced true silence in a city? Not the absence o
 
 This essay argues that the systematic elimination of silence from urban spaces represents not merely an aesthetic loss but a profound shift in how we inhabit and understand our cities.
 
+${LOREM}
+
 [^1]: The philosopher Max Picard called this "the silence that is the ground of all being."
 `);
 
@@ -377,6 +423,8 @@ Medieval cities were noisy in their own way — the clatter of hooves on cobbles
 But these sounds had **rhythm**. They rose and fell with the day. At night, silence returned.
 
 > "The city that never sleeps is the city that never thinks." — Jane Jacobs
+
+${LOREM}
 `);
 
         writeContent(DIR, "synopsis.md", `# The Architecture of Silence
@@ -443,9 +491,8 @@ describe("integration: paper", () => {
 
     beforeAll(() => {
         mkdirSync(SANDBOX, { recursive: true });
-        if (!existsSync(DIR)) {
-            run(`${CLI} init int-paper --yes --type paper`, SANDBOX);
-        }
+        rmSync(DIR, { recursive: true, force: true });
+        run(`${CLI} init int-paper --yes --type paper`, SANDBOX);
         installCover(DIR);
     });
 
@@ -486,6 +533,8 @@ draft: 1
 # Introduction
 
 The relationship between nature and human wellbeing has been a subject of inquiry since at least the 19th century[^1]. However, it is only in the last two decades that rigorous empirical research has begun to quantify these effects.
+
+${LOREM}
 
 [^1]: See Olmsted's 1865 report on the therapeutic value of Yosemite Valley.
 `);
@@ -548,9 +597,8 @@ describe("integration: article", () => {
 
     beforeAll(() => {
         mkdirSync(SANDBOX, { recursive: true });
-        if (!existsSync(DIR)) {
-            run(`${CLI} init int-article --yes --type article`, SANDBOX);
-        }
+        rmSync(DIR, { recursive: true, force: true });
+        run(`${CLI} init int-article --yes --type article`, SANDBOX);
         installCover(DIR);
     });
 
@@ -602,6 +650,8 @@ You can write a book in:
 The tool doesn't matter. **Consistency matters.**
 
 > "The first draft of anything is garbage." — Hemingway (probably)
+
+${LOREM}
 `);
 
         expect(true).toBe(true);
@@ -640,9 +690,8 @@ describe("integration: collection", () => {
 
     beforeAll(() => {
         mkdirSync(SANDBOX, { recursive: true });
-        if (!existsSync(DIR)) {
-            run(`${CLI} init int-collection --yes --type collection`, SANDBOX);
-        }
+        rmSync(DIR, { recursive: true, force: true });
+        run(`${CLI} init int-collection --yes --type collection`, SANDBOX);
         installCover(DIR);
     });
 
@@ -683,6 +732,10 @@ draft: 2
 Maria watched the city wake up from her balcony. Coffee in one hand, cigarette in the other — the last of her old habits.
 
 Below, the market was already stirring. Voices calling, crates thudding, the smell of fresh bread rising through the morning air.
+
+She had lived in this apartment for eleven years. Before that, she had lived in seven other apartments in four other cities, each one smaller and more temporary than the last. But this one — with its cracked ceiling and its temperamental plumbing and its view of the market square — this one felt permanent. This one felt like home.
+
+The coffee was strong and bitter, the way her mother used to make it. Maria had inherited many things from her mother: her dark eyes, her stubborn streak, her inability to forgive a slight. The coffee recipe was perhaps the most useful of these inheritances.
 `);
 
         writeContent(DIR, "manuscript/02-the-night-bus.md", `---

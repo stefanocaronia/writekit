@@ -86,7 +86,7 @@ export async function renderBook(
     });
 
     const colophon = colophonLines.length > 0
-        ? `\n    <footer class="colophon">\n      <h2>${escapeHtml(labels.colophon)}</h2>\n      ${colophonLines.map((l) => `<p>${l}</p>`).join("\n      ")}\n    </footer>`
+        ? `\n    <footer class="colophon">\n      ${colophonLines.map((l) => `<p>${l}</p>`).join("\n      ")}\n    </footer>`
         : "";
 
     // Table of contents (hidden for single chapter)

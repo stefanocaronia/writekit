@@ -186,7 +186,7 @@ function generateColophon(config: BookConfig): string {
         });
 
         const body = lines.length > 0
-                ? `<div class="colophon">\n<h1>${escapeXml(labels.colophon)}</h1>\n${lines.join("\n")}\n</div>`
+                ? `<div class="colophon">\n${lines.join("\n")}\n</div>`
                 : `<div class="colophon"><p>&#160;</p></div>`;
 
         return wrapXhtml(labels.colophon, body, config.language || "it");
