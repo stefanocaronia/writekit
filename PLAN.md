@@ -102,6 +102,15 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 ## v0.4.0 — Analisi e intelligenza
 
 - [X] **Convenzioni editoriali per tipo** — vedi sezione dedicata sotto
+- [x] **Sections per tipo** — article solo content, paper layout accademico (title block + abstract + content + bibliography). sections[] nel type.yaml controlla cosa buildare.
+- [ ] **Agent instructions complete** — completare le istruzioni embedded per un agent autonomo:
+    - Workflow completo step-by-step (config → style → synopsis → outline → characters → write)
+    - Come popolare i file iniziali dopo `wk init`
+    - Sintassi footnotes e immagini nel markdown
+    - Sections disponibili per tipo (article non ha cover/TOC/about, paper non ha cover/colophon)
+    - Come scrivere backcover.md (pitch commerciale, blurb)
+    - Abstract e keywords nel config.yaml per paper
+    - Come usare `wk stats` per valutare il bilanciamento
 - [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?
 - [ ] **Grafo relazioni** — report relazioni personaggi
 - [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
