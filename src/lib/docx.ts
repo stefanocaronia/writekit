@@ -584,12 +584,36 @@ export async function buildDocx(
     // Collect images from all chapters
     const allBodies = chapters.map((c) => c.body).join("\n");
     const imgPaths = collectImagePaths(allBodies, projectDir);
+    const maxImgWidth = TABLE_WIDTH / 20; // twips to points, approx px
     const imageDataMap = new Map<string, { data: Buffer; width: number; height: number }>();
     for (const img of imgPaths) {
         try {
             const data = await readFile(img.absPath);
-            // Default reasonable size for DOCX (400x300), could be improved with image-size lib
-            imageDataMap.set(img.src, { data, width: 400, height: 300 });
+            // Read image dimensions from header
+            let w = 400, h = 300;
+            if (data[0] === 0x89 && data[1] === 0x50) {
+                // PNG: width at offset 16, height at offset 20 (big-endian 32-bit)
+                w = data.readUInt32BE(16);
+                h = data.readUInt32BE(20);
+            } else if (data[0] === 0xFF && data[1] === 0xD8) {
+                // JPEG: scan for SOF0/SOF2 marker
+                let offset = 2;
+                while (offset < data.length - 8) {
+                    if (data[offset] === 0xFF && (data[offset + 1] === 0xC0 || data[offset + 1] === 0xC2)) {
+                        h = data.readUInt16BE(offset + 5);
+                        w = data.readUInt16BE(offset + 7);
+                        break;
+                    }
+                    offset += 2 + data.readUInt16BE(offset + 2);
+                }
+            }
+            // Scale to fit max width while preserving aspect ratio
+            if (w > maxImgWidth) {
+                const scale = maxImgWidth / w;
+                w = Math.round(w * scale);
+                h = Math.round(h * scale);
+            }
+            imageDataMap.set(img.src, { data, width: w, height: h });
         } catch { /* skip */ }
     }
 

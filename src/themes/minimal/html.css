@@ -103,6 +103,10 @@ body {
   padding: 5rem 2rem;
   border-top: 1px solid var(--border);
 }
+.chapter h1, .chapter h2, .chapter h3 {
+  break-after: avoid;
+  page-break-after: avoid;
+}
 .chapter h1 {
   font-size: 2rem;
   font-weight: 700;
@@ -138,6 +142,12 @@ body {
 }
 .chapter em { font-style: italic; }
 .chapter strong { font-weight: 600; }
+.chapter img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+}
 .chapter table {
   border-collapse: collapse;
   width: 100%;
