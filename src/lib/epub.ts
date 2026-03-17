@@ -18,17 +18,19 @@ function escapeXml(text: string): string {
                 .replace(/"/g, "&quot;");
 }
 
-/** Fix bare boolean attributes for XHTML compliance */
-function fixXhtmlAttrs(html: string): string {
-        // data-footnote-ref (no value) → data-footnote-ref="true"
+/** Fix HTML to be XHTML compliant */
+function fixXhtml(html: string): string {
         return html
+                // Bare boolean attributes → add value
                 .replace(/\sdata-footnote-ref(?=[\s>\/])/g, ' data-footnote-ref="true"')
                 .replace(/\sdata-footnote-backref(?=[\s>\/])/g, ' data-footnote-backref="true"')
-                .replace(/\sdata-footnotes(?=[\s>\/])/g, ' data-footnotes="true"');
+                .replace(/\sdata-footnotes(?=[\s>\/])/g, ' data-footnotes="true"')
+                // Self-close void elements: <img ...> → <img ... />
+                .replace(/<(img|br|hr|input|meta|link)(\s[^>]*?)?>/g, '<$1$2 />');
 }
 
 function wrapXhtml(title: string, body: string, lang: string): string {
-        const fixedBody = fixXhtmlAttrs(body);
+        const fixedBody = fixXhtml(body);
         return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="${lang}" lang="${lang}">
