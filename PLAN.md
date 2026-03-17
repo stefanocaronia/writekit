@@ -83,13 +83,13 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 - [x] **Strutture dati per tipo** — essay: thesis.md, arguments/, concepts/. Paper: abstract.md, concepts/. `wk add concept`, `wk add argument`. Schema e sample files per tipo.
 - [x] **Immagini nel manuscript** — `![alt](path)` in HTML (base64), ePub (zip), PDF (via HTML), DOCX (ImageRun). Path relativi al progetto.
-- [x] **DOCX template custom** — `assets/template.docx` sovrascrive gli stili Word del tema. Estrazione styles.xml via jszip. Priorità: template utente > tema > default.
+- [ ] **DOCX template custom** — da rifare con approccio diverso. `externalStyles` della libreria docx non funziona. Serve aprire il .docx come zip e sostituire document.xml mantenendo styles/fonts/settings del template.
 - [x] **DOCX Table of Contents** — campo TOC generato dai Heading 1 (capitoli), Word lo aggiorna all'apertura. Posizionato dopo la title page.
 - [x] **DOCX temi** — font/colori dal tema attivo via docx settings in theme.yaml
 - [x] **Doc temi nel README** — workflow completo documentato: builtin vs custom, struttura cartella tema, DOCX style priority chain
 - [x] **Footnotes** — sintassi Pandoc/MultiMarkdown via marked-footnote. HTML/ePub/PDF con CSS, DOCX con FootnoteReferenceRun nativo Word.
 - [x] **PDF configurabile + print presets** — 9 preset (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu). Ogni preset ha dimensioni, margini e bleed specifici. Config: `print_preset: trade`. Validazione nel check.
-- [x] **DOCX template utente** — implementato insieme a DOCX template custom sopra
+- [ ] **DOCX template utente** — dipende da DOCX template custom
 - [x] **Incremental build nel watch** — skip build se il file cambiato non è content (notes, characters, ecc.). Build solo su manuscript, config, style, assets, contributors.
 - [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)
 - [x] **`wk remove`** — remove chapter (con rinumerazione), character, location, note, author. Type-aware: derivato da add_commands escludendo yaml-only (event, source). Sync rinumera capitoli automaticamente.

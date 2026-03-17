@@ -25,22 +25,13 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
 import type { DocxStyle } from "./theme.js";
-import { resolveTemplatePath, extractStylesXml } from "./docx-template.js";
+// Template support removed — externalStyles doesn't work reliably. See PLAN.md.
 
 // Module-level style, set by buildDocx before rendering
 let FONT = "Georgia";
 let ACCENT = "8B4513";
 let TEXT_COLOR = "2C2C2C";
 let MUTED = "666666";
-let USE_TEMPLATE = false; // When true, skip inline font/color — let Word styles handle it
-
-/** Create a TextRun that respects USE_TEMPLATE — no inline styling when template is active */
-function styledRun(text: string, opts: { font?: string; size?: number; color?: string; bold?: boolean; italics?: boolean } = {}): TextRun {
-    if (USE_TEMPLATE) {
-        return new TextRun({ text, bold: opts.bold, italics: opts.italics });
-    }
-    return new TextRun({ text, font: opts.font ?? FONT, size: opts.size, color: opts.color, bold: opts.bold, italics: opts.italics });
-}
 
 // ── Inline parsing ──────────────────────────────────────────────────────────
 
@@ -467,7 +458,6 @@ export async function buildDocx(
     backcover = "",
     coverImagePath?: string | null,
     docxStyle?: DocxStyle,
-    themeDir?: string,
 ): Promise<string> {
     // Apply theme style
     if (docxStyle) {
@@ -524,7 +514,7 @@ export async function buildDocx(
         new Paragraph({
             alignment: AlignmentType.CENTER,
             heading: HeadingLevel.TITLE,
-            children: [styledRun(config.title, { font: FONT, size: 56 })],
+            children: [new TextRun({ text: config.title, font: FONT, size: 56 })],
         }),
     ];
 
@@ -533,7 +523,7 @@ export async function buildDocx(
             new Paragraph({
                 alignment: AlignmentType.CENTER,
                 children: [
-                    styledRun(config.subtitle, { font: FONT, size: 28, italics: true, color: MUTED }),
+                    new TextRun({ text: config.subtitle, font: FONT, size: 28, italics: true, color: MUTED }),
                 ],
                 spacing: { before: 200 },
             }),
@@ -545,7 +535,7 @@ export async function buildDocx(
             new Paragraph({
                 alignment: AlignmentType.CENTER,
                 children: [
-                    styledRun(formatAuthors(config.author), { font: FONT, size: 24, color: MUTED }),
+                    new TextRun({ text: formatAuthors(config.author), font: FONT, size: 24, color: MUTED }),
                 ],
                 spacing: { before: 600 },
             }),
@@ -565,7 +555,7 @@ export async function buildDocx(
             new Paragraph({
                 heading: HeadingLevel.HEADING_2,
                 children: [
-                    styledRun(labels.tableOfContents, { font: FONT, color: ACCENT }),
+                    new TextRun({ text: labels.tableOfContents, font: FONT, color: ACCENT }),
                 ],
                 spacing: { before: 400, after: 400 },
             }),
@@ -609,7 +599,7 @@ export async function buildDocx(
             new Paragraph({
                 heading: HeadingLevel.HEADING_1,
                 children: [
-                    styledRun(chapter.title, { font: FONT, size: 36, color: ACCENT }),
+                    new TextRun({ text: chapter.title, font: FONT, size: 36, color: ACCENT }),
                 ],
                 spacing: { before: 600, after: 400 },
             }),
@@ -637,7 +627,7 @@ export async function buildDocx(
             new Paragraph({
                 heading: HeadingLevel.HEADING_2,
                 children: [
-                    styledRun(labels.aboutTheAuthor, { font: FONT, color: ACCENT }),
+                    new TextRun({ text: labels.aboutTheAuthor, font: FONT, color: ACCENT }),
                 ],
                 spacing: { before: 600, after: 400 },
             }),
@@ -646,8 +636,8 @@ export async function buildDocx(
             aboutChildren.push(
                 new Paragraph({
                     children: [
-                        styledRun(contrib.name + " ", { font: FONT, size: 22, bold: true }),
-                        styledRun(contrib.bio, { font: FONT, size: 22 }),
+                        new TextRun({ text: contrib.name + " ", font: FONT, size: 22, bold: true }),
+                        new TextRun({ text: contrib.bio, font: FONT, size: 22 }),
                     ],
                     spacing: { before: 300, after: 200 },
                 }),
@@ -670,7 +660,7 @@ export async function buildDocx(
             colophonChildren.push(
                 new Paragraph({
                     children: [
-                        styledRun(line, { font: FONT, size: 20, color: MUTED }),
+                        new TextRun({ text: line, font: FONT, size: 20, color: MUTED }),
                     ],
                     spacing: { after: 80 },
                 }),
@@ -685,24 +675,12 @@ export async function buildDocx(
 
     const authorStr = formatAuthors(config.author);
 
-    // Load external styles from template.docx if available
-    const templatePath = await resolveTemplatePath(projectDir, themeDir);
-    const externalStyles = templatePath ? await extractStylesXml(templatePath) : null;
-    USE_TEMPLATE = !!externalStyles;
-    // When using template, clear inline font so Word styles take over
-    if (USE_TEMPLATE) {
-        FONT = undefined as unknown as string;
-        ACCENT = undefined as unknown as string;
-        MUTED = undefined as unknown as string;
-    }
-
     const doc = new Document({
         title: config.title,
         subject: config.subtitle || undefined,
         creator: authorStr || undefined,
         description: config.genre ? `Genre: ${config.genre}` : undefined,
         keywords: config.genre || undefined,
-        externalStyles: externalStyles ?? undefined,
         numbering: {
             config: [
                 {
