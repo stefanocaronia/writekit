@@ -689,6 +689,12 @@ export async function buildDocx(
     const templatePath = await resolveTemplatePath(projectDir, themeDir);
     const externalStyles = templatePath ? await extractStylesXml(templatePath) : null;
     USE_TEMPLATE = !!externalStyles;
+    // When using template, clear inline font so Word styles take over
+    if (USE_TEMPLATE) {
+        FONT = undefined as unknown as string;
+        ACCENT = undefined as unknown as string;
+        MUTED = undefined as unknown as string;
+    }
 
     const doc = new Document({
         title: config.title,
