@@ -85,6 +85,26 @@ export async function buildPdf(
             waitUntil: "networkidle0",
         });
 
+        // Inject cover-page styles to compensate PDF margins
+        await page.addStyleTag({
+            content: `.cover-page {
+                margin: -${preset.margin.top}mm -${preset.margin.outer}mm -${preset.margin.bottom}mm -${preset.margin.inner}mm;
+                padding: 0;
+                width: ${preset.width}mm;
+                height: ${preset.height}mm;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            .cover-page .cover-image {
+                width: ${preset.width}mm;
+                height: ${preset.height}mm;
+                object-fit: cover;
+                max-height: none;
+            }`,
+        });
+
         const outPath = join(buildDir, filename);
         await page.pdf({
             path: outPath,
