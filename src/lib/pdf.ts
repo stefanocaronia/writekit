@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
+import type { Section } from "./project-type.js";
 import { renderBook } from "./html.js";
 import { getPreset, DEFAULT_PRESET, type PrintPreset } from "./print-presets.js";
 import { loadTypography } from "./typography.js";
@@ -57,6 +58,7 @@ export async function buildPdf(
     contributors: Contributor[] = [],
     backcover = "",
     coverImagePath?: string | null,
+    sections?: Section[],
 ): Promise<string> {
     const browserPath = findBrowser();
     if (!browserPath) {
@@ -71,7 +73,7 @@ export async function buildPdf(
 
     // Generate HTML first
     const typography = await loadTypography(projectDir);
-    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath, projectDir, typography);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath, projectDir, typography, sections);
     const htmlPath = join(buildDir, "_temp.html");
     await writeFile(htmlPath, html, "utf-8");
 

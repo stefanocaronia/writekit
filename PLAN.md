@@ -101,7 +101,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.4.0 — Analisi e intelligenza
 
-- [ ] **Convenzioni editoriali per tipo** — vedi sezione dedicata sotto
+- [X] **Convenzioni editoriali per tipo** — vedi sezione dedicata sotto
 - [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?
 - [ ] **Grafo relazioni** — report relazioni personaggi
 - [ ] **Timeline validation** — ordine cronologico vs ordine capitoli

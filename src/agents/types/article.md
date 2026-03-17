@@ -33,6 +33,10 @@ An article is typically 500–5000 words and follows a straightforward structure
 - Match the audience — a technical article for developers reads differently from a lifestyle piece
 - First person is acceptable in opinion/personal articles, third person for news/informational
 
+## Build output
+
+Articles render **only content** — no cover image, no table of contents, no back cover, no "About the Author" section, no colophon. The output is lean: just the title, author, and text.
+
 ## Publication considerations
 
 - Articles are often published standalone (blog, magazine, newsletter)

@@ -1,5 +1,13 @@
 name: Collection
 description: Anthology of short stories, poems, or essays — per-piece author in frontmatter
+sections:
+    - cover
+    - title_page
+    - toc
+    - content
+    - backcover
+    - about
+    - colophon
 typography:
     paragraph_indent: 1.5rem
     paragraph_spacing: "0"

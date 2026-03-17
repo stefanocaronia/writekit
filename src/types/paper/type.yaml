@@ -1,5 +1,10 @@
 name: Paper
 description: Academic paper with bibliography
+sections:
+    - title_block
+    - abstract
+    - content
+    - bibliography
 typography:
     paragraph_indent: "0"
     paragraph_spacing: 0.5rem
@@ -25,7 +30,6 @@ files:
     - style.yaml
     - synopsis.md
     - abstract.md
-    - backcover.md
     - bibliography.yaml
 add_commands:
     - chapter

@@ -58,7 +58,10 @@ function buildConfigYaml(options: InitOptions): string {
         ? `\u00A9 ${new Date().getFullYear()} ${options.author}`
         : "";
 
-    return `# Project
+    const isBook = ["novel", "collection", "essay"].includes(options.type);
+    const isPaper = options.type === "paper";
+
+    let yaml = `# Project
 type: ${options.type}
 
 # Identity
@@ -67,27 +70,36 @@ subtitle: ""
 ${options.type === "novel" ? 'series: ""\nvolume: 1\n' : ""}
 # People
 author: ${JSON.stringify(options.author)}
-${options.type === "novel" ? 'translator: ""\neditor: ""\nillustrator: ""\n' : ""}
+${options.type === "novel" ? 'translator: ""\neditor: ""\nillustrator: ""\n' : ""}`;
+
+    if (isPaper) {
+        yaml += `
+# Academic
+abstract: ""
+keywords: []
+${`doi: ""`}
+`;
+    }
+
+    yaml += `
 # Publication
 language: ${options.language}
 genre: ""
-${options.type === "paper" ? 'doi: ""\n' : ""}isbn: ""
+isbn: ""
 publisher: ""
-edition: 1
-date: ""
+${isBook ? "edition: 1\n" : ""}date: ""
 
 # Build
 build_formats:
     - html
 theme: default
-cover: ""
-print_preset: a5
-
+${isBook ? 'cover: ""\nprint_preset: a5\n' : ""}
 # Legal
 license: All rights reserved
 license_url: ""
 copyright: ${JSON.stringify(copyrightLine)}
 `;
+    return yaml;
 }
 
 function buildReadme(options: InitOptions, typeDef: ProjectType): string {

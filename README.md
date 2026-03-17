@@ -1,8 +1,8 @@
-# writekit
+# Write Kit
 
-A writing toolkit that turns Markdown into books. Write your novel, essay, or article in plain text files, and **writekit** generates PDF, ePub, HTML, and Word documents for you.
+A writing toolkit that turns Markdown into books. You can write a novel, essay, or article in plain text files, and **writekit** generates ePub, HTML, PDF, and Word documents for you.
 
-Designed for writers — no programming required. Works beautifully with git for version control and with AI assistants for collaborative writing.
+It's similar to what programmers use for building apps, but the framework is for text files, notes, configuration files, and the outcome is the assembled book. 
 
 ## Getting started
 
@@ -14,7 +14,7 @@ You need [Node.js](https://nodejs.org/) (version 18 or later). Then open a termi
 npm install -g writekit
 ```
 
-This gives you the `writekit` command. You can also use the shorter alias `wk`.
+Now you can use the `writekit` command. In this guide we will use the shorter alias `wk`.
 
 ### 2. Create a project
 
@@ -32,13 +32,13 @@ Open the `manuscript/` folder and start writing in Markdown — a simple text fo
 
 When you create a project, writekit asks what type of text you're writing:
 
-| Type | Best for |
-|---|---|
-| **novel** | Novels, novellas, long-form fiction — characters, world, timeline |
-| **collection** | Anthologies — short stories, poems, essays by one or more authors |
-| **essay** | Single long-form non-fiction |
-| **paper** | Academic papers with bibliography |
-| **article** | Short articles — the simplest structure |
+| Type | Best for | Build sections |
+|---|---|---|
+| **novel** | Novels, novellas, long-form fiction | cover, title page, TOC, content, back cover, about, colophon |
+| **collection** | Anthologies — short stories, poems, essays | cover, title page, TOC, content, back cover, about, colophon |
+| **essay** | Single long-form non-fiction | cover, title page, TOC, content, back cover, about, colophon |
+| **paper** | Academic papers with bibliography | title block, abstract, content, bibliography |
+| **article** | Short articles — the simplest structure | content only |
 
 Each type sets up only the folders and files you need. You choose the type once at creation:
 

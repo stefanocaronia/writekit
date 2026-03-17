@@ -2,11 +2,17 @@
 
 This project is an **academic paper**. Follow these editorial, structural, and citation conventions.
 
+## Build output
+
+Papers render: **title block** (title, authors inline), **abstract** (from `config.yaml`), **content** (manuscript chapters), and **bibliography**. No cover image, no back cover, no table of contents, no "About the Author", no colophon.
+
+The `abstract` and `keywords` fields in `config.yaml` are rendered at the top of the paper, before the body text.
+
 ## Paper structure
 
 Academic papers follow a standard structure. The exact sections depend on the discipline, but the common pattern is:
 
-1. **Title page** — title, author(s), affiliation(s), date, abstract
+1. **Title block** — title, author(s), affiliation(s), abstract, keywords
 2. **Abstract** — 150–300 words summarizing the paper's purpose, method, results, and conclusion
 3. **Introduction** — states the research question, context, and significance
 4. **Literature review / Background** — surveys existing work on the topic

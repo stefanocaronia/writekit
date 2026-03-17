@@ -6,6 +6,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
+import type { Section } from "./project-type.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import { collectImagePaths, rewriteImagePaths } from "./images.js";
@@ -56,7 +57,7 @@ function generateContainerXml(): string {
 </container>`;
 }
 
-function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = []): string {
+function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = [], hasColophon = true, hasTitlePage = true, hasToc = true): string {
         const uuid = `urn:uuid:${simpleUuid()}`;
 
         const metadataLines = [
@@ -76,13 +77,17 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcove
 
         const manifestItems = [
                 `    <item id="style" href="style.css" media-type="text/css" />`,
-                `    <item id="titlepage" href="titlepage.xhtml" media-type="application/xhtml+xml" />`,
-                `    <item id="toc" href="toc.xhtml" media-type="application/xhtml+xml" properties="nav" />`,
         ];
-        const spineItems = [
-                `    <itemref idref="titlepage" />`,
-                `    <itemref idref="toc" />`,
-        ];
+        const spineItems: string[] = [];
+
+        if (hasTitlePage) {
+                manifestItems.push(`    <item id="titlepage" href="titlepage.xhtml" media-type="application/xhtml+xml" />`);
+                spineItems.push(`    <itemref idref="titlepage" />`);
+        }
+        if (hasToc) {
+                manifestItems.push(`    <item id="toc" href="toc.xhtml" media-type="application/xhtml+xml" properties="nav" />`);
+                spineItems.push(`    <itemref idref="toc" />`);
+        }
 
         // Cover image
         if (coverExt) {
@@ -120,8 +125,10 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcove
         }
 
         // Add colophon
-        manifestItems.push(`    <item id="colophon" href="colophon.xhtml" media-type="application/xhtml+xml" />`);
-        spineItems.push(`    <itemref idref="colophon" />`);
+        if (hasColophon) {
+                manifestItems.push(`    <item id="colophon" href="colophon.xhtml" media-type="application/xhtml+xml" />`);
+                spineItems.push(`    <itemref idref="colophon" />`);
+        }
 
         return `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId">
@@ -224,7 +231,9 @@ export async function buildEpub(
         contributors: Contributor[] = [],
         backcover = "",
         coverImagePath?: string | null,
+        sections?: Section[],
 ): Promise<string> {
+        const has = (s: Section) => !sections || sections.includes(s);
         const buildDir = join(projectDir, "build");
         await mkdir(buildDir, { recursive: true });
         const outPath = join(buildDir, filename);
@@ -243,7 +252,7 @@ export async function buildEpub(
 
         // Cover image
         let coverExt: string | undefined;
-        if (coverImagePath) {
+        if (has("cover") && coverImagePath) {
                 try {
                         const imgData = await readFile(coverImagePath);
                         coverExt = extname(coverImagePath).slice(1).toLowerCase().replace("jpg", "jpeg");
@@ -265,14 +274,36 @@ export async function buildEpub(
         }
 
         // OEBPS
-        const hasBackcover = !!backcover;
-        const hasAbout = contributors.some((c) => c.bio);
-        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images)), "OEBPS/content.opf");
+        const hasBackcover = has("backcover") && !!backcover;
+        const hasAbout = has("about") && contributors.some((c) => c.bio);
+        const hasColophon = has("colophon");
+        const hasTitlePage = has("title_page") || has("title_block");
+        const hasToc = has("toc") && chapters.length > 1;
+        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc)), "OEBPS/content.opf");
         // Prepend typography CSS variables to theme CSS
         const epubCss = `:root { ${typoVars} }\n${theme.epubCss}`;
         zip.addBuffer(Buffer.from(epubCss), "OEBPS/style.css");
-        zip.addBuffer(Buffer.from(generateTitlePage(config)), "OEBPS/titlepage.xhtml");
-        zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters)), "OEBPS/toc.xhtml");
+
+        // Title page
+        if (has("title_page")) {
+                zip.addBuffer(Buffer.from(generateTitlePage(config)), "OEBPS/titlepage.xhtml");
+        } else if (has("title_block")) {
+                // Academic style: simpler header
+                const c = "text-align:center;text-indent:0";
+                const lines = [
+                        `<p style="font-size:2em;font-weight:bold;color:#2c2c2c;margin:0;padding:0;${c}">${escapeXml(config.title)}</p>`,
+                ];
+                if (config.author) {
+                        lines.push(`<p style="font-size:1em;margin-top:1em;color:#444;${c}">${escapeXml(formatAuthors(config.author))}</p>`);
+                }
+                const body = `<div style="margin-top:10%;text-align:center">\n${lines.join("\n")}\n</div>`;
+                zip.addBuffer(Buffer.from(wrapXhtml(config.title, body, config.language || "it")), "OEBPS/titlepage.xhtml");
+        }
+
+        // Table of contents
+        if (hasToc) {
+                zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters)), "OEBPS/toc.xhtml");
+        }
 
         // Chapters (with rewritten image paths)
         for (let i = 0; i < chapters.length; i++) {
@@ -283,18 +314,22 @@ export async function buildEpub(
         }
 
         // Back cover
-        if (backcover) {
+        if (hasBackcover) {
                 zip.addBuffer(Buffer.from(generateBackcover(config, backcover)), "OEBPS/backcover.xhtml");
         }
 
         // About the author(s)
-        const aboutXhtml = generateAboutAuthors(config, contributors);
-        if (aboutXhtml) {
-                zip.addBuffer(Buffer.from(aboutXhtml), "OEBPS/about.xhtml");
+        if (hasAbout) {
+                const aboutXhtml = generateAboutAuthors(config, contributors);
+                if (aboutXhtml) {
+                        zip.addBuffer(Buffer.from(aboutXhtml), "OEBPS/about.xhtml");
+                }
         }
 
         // Colophon
-        zip.addBuffer(Buffer.from(generateColophon(config)), "OEBPS/colophon.xhtml");
+        if (hasColophon) {
+                zip.addBuffer(Buffer.from(generateColophon(config)), "OEBPS/colophon.xhtml");
+        }
 
         // Write to disk
         await new Promise<void>((resolve, reject) => {

@@ -8,6 +8,7 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import type { Typography } from "./typography.js";
 import { typographyClasses, typographyCssVars } from "./typography.js";
+import type { Section } from "./project-type.js";
 
 const JS = `
     // Smooth scroll for TOC links
@@ -42,7 +43,9 @@ export async function renderBook(
     coverImagePath?: string | null,
     projectDir?: string,
     typography?: Typography,
+    sections?: Section[],
 ): Promise<string> {
+    const has = (s: Section) => !sections || sections.includes(s);
     const labels = getLabels(config.language);
 
     // Render all chapters markdown to HTML
@@ -55,10 +58,9 @@ export async function renderBook(
         renderedChapters.push(html);
     }
 
-    // Cover image
     // Cover image (separate page)
     let coverImageSection = "";
-    if (coverImagePath) {
+    if (has("cover") && coverImagePath) {
         try {
             const imgData = await readFile(coverImagePath);
             const ext = extname(coverImagePath).slice(1).replace("jpg", "jpeg");
@@ -70,33 +72,55 @@ export async function renderBook(
         } catch { /* no cover image */ }
     }
 
-    // Title page
-    const seriesLine = config.series
-        ? `<div class="subtitle">${escapeHtml(config.series)}${config.volume ? ` — Vol. ${config.volume}` : ""}</div>`
-        : "";
-    const cover = `
+    // Title page (full page for books) or title block (inline for papers)
+    let titleSection = "";
+    if (has("title_page")) {
+        const seriesLine = config.series
+            ? `<div class="subtitle">${escapeHtml(config.series)}${config.volume ? ` — Vol. ${config.volume}` : ""}</div>`
+            : "";
+        titleSection = `
         <header class="cover">
             <h1>${escapeHtml(config.title)}</h1>
             ${config.subtitle ? `<div class="subtitle">${escapeHtml(config.subtitle)}</div>` : ""}
             ${seriesLine}
             ${config.author ? `<div class="author">${escapeHtml(formatAuthors(config.author))}</div>` : ""}
         </header>`;
+    } else if (has("title_block")) {
+        // Academic style: title, authors, affiliations inline at top
+        titleSection = `
+        <header class="title-block">
+            <h1>${escapeHtml(config.title)}</h1>
+            ${config.author ? `<div class="author">${escapeHtml(formatAuthors(config.author))}</div>` : ""}
+        </header>`;
+    }
+
+    // Abstract (paper only)
+    let abstractSection = "";
+    if (has("abstract") && config.abstract) {
+        abstractSection = `
+        <section class="abstract">
+            <h2>${escapeHtml(labels.abstract || "Abstract")}</h2>
+            <p>${escapeHtml(config.abstract)}</p>
+            ${config.keywords?.length ? `<p class="keywords"><strong>Keywords:</strong> ${config.keywords.map(escapeHtml).join(", ")}</p>` : ""}
+        </section>`;
+    }
 
     // Colophon
-    const colophonLines = buildColophonLines(config).map((line) => {
-        // Make license a link if URL is provided
-        if (config.license_url && line === config.license) {
-            return `<a href="${escapeHtml(config.license_url)}" target="_blank" rel="noopener">${escapeHtml(line)}</a>`;
+    let colophon = "";
+    if (has("colophon")) {
+        const colophonLines = buildColophonLines(config).map((line) => {
+            if (config.license_url && line === config.license) {
+                return `<a href="${escapeHtml(config.license_url)}" target="_blank" rel="noopener">${escapeHtml(line)}</a>`;
+            }
+            return escapeHtml(line);
+        });
+        if (colophonLines.length > 0) {
+            colophon = `\n    <footer class="colophon">\n      ${colophonLines.map((l) => `<p>${l}</p>`).join("\n      ")}\n    </footer>`;
         }
-        return escapeHtml(line);
-    });
+    }
 
-    const colophon = colophonLines.length > 0
-        ? `\n    <footer class="colophon">\n      ${colophonLines.map((l) => `<p>${l}</p>`).join("\n      ")}\n    </footer>`
-        : "";
-
-    // Table of contents (hidden for single chapter)
-    const showToc = chapters.length > 1;
+    // Table of contents (only if section enabled and multiple chapters)
+    const showToc = has("toc") && chapters.length > 1;
     const toc = showToc
         ? `
         <nav class="toc">
@@ -132,13 +156,13 @@ export async function renderBook(
         .join("\n");
 
     // Back cover
-    const backcoverSection = backcover
+    const backcoverSection = has("backcover") && backcover
         ? `\n    <section class="backcover">\n      ${await marked(backcover)}\n    </section>`
         : "";
 
     // About the author(s)
     let aboutSection = "";
-    if (contributors && contributors.length > 0) {
+    if (has("about") && contributors && contributors.length > 0) {
         const bios = contributors
             .filter((c) => c.bio)
             .map((c) => `<p><strong>${escapeHtml(c.name)}</strong> ${escapeHtml(c.bio)}</p>`)
@@ -158,7 +182,7 @@ export async function renderBook(
 </head>
 <body class="${typography ? typographyClasses(typography) : ""}" style="${typography ? typographyCssVars(typography) : ""}">
     ${coverImageSection}
-    ${cover}${showToc ? `\n    <div id="toc">${toc}</div>` : ""}
+    ${titleSection}${abstractSection}${showToc ? `\n    <div id="toc">${toc}</div>` : ""}
     ${chapterSections}${backcoverSection}${aboutSection}${colophon}
     <script>${JS}</script>
 </body>

@@ -25,6 +25,7 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
 import type { DocxStyle } from "./theme.js";
+import type { Section } from "./project-type.js";
 import { loadTypography } from "./typography.js";
 // Template support removed — externalStyles doesn't work reliably. See PLAN.md.
 
@@ -465,7 +466,9 @@ export async function buildDocx(
     backcover = "",
     coverImagePath?: string | null,
     docxStyle?: DocxStyle,
+    sections?: Section[],
 ): Promise<string> {
+    const has = (s: Section) => !sections || sections.includes(s);
     // Load typography and set module-level vars
     const typo = await loadTypography(projectDir);
     TYPO_INDENT = typo.paragraphIndent === "0" ? 0 : convertInchesToTwip(0.3);
@@ -482,13 +485,13 @@ export async function buildDocx(
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
-    const sections: {
+    const docSections: {
         properties: { page: { size: typeof PAGE_A5; margin?: { top: number; bottom: number; left: number; right: number } } };
         children: (Paragraph | Table)[];
     }[] = [];
 
     // Cover image page — full bleed, no margins
-    if (coverImagePath) {
+    if (has("cover") && coverImagePath) {
         try {
             const imgData = await readFile(coverImagePath);
             // A5 in EMU: 1 inch = 914400 EMU, A5 = 5.83 x 8.27 inches
@@ -497,7 +500,7 @@ export async function buildDocx(
             // Width in px-like units for docx: A5 ≈ 420 x 595 points
             const coverWidth = Math.round(PAGE_A5.width / 20 * 1.33); // twips to approx pixels
             const coverHeight = Math.round(PAGE_A5.height / 20 * 1.33);
-            sections.push({
+            docSections.push({
                 properties: {
                     page: {
                         size: PAGE_A5,
@@ -522,62 +525,66 @@ export async function buildDocx(
     }
 
     // Title page
-    const titleChildren: Paragraph[] = [
-        new Paragraph({ spacing: { before: 4000 } }),
-        new Paragraph({
-            alignment: AlignmentType.CENTER,
-            heading: HeadingLevel.TITLE,
-            children: [new TextRun({ text: config.title, font: FONT, size: 56 })],
-        }),
-    ];
-
-    if (config.subtitle) {
-        titleChildren.push(
+    if (has("title_page")) {
+        const titleChildren: Paragraph[] = [
+            new Paragraph({ spacing: { before: 4000 } }),
             new Paragraph({
                 alignment: AlignmentType.CENTER,
-                children: [
-                    new TextRun({ text: config.subtitle, font: FONT, size: 28, italics: true, color: MUTED }),
-                ],
-                spacing: { before: 200 },
+                heading: HeadingLevel.TITLE,
+                children: [new TextRun({ text: config.title, font: FONT, size: 56 })],
             }),
-        );
-    }
+        ];
 
-    if (config.author) {
-        titleChildren.push(
-            new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [
-                    new TextRun({ text: formatAuthors(config.author), font: FONT, size: 24, color: MUTED }),
-                ],
-                spacing: { before: 600 },
-            }),
-        );
-    }
+        if (config.subtitle) {
+            titleChildren.push(
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new TextRun({ text: config.subtitle, font: FONT, size: 28, italics: true, color: MUTED }),
+                    ],
+                    spacing: { before: 200 },
+                }),
+            );
+        }
 
-    sections.push({
-        properties: { page: { size: PAGE_A5 } },
-        children: titleChildren,
-    });
+        if (config.author) {
+            titleChildren.push(
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new TextRun({ text: formatAuthors(config.author), font: FONT, size: 24, color: MUTED }),
+                    ],
+                    spacing: { before: 600 },
+                }),
+            );
+        }
+
+        docSections.push({
+            properties: { page: { size: PAGE_A5 } },
+            children: titleChildren,
+        });
+    }
 
     // Table of Contents
     const labels = getLabels(config.language);
-    sections.push({
-        properties: { page: { size: PAGE_A5 } },
-        children: [
-            new Paragraph({
-                heading: HeadingLevel.HEADING_2,
-                children: [
-                    new TextRun({ text: labels.tableOfContents, font: FONT, color: ACCENT }),
-                ],
-                spacing: { before: 400, after: 400 },
-            }),
-            new TableOfContents("TOC", {
-                hyperlink: true,
-                headingStyleRange: "1-1",
-            }),
-        ],
-    });
+    if (has("toc")) {
+        docSections.push({
+            properties: { page: { size: PAGE_A5 } },
+            children: [
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_2,
+                    children: [
+                        new TextRun({ text: labels.tableOfContents, font: FONT, color: ACCENT }),
+                    ],
+                    spacing: { before: 400, after: 400 },
+                }),
+                new TableOfContents("TOC", {
+                    hyperlink: true,
+                    headingStyleRange: "1-1",
+                }),
+            ],
+        });
+    }
 
     // Extract footnotes from all chapters
     const allMarkdown = chapters.map((c) => c.body).join("\n\n");
@@ -643,15 +650,15 @@ export async function buildDocx(
             ...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap),
         ];
 
-        sections.push({
+        docSections.push({
             properties: { page: { size: PAGE_A5 } },
             children,
         });
     }
 
     // Back cover
-    if (backcover) {
-        sections.push({
+    if (has("backcover") && backcover) {
+        docSections.push({
             properties: { page: { size: PAGE_A5 } },
             children: parseMarkdownToDocxBlocks(backcover),
         });
@@ -659,7 +666,7 @@ export async function buildDocx(
 
     // About the author(s)
     const contribsWithBio = contributors.filter((c) => c.bio);
-    if (contribsWithBio.length > 0) {
+    if (has("about") && contribsWithBio.length > 0) {
         const aboutChildren: Paragraph[] = [
             new Paragraph({
                 children: [
@@ -679,7 +686,7 @@ export async function buildDocx(
                 }),
             );
         }
-        sections.push({
+        docSections.push({
             properties: { page: { size: PAGE_A5 } },
             children: aboutChildren,
         });
@@ -687,7 +694,7 @@ export async function buildDocx(
 
     // Colophon
     const colophonLines = buildColophonLines(config);
-    if (colophonLines.length > 0) {
+    if (has("colophon") && colophonLines.length > 0) {
         const colophonChildren: Paragraph[] = [
             new Paragraph({ spacing: { before: 600 } }),
         ];
@@ -703,7 +710,7 @@ export async function buildDocx(
             );
         }
 
-        sections.push({
+        docSections.push({
             properties: { page: { size: PAGE_A5 } },
             children: colophonChildren,
         });
@@ -746,7 +753,7 @@ export async function buildDocx(
             ],
         },
         footnotes: Object.keys(docFootnotes).length > 0 ? docFootnotes : undefined,
-        sections,
+        sections: docSections,
     });
 
     const buffer = await Packer.toBuffer(doc);

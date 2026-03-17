@@ -23,6 +23,7 @@ export interface Labels {
     copyright: string;
     allRightsReserved: string;
     license: string;
+    abstract: string;
 }
 
 const en: Labels = {
@@ -43,6 +44,7 @@ const en: Labels = {
     copyright: "Copyright",
     allRightsReserved: "All rights reserved",
     license: "License",
+    abstract: "Abstract",
 };
 
 const it: Labels = {
@@ -63,6 +65,7 @@ const it: Labels = {
     copyright: "Diritti d'autore",
     allRightsReserved: "Tutti i diritti riservati",
     license: "Licenza",
+    abstract: "Abstract",
 };
 
 const fr: Labels = {
@@ -83,6 +86,7 @@ const fr: Labels = {
     copyright: "Droits d'auteur",
     allRightsReserved: "Tous droits réservés",
     license: "Licence",
+    abstract: "Résumé",
 };
 
 const de: Labels = {
@@ -103,6 +107,7 @@ const de: Labels = {
     copyright: "Urheberrecht",
     allRightsReserved: "Alle Rechte vorbehalten",
     license: "Lizenz",
+    abstract: "Zusammenfassung",
 };
 
 const es: Labels = {
@@ -123,6 +128,7 @@ const es: Labels = {
     copyright: "Derechos de autor",
     allRightsReserved: "Todos los derechos reservados",
     license: "Licencia",
+    abstract: "Resumen",
 };
 
 const pt: Labels = {
@@ -143,6 +149,7 @@ const pt: Labels = {
     copyright: "Direitos autorais",
     allRightsReserved: "Todos os direitos reservados",
     license: "Licença",
+    abstract: "Resumo",
 };
 
 const ru: Labels = {
@@ -163,6 +170,7 @@ const ru: Labels = {
     copyright: "Авторские права",
     allRightsReserved: "Все права защищены",
     license: "Лицензия",
+    abstract: "Аннотация",
 };
 
 const ar: Labels = {
@@ -183,6 +191,7 @@ const ar: Labels = {
     copyright: "حقوق النشر",
     allRightsReserved: "جميع الحقوق محفوظة",
     license: "الرخصة",
+    abstract: "ملخص",
 };
 
 const hi: Labels = {
@@ -203,6 +212,7 @@ const hi: Labels = {
     copyright: "कॉपीराइट",
     allRightsReserved: "सर्वाधिकार सुरक्षित",
     license: "लाइसेंस",
+    abstract: "सारांश",
 };
 
 const zh: Labels = {
@@ -223,6 +233,7 @@ const zh: Labels = {
     copyright: "版权",
     allRightsReserved: "版权所有",
     license: "许可协议",
+    abstract: "摘要",
 };
 
 const ko: Labels = {
@@ -243,6 +254,7 @@ const ko: Labels = {
     copyright: "저작권",
     allRightsReserved: "모든 권리 보유",
     license: "라이선스",
+    abstract: "초록",
 };
 
 const ja: Labels = {
@@ -263,6 +275,7 @@ const ja: Labels = {
     copyright: "著作権",
     allRightsReserved: "無断転載を禁じます",
     license: "ライセンス",
+    abstract: "要旨",
 };
 
 const nl: Labels = {
@@ -283,6 +296,7 @@ const nl: Labels = {
     copyright: "Auteursrecht",
     allRightsReserved: "Alle rechten voorbehouden",
     license: "Licentie",
+    abstract: "Samenvatting",
 };
 
 const pl: Labels = {
@@ -303,6 +317,7 @@ const pl: Labels = {
     copyright: "Prawa autorskie",
     allRightsReserved: "Wszelkie prawa zastrzeżone",
     license: "Licencja",
+    abstract: "Streszczenie",
 };
 
 const tr: Labels = {
@@ -323,6 +338,7 @@ const tr: Labels = {
     copyright: "Telif Hakkı",
     allRightsReserved: "Tüm hakları saklıdır",
     license: "Lisans",
+    abstract: "Özet",
 };
 
 const sv: Labels = {
@@ -343,6 +359,7 @@ const sv: Labels = {
     copyright: "Upphovsrätt",
     allRightsReserved: "Alla rättigheter förbehållna",
     license: "Licens",
+    abstract: "Sammanfattning",
 };
 
 const el: Labels = {
@@ -363,6 +380,7 @@ const el: Labels = {
     copyright: "Πνευματικά δικαιώματα",
     allRightsReserved: "Με επιφύλαξη παντός δικαιώματος",
     license: "Άδεια",
+    abstract: "Περίληψη",
 };
 
 const catalog: Record<string, Labels> = {

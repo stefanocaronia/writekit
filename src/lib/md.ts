@@ -1,4 +1,5 @@
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
+import type { Section } from "./project-type.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 
@@ -7,30 +8,36 @@ export function renderBookMd(
     chapters: Chapter[],
     contributors: Contributor[] = [],
     backcover = "",
+    sections?: Section[],
 ): string {
+    const has = (s: Section) => !sections || sections.includes(s);
     const labels = getLabels(config.language);
     const lines: string[] = [];
 
-    // Cover
-    lines.push(`# ${config.title}`);
-    if (config.subtitle) lines.push(`\n*${config.subtitle}*`);
-    if (config.series) {
-        lines.push(`\n${config.series}${config.volume ? ` — Vol. ${config.volume}` : ""}`);
+    // Title / author header
+    if (has("title_page")) {
+        lines.push(`# ${config.title}`);
+        if (config.subtitle) lines.push(`\n*${config.subtitle}*`);
+        if (config.series) {
+            lines.push(`\n${config.series}${config.volume ? ` — Vol. ${config.volume}` : ""}`);
+        }
+        if (config.author) lines.push(`\n**${formatAuthors(config.author)}**`);
+        lines.push("");
+        lines.push("---");
+        lines.push("");
     }
-    if (config.author) lines.push(`\n**${formatAuthors(config.author)}**`);
-    lines.push("");
-    lines.push("---");
-    lines.push("");
 
     // Table of contents
-    lines.push(`## ${labels.tableOfContents}`);
-    lines.push("");
-    for (let i = 0; i < chapters.length; i++) {
-        lines.push(`${i + 1}. ${chapters[i].title}`);
+    if (has("toc") && chapters.length > 1) {
+        lines.push(`## ${labels.tableOfContents}`);
+        lines.push("");
+        for (let i = 0; i < chapters.length; i++) {
+            lines.push(`${i + 1}. ${chapters[i].title}`);
+        }
+        lines.push("");
+        lines.push("---");
+        lines.push("");
     }
-    lines.push("");
-    lines.push("---");
-    lines.push("");
 
     // Chapters
     for (const chapter of chapters) {
@@ -43,7 +50,7 @@ export function renderBookMd(
     }
 
     // Back cover
-    if (backcover) {
+    if (has("backcover") && backcover) {
         lines.push(backcover.trim());
         lines.push("");
         lines.push("---");
@@ -52,7 +59,7 @@ export function renderBookMd(
 
     // About the author(s)
     const contribsWithBio = contributors.filter((c) => c.bio);
-    if (contribsWithBio.length > 0) {
+    if (has("about") && contribsWithBio.length > 0) {
         lines.push(`## ${labels.aboutTheAuthor}`);
         lines.push("");
         for (const c of contribsWithBio) {
@@ -65,7 +72,7 @@ export function renderBookMd(
 
     // Colophon
     const colophonLines = buildColophonLines(config);
-    if (colophonLines.length > 0) {
+    if (has("colophon") && colophonLines.length > 0) {
         lines.push("---");
         lines.push("");
         for (const line of colophonLines) {

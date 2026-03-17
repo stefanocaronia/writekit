@@ -16,15 +16,22 @@ export interface FrontmatterSchema {
     optional: string[];
 }
 
+export type Section = "cover" | "title_page" | "title_block" | "abstract" | "toc" | "content" | "backcover" | "about" | "colophon" | "bibliography";
+
 export interface ProjectType {
     name: string;
     description: string;
+    sections: Section[];
     dirs: string[];
     files: string[];
     add_commands: string[];
     reports: string[];
     schemas: Record<string, FrontmatterSchema>;
     sample_files: Record<string, SampleFile>;
+}
+
+export function hasSection(typeDef: ProjectType, section: Section): boolean {
+    return typeDef.sections.includes(section);
 }
 
 const ALL_TYPES = ["novel", "collection", "essay", "paper", "article"] as const;

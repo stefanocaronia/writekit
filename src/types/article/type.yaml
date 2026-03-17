@@ -1,5 +1,7 @@
 name: Article
 description: Article or short non-fiction — the simplest structure
+sections:
+    - content
 typography:
     paragraph_indent: "0"
     paragraph_spacing: 0.3rem
@@ -22,7 +24,6 @@ dirs:
 files:
     - style.yaml
     - synopsis.md
-    - backcover.md
 add_commands:
     - chapter
     - note
