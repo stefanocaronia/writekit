@@ -159,8 +159,16 @@ Ogni tipo di testo ha convenzioni tipografiche diverse (indentazione, spaziatura
 | `first_paragraph_indent` | `false` | `false` | `false` | `false` | `false` |
 | `heading_style` | `serif` | `serif` | `serif` | `bold` | `bold` |
 | `blockquote_style` | `italic` | `italic` | `italic` | `indent` | `indent` |
+| `scene_break` | `* * *` | `* * *` | `---` | `---` | `---` |
+| `chapter_opening` | `large` | `large` | `medium` | `small` | `small` |
+| `line_height` | `1.6` | `1.6` | `1.6` | `2.0` | `1.5` |
+| `hyphenation` | `true` | `true` | `true` | `true` | `false` |
+| `orphans_widows` | `2` | `2` | `2` | `3` | `2` |
 
 > `first_paragraph_indent: false` = il primo paragrafo dopo un heading non ha indent (standard tipografico universale).
+> `chapter_opening`: `large` = ~40% pagina vuota prima del titolo, `medium` = ~25%, `small` = solo margine normale.
+> `scene_break`: come viene renderizzato `---` o `***` nel markdown quando usato come separatore di scena.
+> `orphans_widows`: minimo righe che devono stare in fondo (orphans) e in cima (widows) a una pagina.
 
 ### Catena di priorità
 
@@ -211,12 +219,17 @@ Nuovo modulo che:
 
 ```typescript
 interface Typography {
-    paragraphIndent: string;
-    paragraphSpacing: string;
-    textAlign: string;
-    firstParagraphIndent: boolean;
-    headingStyle: string;
-    blockquoteStyle: string;
+    paragraphIndent: string;      // "1.5rem" | "0"
+    paragraphSpacing: string;     // "0" | "0.5rem"
+    textAlign: string;            // "justify" | "left"
+    firstParagraphIndent: boolean; // false = no indent after heading
+    headingStyle: string;         // "serif" | "bold"
+    blockquoteStyle: string;      // "italic" | "indent"
+    sceneBreak: string;           // "* * *" | "---"
+    chapterOpening: string;       // "large" | "medium" | "small"
+    lineHeight: string;           // "1.6" | "2.0"
+    hyphenation: boolean;         // true | false
+    orphansWidows: number;        // 2 | 3
 }
 
 function loadTypography(projectDir: string): Promise<Typography>;
@@ -232,12 +245,24 @@ I temi hanno classi per ogni variante. Il builder HTML inietta la classe giusta 
 
 CSS:
 ```css
+/* Paragraph */
 .typo-indent .chapter p + p { text-indent: 1.5rem; }
 .typo-no-indent .chapter p + p { text-indent: 0; }
 .typo-spacing .chapter p { margin-bottom: 0.5rem; }
 .typo-no-spacing .chapter p { margin-bottom: 0; }
-.typo-justify .chapter p { text-align: justify; }
-.typo-left .chapter p { text-align: left; }
+.typo-justify .chapter p { text-align: justify; hyphens: auto; }
+.typo-left .chapter p { text-align: left; hyphens: none; }
+/* Chapter opening */
+.typo-opening-large .chapter { padding-top: 40vh; }
+.typo-opening-medium .chapter { padding-top: 25vh; }
+.typo-opening-small .chapter { padding-top: 2rem; }
+/* Scene breaks */
+.typo-scene-stars .chapter hr::after { content: "* * *"; }
+.typo-scene-dash .chapter hr { border-top: 1px solid #ccc; }
+/* Line height */
+body { line-height: var(--line-height, 1.6); }
+/* Orphans/widows */
+.chapter p { orphans: var(--orphans, 2); widows: var(--widows, 2); }
 ```
 
 #### 5. DOCX builder (`src/lib/docx.ts`)
