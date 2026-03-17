@@ -112,15 +112,25 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
     const typeDef = await loadType(projectTypeName);
 
     // Check required files (config.yaml always + type-specific files)
-    const requiredFiles = ["config.yaml", ...typeDef.files];
+    // Some files are optional (created by build or user choice)
+    const optionalFiles = new Set(["backcover.md", "bibliography.yaml", "thesis.md", "abstract.md"]);
+    const requiredFiles = ["config.yaml", ...typeDef.files.filter((f) => !optionalFiles.has(f))];
     for (const file of requiredFiles) {
         if (!(await fileExists(join(projectDir, file)))) {
             issues.push({ level: "error", message: `Missing required file: ${file}` });
         }
     }
+    // Warn (not error) for optional files
+    for (const file of typeDef.files.filter((f) => optionalFiles.has(f))) {
+        if (!(await fileExists(join(projectDir, file)))) {
+            issues.push({ level: "warning", message: `Optional file missing: ${file}` });
+        }
+    }
 
-    // Check required directories
+    // Check required directories (build/ and assets/ are created automatically)
+    const optionalDirs = new Set(["build", "assets"]);
     for (const dir of typeDef.dirs) {
+        if (optionalDirs.has(dir)) continue;
         if (!(await dirExists(join(projectDir, dir)))) {
             issues.push({ level: "error", message: `Missing required directory: ${dir}/` });
         }

@@ -308,14 +308,37 @@ From reluctant ally to active participant in uncovering the truth.
         expect(out).toContain("Chapters");
     });
 
-    it("build html works", () => {
+    it("build html works with all content", () => {
         run(`${CLI} build html`, DIR);
         const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".html"));
         expect(files.length).toBeGreaterThan(0);
         const html = readFileSync(join(DIR, "build", files[0]), "utf-8");
-        expect(html).toContain("The Fountain");
-        expect(html).toContain("footnote");
+        // Cover
         expect(html).toContain("cover-image");
+        // Title
+        expect(html).toContain("The Fountain of Secrets");
+        // Authors
+        expect(html).toContain("Marco Bellini");
+        // Chapters
+        expect(html).toContain("The Fountain");
+        expect(html).toContain("The Storm");
+        // Formatting
+        expect(html).toContain("<strong>");
+        expect(html).toContain("<em>");
+        expect(html).toContain("<blockquote>");
+        expect(html).toContain("<li>");
+        expect(html).toContain("<table>");
+        // Footnotes
+        expect(html).toContain("footnote");
+        // Image
+        expect(html).toContain("<img");
+        // Back cover
+        expect(html).toContain("masterful blend");
+        // About
+        expect(html).toContain("About the Author");
+        // Colophon (no heading, but content)
+        expect(html).toContain("CC BY-NC-SA 4.0");
+        expect(html).toContain("2026");
     });
 
     it("build epub works", () => {
@@ -337,6 +360,9 @@ From reluctant ally to active participant in uncovering the truth.
         const md = readFileSync(join(DIR, "build", files[0]), "utf-8");
         expect(md).toContain("Table of Contents");
         expect(md).toContain("The Fountain");
+        expect(md).toContain("The Storm");
+        expect(md).toContain("---");
+        expect(md).toContain("About the Author");
         expect(md).toContain("2026");
     });
 
@@ -846,5 +872,117 @@ Yuki Tanaka is a poet and short story writer from Kyoto, now living in New York.
         const out = run(`${CLI} stats`, DIR);
         expect(out).toContain("Voices of the City");
         expect(out).toContain("3"); // 3 chapters
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPE-SPECIFIC CONTENT CHECKS
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("content verification", () => {
+    it("novel: characters have aliases", () => {
+        const content = readFileSync(join(SANDBOX, "int-novel", "characters", "elena-rossi.md"), "utf-8");
+        expect(content).toContain("aliases");
+        expect(content).toContain("la professoressa");
+    });
+
+    it("novel: world has locations", () => {
+        expect(existsSync(join(SANDBOX, "int-novel", "world", "piazza-del-duomo.md"))).toBe(true);
+    });
+
+    it("novel: timeline has events", () => {
+        const timeline = readFileSync(join(SANDBOX, "int-novel", "timeline.yaml"), "utf-8");
+        expect(timeline).toContain("Marco arrives");
+    });
+
+    it("novel: reports populated", () => {
+        const status = readFileSync(join(SANDBOX, "int-novel", "build", "reports", "status.md"), "utf-8");
+        expect(status).toContain("The Fountain");
+        expect(status).toContain("Total words");
+    });
+
+    it("essay: thesis.md present", () => {
+        expect(existsSync(join(SANDBOX, "int-essay", "thesis.md"))).toBe(true);
+        const thesis = readFileSync(join(SANDBOX, "int-essay", "thesis.md"), "utf-8");
+        expect(thesis).toContain("silence");
+    });
+
+    it("essay: arguments folder has sheets", () => {
+        expect(existsSync(join(SANDBOX, "int-essay", "arguments", "silence-is-essential-for-community-formation.md"))).toBe(true);
+    });
+
+    it("essay: concepts folder has sheets", () => {
+        expect(existsSync(join(SANDBOX, "int-essay", "concepts", "soundscape.md"))).toBe(true);
+    });
+
+    it("paper: abstract.md present", () => {
+        expect(existsSync(join(SANDBOX, "int-paper", "abstract.md"))).toBe(true);
+    });
+
+    it("paper: bibliography has sources", () => {
+        const bib = readFileSync(join(SANDBOX, "int-paper", "bibliography.yaml"), "utf-8");
+        expect(bib).toContain("Olmsted");
+    });
+
+    it("paper: multiple authors", () => {
+        const config = readFileSync(join(SANDBOX, "int-paper", "config.yaml"), "utf-8");
+        expect(config).toContain("Sofia Bianchi");
+        expect(config).toContain("Luca Conti");
+    });
+
+    it("collection: html contains all authors", () => {
+        const files = readdirSync(join(SANDBOX, "int-collection", "build")).filter((f) => f.endsWith(".html"));
+        const html = readFileSync(join(SANDBOX, "int-collection", "build", files[0]), "utf-8");
+        expect(html).toContain("Maria Russo");
+        expect(html).toContain("Ahmed Farooq");
+        expect(html).toContain("Yuki Tanaka");
+    });
+
+    it("collection: per-piece authors in frontmatter", () => {
+        const ch1 = readFileSync(join(SANDBOX, "int-collection", "manuscript", "01-the-balcony.md"), "utf-8");
+        expect(ch1).toContain("author: Maria Russo");
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EDGE CASES
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("edge cases", () => {
+    const DIR = join(SANDBOX, "int-edge");
+
+    beforeAll(() => {
+        rmSync(DIR, { recursive: true, force: true });
+        run(`${CLI} init int-edge --yes --type novel`, SANDBOX);
+    });
+
+    it("chapter with special characters", () => {
+        run(`${CLI} add chapter "L'été à Paris"`, DIR);
+        const files = readdirSync(join(DIR, "manuscript"));
+        expect(files.some((f) => f.includes("l-ete-a-paris"))).toBe(true);
+    });
+
+    it("character with accented name", () => {
+        run(`${CLI} add character "José García"`, DIR);
+        expect(existsSync(join(DIR, "characters", "jose-garcia.md"))).toBe(true);
+    });
+
+    it("remove nonexistent chapter shows error", () => {
+        expect(() => run(`${CLI} remove chapter 99`, DIR)).toThrow();
+    });
+
+    it("rename nonexistent character shows error", () => {
+        expect(() => run(`${CLI} rename character "Nobody" "Somebody"`, DIR)).toThrow();
+    });
+
+    it("build with empty project works", () => {
+        const emptyDir = join(SANDBOX, "int-empty");
+        rmSync(emptyDir, { recursive: true, force: true });
+        run(`${CLI} init int-empty --yes --type article`, SANDBOX);
+        // Remove the sample chapter
+        rmSync(join(emptyDir, "manuscript", "01-draft.md"), { force: true });
+        // Build should warn but not crash
+        const out = run(`${CLI} build html`, emptyDir);
+        expect(out).toContain("No chapters");
     });
 });
