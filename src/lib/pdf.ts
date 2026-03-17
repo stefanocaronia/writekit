@@ -105,13 +105,13 @@ export async function buildPdf(
                 padding: 0 !important;
                 margin: 0 !important;
                 max-width: none !important;
-                text-align: center;
             }
             .cover-page .cover-image {
-                width: ${preset.width}mm !important;
-                height: ${preset.height}mm !important;
+                width: 100vw !important;
+                height: 100vh !important;
                 max-width: none !important;
                 max-height: none !important;
+                object-fit: fill;
                 display: block;
             }`,
         });
