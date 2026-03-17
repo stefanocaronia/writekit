@@ -161,21 +161,12 @@ A theme folder contains:
 themes/my-theme/
 ├── theme.yaml      # Name, description, DOCX font/color settings
 ├── html.css        # Styles for HTML and PDF output
-├── epub.css        # Styles for ePub output (simpler CSS)
-└── template.docx   # (optional) Word template — overrides DOCX styles
+└── epub.css        # Styles for ePub output (simpler CSS)
 ```
 
 To switch themes: `wk theme use my-theme` (updates config.yaml).
 
 When you update writekit via npm, the built-in themes are refreshed but your custom themes in `themes/` are never touched.
-
-#### DOCX style priority
-
-The DOCX builder applies styles in this order (each overrides the previous):
-
-1. **theme.yaml** `docx:` section — font, colors
-2. **themes/{name}/template.docx** — if present, overrides theme.yaml styles
-3. **assets/template.docx** — if present, overrides everything
 
 ## Writing in Markdown
 
@@ -194,8 +185,41 @@ Writekit uses Markdown — a simple way to format text that's readable even with
 | `` `code` `` | Inline code |
 | `---` | A horizontal line |
 | `![alt](assets/img.jpg)` | An image |
+| `![alt](assets/img.jpg){width=50%}` | An image with explicit width |
+| `Text with a note[^1]` | A footnote reference |
+| `[^1]: The footnote text.` | The footnote definition |
 
 All of these work in every output format (HTML, ePub, PDF, Word). Images use local paths relative to the project root (e.g. `assets/photo.jpg`).
+
+### Footnotes
+
+Use the standard Markdown footnote syntax:
+
+```markdown
+This claim needs a source[^1]. Another point here[^2].
+
+[^1]: Smith, *On Writing*, 2023.
+[^2]: This is a longer note that explains
+    the point in more detail.
+```
+
+Footnotes are rendered at the bottom of each chapter in HTML/ePub/PDF, and as native Word footnotes in DOCX.
+
+### Images
+
+Place images in `assets/` and reference them in your text:
+
+```markdown
+![A sunset over the city](assets/sunset.jpg)
+```
+
+To control the width (so images don't overflow the text area):
+
+```markdown
+![A sunset](assets/sunset.jpg){width=50%}
+```
+
+The image will never exceed the text width regardless of its original size. In all formats, the aspect ratio is preserved.
 
 ### Frontmatter
 
@@ -216,6 +240,58 @@ It was a dark and stormy night...
 
 Writekit uses this metadata for validation, reports, and building your book. You don't need to memorize the fields — `wk add` creates files with the right frontmatter already in place.
 
+#### Frontmatter fields by file type
+
+**Manuscript chapters** (all types):
+
+| Field | Required | Description |
+|---|---|---|
+| `title` | yes | Chapter title |
+| `chapter` | novel, paper | Chapter number (auto-assigned by `wk add`) |
+| `pov` | novel only | Point-of-view character |
+| `author` | collection | Per-chapter author (for anthologies) |
+| `draft` | no | Draft number (tracked in reports) |
+
+**Characters** (novel only):
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | yes | Character name |
+| `role` | yes | protagonist, antagonist, supporting, minor |
+| `aliases` | no | Alternative names, nicknames |
+| `age` | no | Age or age range |
+| `relationships` | no | List of relationships |
+
+**World / Locations** (novel only):
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | yes | Location name |
+| `type` | yes | location, culture, system, etc. |
+
+**Contributors** (all types):
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | yes | Full name |
+| `roles` | auto | Auto-derived from config.yaml (author, translator, editor, illustrator) |
+
+The body of a contributor file is their biography, rendered in the "About the Author" section.
+
+**Arguments** (essay only):
+
+| Field | Required | Description |
+|---|---|---|
+| `claim` | yes | The argument's central claim |
+| `related` | no | Related concept names |
+
+**Concepts** (essay, paper):
+
+| Field | Required | Description |
+|---|---|---|
+| `term` | yes | The term or concept name |
+| `related` | no | Related concept/argument names |
+
 ## Configuration
 
 ### config.yaml
@@ -233,8 +309,6 @@ theme: default       # Which theme to use
 ```
 
 Other fields (subtitle, genre, ISBN, publisher, etc.) are optional and used in the book's colophon page.
-
-If you place a `template.docx` in the `assets/` folder, the DOCX builder will use its Word styles (headings, paragraphs, fonts) instead of the theme defaults. Create your template in Word, style it how you want, and writekit will apply those styles automatically.
 
 If you place a `cover.jpg` or `cover.png` in the `assets/` folder, it will automatically appear in all output formats. You can also set `cover: path/to/image` in config.yaml.
 
