@@ -269,7 +269,7 @@ export async function buildEpub(
         // Chapters (with rewritten image paths)
         for (let i = 0; i < chapters.length; i++) {
                 const body = rewriteImagePaths(chapters[i].body, pathMapping);
-                const htmlBody = await marked(body);
+                const htmlBody = `<h1>${escapeXml(chapters[i].title)}</h1>\n` + await marked(body);
                 const xhtml = wrapXhtml(chapters[i].title, htmlBody, config.language || "it");
                 zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
         }

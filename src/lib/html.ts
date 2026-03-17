@@ -53,23 +53,26 @@ export async function renderBook(
     }
 
     // Cover image
-    let coverImageHtml = "";
+    // Cover image (separate page)
+    let coverImageSection = "";
     if (coverImagePath) {
         try {
             const imgData = await readFile(coverImagePath);
             const ext = extname(coverImagePath).slice(1).replace("jpg", "jpeg");
             const base64 = imgData.toString("base64");
-            coverImageHtml = `<img class="cover-image" src="data:image/${ext};base64,${base64}" alt="Cover" />`;
+            coverImageSection = `
+        <section class="cover-page">
+            <img class="cover-image" src="data:image/${ext};base64,${base64}" alt="Cover" />
+        </section>`;
         } catch { /* no cover image */ }
     }
 
-    // Cover
+    // Title page
     const seriesLine = config.series
         ? `<div class="subtitle">${escapeHtml(config.series)}${config.volume ? ` — Vol. ${config.volume}` : ""}</div>`
         : "";
     const cover = `
         <header class="cover">
-            ${coverImageHtml}
             <h1>${escapeHtml(config.title)}</h1>
             ${config.subtitle ? `<div class="subtitle">${escapeHtml(config.subtitle)}</div>` : ""}
             ${seriesLine}
@@ -119,6 +122,7 @@ export async function renderBook(
 
             return `
         <section class="chapter" id="${chapterId(i)}">
+            <h1>${escapeHtml(chapters[i].title)}</h1>
             ${html}${nav}
         </section>`;
         })
@@ -150,6 +154,7 @@ export async function renderBook(
     <style>${theme.htmlCss}</style>
 </head>
 <body>
+    ${coverImageSection}
     ${cover}${showToc ? `\n    <div id="toc">${toc}</div>` : ""}
     ${chapterSections}${backcoverSection}${aboutSection}${colophon}
     <script>${JS}</script>

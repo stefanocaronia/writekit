@@ -34,6 +34,8 @@ export function renderBookMd(
 
     // Chapters
     for (const chapter of chapters) {
+        lines.push(`# ${chapter.title}`);
+        lines.push("");
         lines.push(chapter.body.trim());
         lines.push("");
         lines.push("---");
