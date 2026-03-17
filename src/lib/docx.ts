@@ -47,8 +47,6 @@ const INLINE_PATTERNS: {
                 text: m[1],
                 font: "Consolas",
                 size: 20,
-                color: "C7254E",
-                shading: { fill: "F9F2F4" },
             }),
     },
     // ***bold italic***
@@ -79,7 +77,7 @@ const INLINE_PATTERNS: {
                     new TextRun({
                         text: m[1],
                         font: FONT,
-                        color: "2E74B5",
+                        color: ACCENT,
                         underline: {},
                     }),
                 ],
