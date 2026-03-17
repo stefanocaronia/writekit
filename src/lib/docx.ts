@@ -189,11 +189,12 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageDat
     const paragraphs: Paragraph[] = [];
     const lines = markdown.split("\n");
     let i = 0;
+    let lastWasParagraph = false;
 
     while (i < lines.length) {
         const line = lines[i];
 
-        // Skip empty lines
+        // Skip empty lines (but don't reset lastWasParagraph — blank line between paragraphs is normal)
         if (line.trim() === "") {
             i++;
             continue;
@@ -216,6 +217,7 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageDat
                     keepNext: true,
                 }),
             );
+            lastWasParagraph = false;
             i++;
             continue;
         }
@@ -342,14 +344,15 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageDat
             }
         }
 
-        // Regular paragraph
+        // Regular paragraph — book style: no inter-paragraph spacing, indent on p+p
         paragraphs.push(
             new Paragraph({
                 children: parseInline(line, footnotes),
                 alignment: AlignmentType.JUSTIFIED,
-                spacing: { after: 200 },
+                indent: lastWasParagraph ? { firstLine: convertInchesToTwip(0.3) } : undefined,
             }),
         );
+        lastWasParagraph = true;
         i++;
     }
 
@@ -648,11 +651,10 @@ export async function buildDocx(
     if (contribsWithBio.length > 0) {
         const aboutChildren: Paragraph[] = [
             new Paragraph({
-                heading: HeadingLevel.HEADING_2,
                 children: [
-                    new TextRun({ text: labels.aboutTheAuthor, font: FONT, color: ACCENT }),
+                    new TextRun({ text: labels.aboutTheAuthor, font: FONT, bold: true }),
                 ],
-                spacing: { before: 600, after: 400 },
+                spacing: { before: 400, after: 200 },
             }),
         ];
         for (const contrib of contribsWithBio) {
