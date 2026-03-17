@@ -25,6 +25,19 @@ export function renderBookMd(
         lines.push("");
         lines.push("---");
         lines.push("");
+    } else if (has("title_block")) {
+        lines.push(`# ${config.title}`);
+        if (config.author) lines.push(`\n*${formatAuthors(config.author)}*`);
+        lines.push("");
+        lines.push("---");
+        lines.push("");
+    } else {
+        // Article-like types: always output at least title + author
+        lines.push(`# ${config.title}`);
+        if (config.author) lines.push(`\n*${formatAuthors(config.author)}*`);
+        lines.push("");
+        lines.push("---");
+        lines.push("");
     }
 
     // Table of contents

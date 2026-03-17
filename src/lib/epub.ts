@@ -277,7 +277,7 @@ export async function buildEpub(
         const hasBackcover = has("backcover") && !!backcover;
         const hasAbout = has("about") && contributors.some((c) => c.bio);
         const hasColophon = has("colophon");
-        const hasTitlePage = has("title_page") || has("title_block");
+        const hasTitlePage = true; // always emit: full, block, or article-header fallback
         const hasToc = has("toc") && chapters.length > 1;
         zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc)), "OEBPS/content.opf");
         // Prepend typography CSS variables to theme CSS
@@ -297,6 +297,16 @@ export async function buildEpub(
                         lines.push(`<p style="font-size:1em;margin-top:1em;color:#444;${c}">${escapeXml(formatAuthors(config.author))}</p>`);
                 }
                 const body = `<div style="margin-top:10%;text-align:center">\n${lines.join("\n")}\n</div>`;
+                zip.addBuffer(Buffer.from(wrapXhtml(config.title, body, config.language || "it")), "OEBPS/titlepage.xhtml");
+        } else {
+                // Article-like types: minimal header with title and author
+                const headerLines = [
+                        `<h1>${escapeXml(config.title)}</h1>`,
+                ];
+                if (config.author) {
+                        headerLines.push(`<p class="author">${escapeXml(formatAuthors(config.author))}</p>`);
+                }
+                const body = `<div class="article-header">\n${headerLines.join("\n")}\n</div>`;
                 zip.addBuffer(Buffer.from(wrapXhtml(config.title, body, config.language || "it")), "OEBPS/titlepage.xhtml");
         }
 

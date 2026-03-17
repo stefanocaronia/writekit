@@ -229,6 +229,67 @@ body {
   margin-bottom: 1.5rem;
 }
 
+/* --- Title block (paper/academic) --- */
+.title-block {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  text-align: center;
+  padding: 4rem 2rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.title-block h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.title-block .author {
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+/* --- Article header (minimal, content-only types) --- */
+.article-header {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.article-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+.article-header .author {
+  font-size: 1rem;
+  color: var(--muted);
+}
+.article-header .translator {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* --- Abstract (paper) --- */
+.abstract {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem;
+}
+.abstract h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.abstract p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.abstract .keywords {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 /* --- Colophon --- */
 .colophon {
   max-width: var(--max-width);

@@ -92,6 +92,15 @@ export async function renderBook(
             <h1>${escapeHtml(config.title)}</h1>
             ${config.author ? `<div class="author">${escapeHtml(formatAuthors(config.author))}</div>` : ""}
         </header>`;
+    } else {
+        // Minimal header for article-like types (content-only)
+        const translatorLine = config.translator ? `<div class="translator">${escapeHtml(labels.translator)} ${escapeHtml(config.translator)}</div>` : "";
+        titleSection = `
+        <header class="article-header">
+            <h1>${escapeHtml(config.title)}</h1>
+            ${config.author ? `<div class="author">${escapeHtml(formatAuthors(config.author))}</div>` : ""}
+            ${translatorLine}
+        </header>`;
     }
 
     // Abstract (paper only)

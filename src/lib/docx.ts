@@ -38,6 +38,18 @@ let TYPO_INDENT = convertInchesToTwip(0.3);
 let TYPO_SPACING = 0;
 let TYPO_ALIGN: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.JUSTIFIED;
 
+/** Convert a CSS-like spacing value (e.g. "0.5rem", "6pt", "0") to twips. */
+function spacingToTwips(value: string): number {
+    const v = value.trim();
+    if (v === "0") return 0;
+    const num = parseFloat(v);
+    if (Number.isNaN(num)) return 0;
+    if (v.endsWith("rem")) return Math.round(num * 240);  // 1rem ≈ 12pt ≈ 240 twips
+    if (v.endsWith("pt")) return Math.round(num * 20);    // 1pt = 20 twips
+    if (v.endsWith("px")) return Math.round(num * 15);    // 1px ≈ 0.75pt ≈ 15 twips
+    return Math.round(num * 240); // default: treat as rem
+}
+
 // ── Inline parsing ──────────────────────────────────────────────────────────
 
 const INLINE_PATTERNS: {
@@ -355,7 +367,7 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageDat
                 children: parseInline(line, footnotes),
                 alignment: TYPO_ALIGN,
                 indent: lastWasParagraph && TYPO_INDENT > 0 ? { firstLine: TYPO_INDENT } : undefined,
-                spacing: TYPO_SPACING > 0 ? { after: TYPO_SPACING } : undefined,
+                spacing: { after: TYPO_SPACING },
             }),
         );
         lastWasParagraph = true;
@@ -472,7 +484,7 @@ export async function buildDocx(
     // Load typography and set module-level vars
     const typo = await loadTypography(projectDir);
     TYPO_INDENT = typo.paragraphIndent === "0" ? 0 : convertInchesToTwip(0.3);
-    TYPO_SPACING = typo.paragraphSpacing === "0" ? 0 : 200;
+    TYPO_SPACING = spacingToTwips(typo.paragraphSpacing);
     TYPO_ALIGN = typo.textAlign === "left" ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
 
     // Apply theme style
@@ -562,6 +574,54 @@ export async function buildDocx(
         docSections.push({
             properties: { page: { size: PAGE_A5 } },
             children: titleChildren,
+        });
+    } else if (has("title_block") && (config.title || config.author)) {
+        // Paper-style: inline title block (no separate page)
+        const blockChildren: Paragraph[] = [];
+        if (config.title) {
+            blockChildren.push(
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [new TextRun({ text: config.title, font: FONT, size: 36, bold: true })],
+                    spacing: { before: 200, after: 100 },
+                }),
+            );
+        }
+        if (config.author) {
+            blockChildren.push(
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [new TextRun({ text: formatAuthors(config.author), font: FONT, size: 22, color: MUTED })],
+                    spacing: { after: 300 },
+                }),
+            );
+        }
+        docSections.push({
+            properties: { page: { size: PAGE_A5 } },
+            children: blockChildren,
+        });
+    } else if (!has("title_page") && !has("title_block") && (config.title || config.author)) {
+        // Article-style: simple header with title and author
+        const headerChildren: Paragraph[] = [];
+        if (config.title) {
+            headerChildren.push(
+                new Paragraph({
+                    children: [new TextRun({ text: config.title, font: FONT, size: 32, bold: true })],
+                    spacing: { before: 200, after: 80 },
+                }),
+            );
+        }
+        if (config.author) {
+            headerChildren.push(
+                new Paragraph({
+                    children: [new TextRun({ text: formatAuthors(config.author), font: FONT, size: 22, color: MUTED })],
+                    spacing: { after: 200 },
+                }),
+            );
+        }
+        docSections.push({
+            properties: { page: { size: PAGE_A5 } },
+            children: headerChildren,
         });
     }
 

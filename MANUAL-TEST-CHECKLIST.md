@@ -7,7 +7,7 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 ## Visual inspection
 
 ### HTML — open `sandbox/int-*/build/*.html` in browser
-- [ ] Cover image looks good (proper size, centered)
+- [X] Cover image looks good (proper size, centered)
 - [ ] Typography looks like a book (serif, justified, proper spacing)
 - [ ] Chapter navigation works (click prev/next/TOC)
 - [ ] Footnote superscripts are clickable and scroll to notes
@@ -15,7 +15,7 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [ ] Theme "minimal" looks different from "default" (sans-serif, blue, left-aligned)
 
 ### ePub — open `sandbox/int-*/build/*.epub` in Thorium/Calibre
-- [ ] Title page: large title, centered, author below
+- [X] Title page: large title, centered, author below
 - [ ] Table of contents navigable via reader
 - [ ] Chapters render correctly, no XHTML errors
 - [ ] Footnotes work (tap/click on superscript)

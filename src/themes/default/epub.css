@@ -77,6 +77,63 @@ hr::after {
   margin-bottom: 0.3em;
 }
 
+/* --- Title block (paper/academic) --- */
+.title-block {
+  text-align: center;
+  margin-top: 3em;
+  margin-bottom: 2em;
+}
+.title-block h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+.title-block .author {
+  font-size: 1.1em;
+  color: #555;
+}
+
+/* --- Article header (minimal, content-only types) --- */
+.article-header {
+  margin-top: 2em;
+  margin-bottom: 1.5em;
+  padding-bottom: 1em;
+  border-bottom: 1px solid #ccc;
+}
+.article-header h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 0.3em;
+}
+.article-header .author {
+  font-size: 1em;
+  color: #555;
+}
+.article-header .translator {
+  font-size: 0.9em;
+  color: #555;
+  font-style: italic;
+}
+
+/* --- Abstract (paper) --- */
+.abstract {
+  margin: 1.5em 0;
+}
+.abstract h2 {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+.abstract p {
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+.abstract .keywords {
+  margin-top: 0.5em;
+  font-size: 0.9em;
+  color: #555;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
