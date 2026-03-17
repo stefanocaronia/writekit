@@ -130,13 +130,16 @@ export async function loadChapters(projectDir: string): Promise<Chapter[]> {
         const content = await readFile(join(manuscriptDir, file), "utf-8");
         const { data, body } = parseFrontmatter(content);
 
+        // Strip leading H1 from body — builders generate the title from frontmatter
+        const cleanBody = body.replace(/^#\s+.+\n+/, "");
+
         chapters.push({
             number: (data.chapter as number) ?? chapters.length + 1,
             title: (data.title as string) ?? file.replace(/\.md$/, ""),
             pov: data.pov as string | undefined,
             draft: data.draft as number | undefined,
             author: data.author as string | undefined,
-            body,
+            body: cleanBody,
             filename: file,
         });
     }
