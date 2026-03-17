@@ -101,12 +101,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.4.0 — Analisi e intelligenza
 
-- [ ] **Convenzioni editoriali per tipo** — ogni type.yaml definisce default tipografici (indent, paragraph spacing, alignment, ecc.). L'utente può sovrascriverli in style.yaml. I temi CSS hanno classi per tutte le varianti, il build applica le classi giuste. Catena: type defaults → style.yaml override → tema CSS.
-  - novel: indent prima riga, no spazio tra paragrafi
-  - essay: indent, no spazio
-  - paper: no indent, spazio tra paragrafi
-  - article: no indent, no spazio
-  - collection: come novel
+- [ ] **Convenzioni editoriali per tipo** — vedi sezione dedicata sotto
 - [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?
 - [ ] **Grafo relazioni** — report relazioni personaggi
 - [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
@@ -143,6 +138,148 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - `src/lib/ui.ts` — colori e icone
 - `src/lib/schema.ts` — validateData (config, style, timeline)
 - `src/lib/project-type.ts` — loadType, isValidType, allTypeNames
+
+---
+
+## Editorial Conventions — Design Document
+
+### Problem
+
+Ogni tipo di testo ha convenzioni tipografiche diverse (indentazione, spaziatura, allineamento, ecc.) che oggi sono hardcoded nel CSS dei temi e nel builder DOCX. Non c'è modo di:
+1. Differenziare le convenzioni per tipo (novel vs paper vs article)
+2. Permettere all'utente di sovrascriverle
+
+### Convenzioni per tipo
+
+| Proprietà | novel | collection | essay | paper | article |
+|---|---|---|---|---|---|
+| `paragraph_indent` | `1.5rem` | `1.5rem` | `1.5rem` | `0` | `0` |
+| `paragraph_spacing` | `0` | `0` | `0` | `0.5rem` | `0.3rem` |
+| `text_align` | `justify` | `justify` | `justify` | `justify` | `left` |
+| `first_paragraph_indent` | `false` | `false` | `false` | `false` | `false` |
+| `heading_style` | `serif` | `serif` | `serif` | `bold` | `bold` |
+| `blockquote_style` | `italic` | `italic` | `italic` | `indent` | `indent` |
+
+> `first_paragraph_indent: false` = il primo paragrafo dopo un heading non ha indent (standard tipografico universale).
+
+### Catena di priorità
+
+```
+type.yaml (default per tipo)
+    ↓ override
+style.yaml (utente, campo `typography:`)
+    ↓ applicato da
+tema CSS (classi per ogni variante)
+builder DOCX (stili programmatici)
+```
+
+### Implementazione
+
+#### 1. Type definitions (`src/types/*/type.yaml`)
+
+Ogni tipo aggiunge una sezione `typography:`:
+
+```yaml
+# In novel/type.yaml
+typography:
+    paragraph_indent: 1.5rem
+    paragraph_spacing: 0
+    text_align: justify
+    first_paragraph_indent: false
+    heading_style: serif
+    blockquote_style: italic
+```
+
+#### 2. Style override (`style.yaml` nel progetto utente)
+
+L'utente può sovrascrivere singole proprietà:
+
+```yaml
+# In style.yaml
+pov: third-person
+tense: past
+typography:
+    paragraph_spacing: 0.3rem    # override solo questo
+```
+
+#### 3. Loader (`src/lib/typography.ts`)
+
+Nuovo modulo che:
+- Carica typography dal type.yaml
+- Merge con override da style.yaml
+- Espone un oggetto `Typography` con tutte le proprietà risolte
+
+```typescript
+interface Typography {
+    paragraphIndent: string;
+    paragraphSpacing: string;
+    textAlign: string;
+    firstParagraphIndent: boolean;
+    headingStyle: string;
+    blockquoteStyle: string;
+}
+
+function loadTypography(projectDir: string): Promise<Typography>;
+```
+
+#### 4. CSS (`src/themes/*/html.css` e `epub.css`)
+
+I temi hanno classi per ogni variante. Il builder HTML inietta la classe giusta su `<body>`:
+
+```html
+<body class="typo-indent typo-justify typo-no-first-indent">
+```
+
+CSS:
+```css
+.typo-indent .chapter p + p { text-indent: 1.5rem; }
+.typo-no-indent .chapter p + p { text-indent: 0; }
+.typo-spacing .chapter p { margin-bottom: 0.5rem; }
+.typo-no-spacing .chapter p { margin-bottom: 0; }
+.typo-justify .chapter p { text-align: justify; }
+.typo-left .chapter p { text-align: left; }
+```
+
+#### 5. DOCX builder (`src/lib/docx.ts`)
+
+Legge `Typography` e applica:
+- `paragraphIndent` → `indent.firstLine`
+- `paragraphSpacing` → `spacing.after`
+- `textAlign` → `alignment`
+
+#### 6. PDF
+
+Ereditato dall'HTML (CSS classi).
+
+#### 7. ePub
+
+Stesse classi CSS dell'HTML, iniettate nel body dei capitoli.
+
+### File da modificare
+
+1. `src/types/*/type.yaml` — aggiungere `typography:` a tutti i 5 tipi
+2. `src/lib/typography.ts` — nuovo modulo loader/merger
+3. `src/lib/html.ts` — iniettare classi su body
+4. `src/lib/epub.ts` — iniettare classi su body capitoli
+5. `src/lib/docx.ts` — leggere typography e applicare
+6. `src/lib/md.ts` — non impattato (è testo puro)
+7. `src/themes/*/html.css` — aggiungere classi typo-*
+8. `src/themes/*/epub.css` — aggiungere classi typo-*
+9. `src/lib/parse.ts` — caricare typography da style.yaml
+10. `src/commands/check.ts` — validare campi typography
+
+### Ordine di implementazione
+
+1. Definire l'interfaccia `Typography` e i default per tipo
+2. Creare il loader che merge type + style
+3. Aggiornare HTML builder per iniettare classi
+4. Aggiornare CSS temi con tutte le classi varianti
+5. Aggiornare DOCX builder
+6. Aggiornare ePub builder
+7. Aggiornare check per validare
+8. Test
+
+---
 
 ### Pre-release checklist
 
