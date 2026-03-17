@@ -251,23 +251,47 @@ sup a:hover {
 }
 
 /* --- Print / PDF --- */
+.cover {
+  break-after: page;
+  page-break-after: always;
+}
+#toc {
+  break-after: page;
+  page-break-after: always;
+}
+.chapter {
+  break-before: page;
+  page-break-before: always;
+  border-top: none;
+}
+.backcover {
+  break-before: page;
+  page-break-before: always;
+  border-top: none;
+}
+.about-authors {
+  break-before: page;
+  page-break-before: always;
+  border-top: none;
+}
+.colophon {
+  break-before: page;
+  page-break-before: always;
+  border-top: none;
+}
+
 @media print {
-  :root {
-    --bg: #ffffff;
-  }
-  body {
-    background: #fff;
-  }
+  :root { --bg: #fff; }
+  body { background: #fff; }
   .cover {
-    page-break-after: always;
     padding: 0;
     margin: 0;
     max-width: none;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
     border: none;
   }
   .cover-image {
@@ -276,26 +300,5 @@ sup a:hover {
     width: auto;
     height: auto;
   }
-  #toc {
-    page-break-after: always;
-  }
-  .chapter {
-    page-break-before: always;
-    border: none;
-  }
-  .backcover {
-    page-break-before: always;
-    border: none;
-  }
-  .about-authors {
-    page-break-before: always;
-    border: none;
-  }
-  .colophon {
-    page-break-before: always;
-    border: none;
-  }
-  .chapter-nav {
-    display: none;
-  }
+  .chapter-nav { display: none; }
 }
