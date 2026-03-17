@@ -15,6 +15,7 @@ Read `style.yaml` before writing or reviewing any text. It defines:
 - `tone` — the emotional quality of the writing. Match it.
 - `voice` — the narrative voice. Keep it consistent.
 - `rules` — specific rules the author has set. Follow them strictly.
+- `typography` — (optional) override typographic conventions for this project (paragraph_indent, paragraph_spacing, text_align, line_height, hyphenation, scene_break, chapter_opening, orphans_widows). Defaults come from the project type.
 
 ## File conventions
 

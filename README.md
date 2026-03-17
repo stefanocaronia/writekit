@@ -274,6 +274,24 @@ rules: []            # Any specific rules, e.g., "no adverbs"
 
 These are especially useful when working with an AI assistant — they help maintain a consistent voice throughout the book.
 
+### Typography
+
+Each project type comes with typographic defaults (paragraph indent, spacing, alignment, etc.). You can override any of them in `style.yaml`:
+
+```yaml
+typography:
+    paragraph_indent: "0"         # no indent (default for paper/article)
+    paragraph_spacing: 0.5rem     # space between paragraphs
+    text_align: left              # left or justify
+    line_height: "2.0"            # double spacing
+    hyphenation: false            # disable auto-hyphenation
+    scene_break: "* * *"          # how --- renders in chapters
+    chapter_opening: large        # large, medium, or small top space
+    orphans_widows: 3             # min lines at page top/bottom
+```
+
+Only include the properties you want to change — the rest use the defaults for your project type.
+
 ## Reports
 
 Every time you build, writekit generates reports in `build/reports/`:
