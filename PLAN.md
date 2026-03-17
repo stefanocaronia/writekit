@@ -4,14 +4,14 @@ version: 0.2.0
 last_updated: 2026-03-16
 status: v0.2 complete, npm publish pending
 last_published_npm: 0.1.0
-types_planned: [novel, collection, essay, paper, article]
+types_planned: [novel, collection, essay, paper]
 ---
 
 # writekit — Roadmap
 
 ## Context
 
-writekit è un CLI Node.js/TypeScript per creare testi strutturati (romanzi, saggi, paper, articoli, raccolte, poesia). Stato attuale: v0.1 funzionante con scaffolding, validazione, build 4 formati (HTML, ePub, PDF, DOCX), watcher, comandi add, sistema temi, report auto-generati.
+writekit è un CLI Node.js/TypeScript per creare testi strutturati (romanzi, saggi, paper, raccolte, poesia). Stato attuale: v0.1 funzionante con scaffolding, validazione, build 4 formati (HTML, ePub, PDF, DOCX), watcher, comandi add, sistema temi, report auto-generati.
 
 ---
 
@@ -41,7 +41,6 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 | **collection** | outline/ | Racconti, poesie, saggi brevi. Più autori possibili |
 | **essay** | outline/ | Saggio singolo |
 | **paper** | outline/, bibliography.yaml | Accademico |
-| **article** | — (solo core) | Il più snello |
 
 > **poetry** rimossa come tipo: una raccolta di poesie usa `collection`.
 
@@ -55,7 +54,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **Campo `type` in config.yaml** — determina scaffolding, validazione, comandi disponibili
 - [x] **Init per tipo** — `wk init` chiede il tipo (o `--type` flag)
 - [x] **Check per tipo** — il validator legge schemas dal type.yaml, valida solo dirs/files del tipo
-- [x] **Add per tipo** — `wk add character` bloccato su essay/paper/article
+- [x] **Add per tipo** — `wk add character` bloccato su essay/paper
 - [x] **Reports per tipo** — ogni tipo definisce quali report generare (novel: tutti, essay: solo status)
 - [x] **Tipi modulari** — ogni tipo in `src/types/{type}/type.yaml` con dirs, files, schemas, reports, add_commands, sample_files
 - [x] **Frontmatter schemas per tipo** — required/optional fields definiti nel type.yaml, non hardcoded
@@ -64,7 +63,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **Agent instructions** — `AGENTS.md` generato all'init, rigenerato al build/watch. Istruzioni embedded in `node_modules/writekit/agents/` con file per tipo.
 - [x] **i18n label** — 17 lingue (it, en, fr, de, es, pt, ru, ar, hi, zh, ko, ja, nl, pl, tr, sv, el). Label editoriali in html, epub, docx, metadata.
 - [x] **Secondo tema builtin** — "minimal" (sans-serif, modern, system-ui)
-- [x] **Test per tutti i tipi** — 46 smoke test, copertura essay/paper/article/collection
+- [x] **Test per tutti i tipi** — smoke test, copertura essay/paper/collection
 
 - [x] **contributors/** — cartella nel core di tutti i tipi. Schede con bio, roles auto-derivati dal config. Check bidirezionale config ↔ contributors.
 - [x] **backcover.md** — quarta di copertina nel core di tutti i tipi.
@@ -102,12 +101,12 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 ## v0.4.0 — Analisi e intelligenza
 
 - [X] **Convenzioni editoriali per tipo** — vedi sezione dedicata sotto
-- [x] **Sections per tipo** — article solo content, paper layout accademico (title block + abstract + content + bibliography). sections[] nel type.yaml controlla cosa buildare.
+- [x] **Sections per tipo** — paper layout accademico (title block + abstract + content + bibliography). sections[] nel type.yaml controlla cosa buildare.
 - [ ] **Agent instructions complete** — completare le istruzioni embedded per un agent autonomo:
     - Workflow completo step-by-step (config → style → synopsis → outline → characters → write)
     - Come popolare i file iniziali dopo `wk init`
     - Sintassi footnotes e immagini nel markdown
-    - Sections disponibili per tipo (article non ha cover/TOC/about, paper non ha cover/colophon)
+    - Sections disponibili per tipo (paper non ha cover/colophon)
     - Come scrivere backcover.md (pitch commerciale, blurb)
     - Abstract e keywords nel config.yaml per paper
     - Come usare `wk stats` per valutare il bilanciamento
@@ -155,24 +154,24 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 ### Problem
 
 Ogni tipo di testo ha convenzioni tipografiche diverse (indentazione, spaziatura, allineamento, ecc.) che oggi sono hardcoded nel CSS dei temi e nel builder DOCX. Non c'è modo di:
-1. Differenziare le convenzioni per tipo (novel vs paper vs article)
+1. Differenziare le convenzioni per tipo (novel vs paper vs essay)
 2. Permettere all'utente di sovrascriverle
 
 ### Convenzioni per tipo
 
-| Proprietà | novel | collection | essay | paper | article |
-|---|---|---|---|---|---|
-| `paragraph_indent` | `1.5rem` | `1.5rem` | `1.5rem` | `0` | `0` |
-| `paragraph_spacing` | `0` | `0` | `0` | `0.5rem` | `0.3rem` |
-| `text_align` | `justify` | `justify` | `justify` | `justify` | `left` |
-| `first_paragraph_indent` | `false` | `false` | `false` | `false` | `false` |
-| `heading_style` | `serif` | `serif` | `serif` | `bold` | `bold` |
-| `blockquote_style` | `italic` | `italic` | `italic` | `indent` | `indent` |
-| `scene_break` | `* * *` | `* * *` | `---` | `---` | `---` |
-| `chapter_opening` | `large` | `large` | `medium` | `small` | `small` |
-| `line_height` | `1.6` | `1.6` | `1.6` | `2.0` | `1.5` |
-| `hyphenation` | `true` | `true` | `true` | `true` | `false` |
-| `orphans_widows` | `2` | `2` | `2` | `3` | `2` |
+| Proprietà | novel | collection | essay | paper |
+|---|---|---|---|---|
+| `paragraph_indent` | `1.5rem` | `1.5rem` | `1.5rem` | `0` |
+| `paragraph_spacing` | `0` | `0` | `0` | `0.5rem` |
+| `text_align` | `justify` | `justify` | `justify` | `justify` |
+| `first_paragraph_indent` | `false` | `false` | `false` | `false` |
+| `heading_style` | `serif` | `serif` | `serif` | `bold` |
+| `blockquote_style` | `italic` | `italic` | `italic` | `indent` |
+| `scene_break` | `* * *` | `* * *` | `---` | `---` |
+| `chapter_opening` | `large` | `large` | `medium` | `small` |
+| `line_height` | `1.6` | `1.6` | `1.6` | `2.0` |
+| `hyphenation` | `true` | `true` | `true` | `true` |
+| `orphans_widows` | `2` | `2` | `2` | `3` |
 
 > `first_paragraph_indent: false` = il primo paragrafo dopo un heading non ha indent (standard tipografico universale).
 > `chapter_opening`: `large` = ~40% pagina vuota prima del titolo, `medium` = ~25%, `small` = solo margine normale.

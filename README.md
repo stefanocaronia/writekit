@@ -1,6 +1,6 @@
 # Write Kit
 
-A writing toolkit that turns Markdown into books. You can write a novel, essay, or article in plain text files, and **writekit** generates ePub, HTML, PDF, and Word documents for you.
+A writing toolkit that turns Markdown into books. You can write a novel, essay, or paper in plain text files, and **writekit** generates ePub, HTML, PDF, and Word documents for you.
 
 It's similar to what programmers use for building apps, but the framework is for text files, notes, configuration files, and the outcome is the assembled book. 
 
@@ -38,7 +38,6 @@ When you create a project, writekit asks what type of text you're writing:
 | **collection** | Anthologies — short stories, poems, essays | cover, title page, TOC, content, back cover, about, colophon |
 | **essay** | Single long-form non-fiction | cover, title page, TOC, content, back cover, about, colophon |
 | **paper** | Academic papers with bibliography | title block, abstract, content, bibliography |
-| **article** | Short articles — the simplest structure | content only |
 
 Each type sets up only the folders and files you need. You choose the type once at creation:
 
@@ -354,7 +353,7 @@ Each project type comes with typographic defaults (paragraph indent, spacing, al
 
 ```yaml
 typography:
-    paragraph_indent: "0"         # no indent (default for paper/article)
+    paragraph_indent: "0"         # no indent (default for paper)
     paragraph_spacing: 0.5rem     # space between paragraphs
     text_align: left              # left or justify
     line_height: "2.0"            # double spacing

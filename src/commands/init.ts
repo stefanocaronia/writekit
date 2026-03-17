@@ -200,7 +200,7 @@ export const initCommand = new Command("init")
     .description("Create a new writing project")
     .argument("<name>", "Project name (directory)")
     .option("-y, --yes", "Skip prompts, use defaults")
-    .option("-t, --type <type>", "Project type (novel, collection, essay, paper, article)")
+    .option("-t, --type <type>", "Project type (novel, collection, essay, paper)")
     .action(async (name: string, opts: { yes?: boolean; type?: string }) => {
         const projectDir = join(process.cwd(), name);
         const options = await promptOptions(name, !!opts.yes, opts.type);

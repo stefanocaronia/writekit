@@ -181,7 +181,7 @@ describe("writekit smoke tests", () => {
 // Project types
 // ---------------------------------------------------------------------------
 
-const TYPES_TO_TEST = ["essay", "paper", "article", "collection"] as const;
+const TYPES_TO_TEST = ["essay", "paper", "collection"] as const;
 
 interface TypeExpectation {
     dirs: string[];
@@ -204,13 +204,6 @@ const TYPE_EXPECTATIONS: Record<string, TypeExpectation> = {
         missingDirs: ["characters", "world", "outline/chapters"],
         files: ["config.yaml", "style.yaml", "synopsis.md", "bibliography.yaml", ".gitignore", "README.md", "AGENTS.md"],
         missingFiles: ["timeline.yaml"],
-        hasCharacterAdd: false,
-    },
-    article: {
-        dirs: ["manuscript", "notes", "reference", "assets", "build"],
-        missingDirs: ["outline", "characters", "world"],
-        files: ["config.yaml", "style.yaml", "synopsis.md", ".gitignore", "README.md", "AGENTS.md"],
-        missingFiles: ["timeline.yaml", "bibliography.yaml"],
         hasCharacterAdd: false,
     },
     collection: {

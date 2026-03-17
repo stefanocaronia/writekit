@@ -34,7 +34,7 @@ export function hasSection(typeDef: ProjectType, section: Section): boolean {
     return typeDef.sections.includes(section);
 }
 
-const ALL_TYPES = ["novel", "collection", "essay", "paper", "article"] as const;
+const ALL_TYPES = ["novel", "collection", "essay", "paper"] as const;
 export type TypeName = (typeof ALL_TYPES)[number];
 
 export function isValidType(name: string): name is TypeName {

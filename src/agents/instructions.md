@@ -1,11 +1,11 @@
 # writekit — Agent Instructions
 
-You are working inside a **writekit** project. This is a structured writing framework for books, essays, papers, and articles. Follow these instructions carefully.
+You are working inside a **writekit** project. This is a structured writing framework for books, essays, and papers. Follow these instructions carefully.
 
 ## Project structure
 
 Read `config.yaml` first. It contains:
-- `type` — the project type (novel, collection, essay, paper, article). Adapt your behavior to this type.
+- `type` — the project type (novel, collection, essay, paper). Adapt your behavior to this type.
 - `title`, `author`, `language` — use these consistently.
 - `theme`, `build_formats`, `print_preset` — do not modify unless asked. `print_preset` controls PDF page size (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu).
 
@@ -94,8 +94,6 @@ Run `wk build` to generate output. Check the reports in `build/reports/` for an 
 - **collection** — anthology of independent pieces. Each piece may have its own author. No characters or world folders.
 - **essay** — single long-form argument. Simple structure, no characters or timeline.
 - **paper** — academic work with bibliography. Has `bibliography.yaml` for sources.
-- **article** — the simplest structure. Just manuscript and notes.
-
 Adapt your behavior to the type. Do not suggest creating characters for an essay, or a bibliography for a novel.
 
 **Read the type-specific instructions** for additional guidelines:
@@ -103,6 +101,4 @@ Adapt your behavior to the type. Do not suggest creating characters for an essay
 - Collection: `node_modules/writekit/agents/types/collection.md`
 - Essay: `node_modules/writekit/agents/types/essay.md`
 - Paper: `node_modules/writekit/agents/types/paper.md`
-- Article: `node_modules/writekit/agents/types/article.md`
-
 Read only the file matching the `type` field in `config.yaml`.

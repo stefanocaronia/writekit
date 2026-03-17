@@ -1018,141 +1018,6 @@ Luca Conti is Professor of Public Health at the University of Bologna. His resea
 // ARTICLE
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("integration: article", () => {
-    const DIR = join(SANDBOX, "int-article");
-
-    beforeAll(() => {
-        mkdirSync(SANDBOX, { recursive: true });
-        rmSync(DIR, { recursive: true, force: true });
-        run(`${CLI} init int-article --yes --type article`, SANDBOX);
-        installCover(DIR);
-    });
-
-    it("populate with realistic content", () => {
-        writeContent(DIR, "config.yaml", `type: article
-title: "Why Every Developer Should Write a Book"
-author: "Stefano Caronia"
-language: en
-genre: technology
-isbn: ""
-publisher: ""
-edition: 1
-date: ""
-build_formats:
-    - html
-    - md
-theme: minimal
-cover: ""
-print_preset: a4
-license: All rights reserved
-license_url: ""
-copyright: "© 2026 Stefano Caronia"
-`);
-
-        writeContent(DIR, "synopsis.md", `# Why Every Developer Should Write a Book
-
-An argument for writing as a tool of thought. This article makes the case that every software developer should attempt to write a book — not for fame or royalties, but because the act of writing is the most effective way to organize and deepen technical knowledge.
-`);
-
-        writeContent(DIR, "manuscript/01-draft.md", `---
-title: Why Every Developer Should Write a Book
-draft: 1
----
-
-# Why Every Developer Should Write a Book
-
-You don't need to be a bestselling author. You don't need a publisher. You don't even need a finished manuscript to start[^1].
-
-**Writing a book is the best way to organize your knowledge.** When you write, you discover what you actually know and what you only think you know. Every chapter you draft is a test — not of your writing ability, but of your understanding.
-
-## The Process Is the Product
-
-Most developers think the goal is the finished book. It's not. The goal is the *thinking* that writing forces you to do.
-
-Consider what happens when you try to explain a concept in writing. You have to:
-
-1. Define your terms precisely
-2. Order your ideas logically
-3. Anticipate the reader's questions
-4. Fill the gaps in your own knowledge
-
-This is exactly the same process you use when designing a good API or writing clear documentation. The skills transfer directly.
-
-## Tools Matter Less Than You Think
-
-![A simple writing setup](assets/image.png)
-
-You can write a book in:
-
-- Markdown files in a git repo
-- Google Docs
-- A fancy writing app
-- A napkin
-
-The tool doesn't matter. **Consistency matters.** Write 500 words a day, every day, and you'll have a 90,000-word first draft in six months. That's a real book. Not a good book — not yet — but a real one. And a real bad book is infinitely more valuable than a perfect book that exists only in your head[^2].
-
-> "The first draft of anything is garbage." — Hemingway (probably)
-
-## The Fear Is the Point
-
-Every developer I know who has tried to write a book has hit the same wall: the fear that they don't know enough, that someone else has already said it better, that the world doesn't need another book on this topic.
-
-This fear is productive. It forces you to research more deeply, to read more widely, to test your assumptions against the existing literature. By the time you push through the fear, you know your subject better than you ever would have without it.
-
-## Start Today
-
-Open a new file. Write a table of contents — just the chapter titles. Don't worry about whether they're right. They'll change a dozen times before you're done.
-
-Then pick the chapter you're most excited about and start writing. Don't start with chapter one. Start with the chapter that keeps you up at night, the one where you have the most to say.
-
-${LOREM}
-
-[^1]: In fact, having a finished manuscript before you start writing it would be a neat trick involving time travel.
-[^2]: This is sometimes called the "shipping principle." A shipped product — however imperfect — generates feedback, learning, and momentum. An unshipped product generates nothing.
-`);
-
-        expect(true).toBe(true);
-    });
-
-    it("character and location commands blocked", () => {
-        expect(() => run(`${CLI} add character "Test"`, DIR)).toThrow();
-        expect(() => run(`${CLI} add location "Test"`, DIR)).toThrow();
-    });
-
-    it("create contributor for author", () => {
-        run(`${CLI} add author "Stefano Caronia"`, DIR);
-    });
-
-    it("populate contributor bio", () => {
-        writeContent(DIR, "contributors/stefano-caronia.md", `---
-name: Stefano Caronia
-roles:
-    - author
----
-
-# Stefano Caronia
-
-Stefano Caronia is a software architect and writer based in Italy. He has been building developer tools for over fifteen years, with a focus on CLI applications, TypeScript, and clean architecture. He is the creator of writekit, an open-source toolkit for writers who prefer plain text and version control.
-`);
-
-        expect(readFileSync(join(DIR, "contributors", "stefano-caronia.md"), "utf-8")).toContain("software architect");
-    });
-
-    it("check passes", () => {
-        const out = run(`${CLI} check`, DIR);
-        // Allow warnings, but no errors
-        expect(out).toMatch(/0 error|All good/);
-    });
-
-    it("build all formats", { timeout: 30_000 }, () => {
-        for (const fmt of ["html", "epub", "docx", "md"]) {
-            run(`${CLI} build ${fmt}`, DIR);
-            const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(`.${fmt}`));
-            expect(files.length, `expected ${fmt} file`).toBeGreaterThan(0);
-        }
-    });
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 // COLLECTION
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1508,15 +1373,6 @@ describe("content verification", () => {
         expect(ch1).toContain("author: Maria Russo");
     });
 
-    it("article: synopsis present", () => {
-        const synopsis = readFileSync(join(SANDBOX, "int-article", "synopsis.md"), "utf-8");
-        expect(synopsis).toContain("writing as a tool");
-    });
-
-    it("article: contributor bio populated", () => {
-        const bio = readFileSync(join(SANDBOX, "int-article", "contributors", "stefano-caronia.md"), "utf-8");
-        expect(bio).toContain("software architect");
-    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1553,9 +1409,9 @@ describe("edge cases", () => {
     it("build with empty project works", () => {
         const emptyDir = join(SANDBOX, "int-empty");
         rmSync(emptyDir, { recursive: true, force: true });
-        run(`${CLI} init int-empty --yes --type article`, SANDBOX);
+        run(`${CLI} init int-empty --yes --type essay`, SANDBOX);
         // Remove the sample chapter
-        rmSync(join(emptyDir, "manuscript", "01-draft.md"), { force: true });
+        rmSync(join(emptyDir, "manuscript", "01-introduction.md"), { force: true });
         // Build should warn but not crash
         const out = run(`${CLI} build html`, emptyDir);
         expect(out).toContain("No chapters");
