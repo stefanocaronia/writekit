@@ -167,7 +167,18 @@ export const buildCommand = new Command("build")
 
         await assertProject(projectDir);
 
-        // Validate before building
+        // Sync first (fix numbering, roles, etc.)
+        console.log(`\n${icon.report} ${c.bold("Syncing project...")}\n`);
+        const syncResult = await syncProject(projectDir);
+        if (syncResult.roles > 0) {
+            console.log(`  ${c.dim(`✓ Updated ${syncResult.roles} contributor role(s)`)}`);
+        }
+        if (syncResult.chapters > 0) {
+            console.log(`  ${c.dim(`✓ Renumbered ${syncResult.chapters} chapter file(s)`)}`);
+        }
+        console.log(`  ${c.dim("✓ AGENTS.md refreshed")}`);
+
+        // Validate after sync
         console.log(`\n${icon.quill} ${c.bold("Checking project...")}\n`);
         const result = await checkProject(projectDir);
         if (result.errors.length > 0) {
@@ -197,16 +208,11 @@ export const buildCommand = new Command("build")
             await builders[fmt](projectDir, config, chapters, theme);
         }
 
-        console.log(`\n${icon.report} ${c.bold("Syncing project...")}\n`);
-        const syncResult = await syncProject(projectDir);
-        if (syncResult.roles > 0) {
-            console.log(`  ${c.dim(`✓ Updated ${syncResult.roles} contributor role(s)`)}`);
-        }
-        if (syncResult.chapters > 0) {
-            console.log(`  ${c.dim(`✓ Renumbered ${syncResult.chapters} chapter file(s)`)}`);
-        }
-        console.log(`  ${c.dim(`✓ Reports: ${syncResult.reports.join(", ")}`)}`);
-        console.log(`  ${c.dim("✓ AGENTS.md refreshed")}`);
+        // Reports (generated after build so they reflect latest content)
+        console.log(`\n${icon.report} ${c.bold("Generating reports...")}\n`);
+        const { generateReports } = await import("../lib/reports.js");
+        const reports = await generateReports(projectDir);
+        console.log(`  ${c.dim(`✓ ${reports.join(", ")}`)}`);
 
         console.log(`\n${icon.done} ${c.green("Done!")}\n`);
     });
