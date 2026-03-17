@@ -213,6 +213,7 @@ function parseMarkdownToDocx(markdown: string, footnotes?: FootnoteMap, imageDat
                     heading: headingMap[level],
                     children: [new TextRun({ text: headingMatch[2], font: FONT, color: ACCENT })],
                     spacing: { before: 400, after: level === 1 ? 300 : 200 },
+                    keepNext: true,
                 }),
             );
             i++;
