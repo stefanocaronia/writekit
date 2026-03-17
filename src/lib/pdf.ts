@@ -85,11 +85,25 @@ export async function buildPdf(
             waitUntil: "networkidle0",
         });
 
-        // Inject cover-page styles to compensate PDF margins
+        // Inject styles: margins via CSS padding (not PDF margins) so cover can be full-bleed
+        const mt = preset.margin.top;
+        const mb = preset.margin.bottom;
+        const ml = preset.margin.inner;
+        const mr = preset.margin.outer;
         await page.addStyleTag({
-            content: `.cover-page {
-                margin: -${preset.margin.top}mm -${preset.margin.outer}mm 0 -${preset.margin.inner}mm;
+            content: `
+            /* Content margins via padding instead of PDF margins */
+            .cover { padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm; }
+            #toc { padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm; }
+            .chapter { padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm; }
+            .backcover { padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm; }
+            .about-authors { padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm; }
+            .colophon { padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm; }
+
+            /* Cover page: full bleed, no padding */
+            .cover-page {
                 padding: 0;
+                margin: 0;
                 width: ${preset.width}mm;
                 height: ${preset.height}mm;
                 display: flex;
@@ -109,10 +123,10 @@ export async function buildPdf(
             width: `${preset.width}mm`,
             height: `${preset.height}mm`,
             margin: {
-                top: `${preset.margin.top}mm`,
-                bottom: `${preset.margin.bottom}mm`,
-                left: `${preset.margin.inner}mm`,
-                right: `${preset.margin.outer}mm`,
+                top: "0",
+                bottom: "0",
+                left: "0",
+                right: "0",
             },
             printBackground: true,
             displayHeaderFooter: false,
