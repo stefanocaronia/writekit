@@ -159,36 +159,40 @@ ${spineItems.join("\n")}
 </package>`;
 }
 
-function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: TypoLabels, partFormat: string, lang: string): string {
+function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: TypoLabels, partFormat: string, chapterFormat: string, lang: string): string {
         const labels = getLabels(config.language);
         const hasParts = config.type !== "paper" && chapters.some((c) => c.part);
+        const partHasLabel = partFormat === "label_number_title" || partFormat === "label_number";
         let items = "";
-        if (hasParts) {
-                let currentPart: string | undefined;
-                let partNum = 0;
-                for (let i = 0; i < chapters.length; i++) {
-                        if (!chapters[i].sectionKind && chapters[i].part && chapters[i].part !== currentPart) {
-                                currentPart = chapters[i].part;
-                                partNum++;
-                                const partText = formatPartHeading(partFormat as any, partNum, currentPart!, typoLabels, lang);
-                                const partDisplay = partText.includes("\n") ? partText.split("\n").join(" — ") : partText;
-                                items += `\n      <li class="toc-part">${escapeXml(partDisplay)}</li>`;
-                        }
-                        items += `\n      <li><a href="chapter-${i + 1}.xhtml">${escapeXml(chapters[i].title)}${config.type === "collection" && chapters[i].author ? ` — ${escapeXml(chapters[i].author!)}` : ""}</a></li>`;
+        let currentPart: string | undefined;
+        let partNum = 0;
+        let chapterNum = 0;
+        for (let i = 0; i < chapters.length; i++) {
+                if (hasParts && !chapters[i].sectionKind && chapters[i].part && chapters[i].part !== currentPart) {
+                        currentPart = chapters[i].part;
+                        partNum++;
+                        const partText = formatPartHeading(partFormat as any, partNum, currentPart!, typoLabels, lang);
+                        let partDisplay = partText.includes("\n") ? partText.split("\n").join(" — ") : partText;
+                        if (partHasLabel) partDisplay = partDisplay.toUpperCase();
+                        items += `\n      <li class="toc-part">${escapeXml(partDisplay)}</li>`;
                 }
-        } else {
-                items = chapters
-                        .map((ch, i) =>
-                                `\n      <li><a href="chapter-${i + 1}.xhtml">${escapeXml(ch.title)}${config.type === "collection" && ch.author ? ` — ${escapeXml(ch.author!)}` : ""}</a></li>`)
-                        .join("");
+                if (chapters[i].sectionKind) {
+                        items += `\n      <li class="toc-chapter"><a href="chapter-${i + 1}.xhtml">${escapeXml(chapters[i].title)}</a></li>`;
+                } else {
+                        chapterNum++;
+                        const formatted = formatChapterHeading(chapterFormat as any, chapterNum, chapters[i].title, typoLabels, lang);
+                        const tocLabel = formatted.includes("\n") ? formatted.split("\n").join(" — ") : formatted;
+                        const authorSuffix = config.type === "collection" && chapters[i].author ? ` — ${escapeXml(chapters[i].author!)}` : "";
+                        items += `\n      <li class="toc-chapter"><a href="chapter-${i + 1}.xhtml">${escapeXml(tocLabel)}${authorSuffix}</a></li>`;
+                }
         }
 
         return wrapXhtml(
                 labels.tableOfContents,
                 `<nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc">
     <h1>${escapeXml(labels.tableOfContents)}</h1>
-    <ol>${items}
-    </ol>
+    <ul>${items}
+    </ul>
 </nav>`,
                 config.language || "it",
         );
@@ -365,12 +369,13 @@ export async function buildEpub(
 
         // Table of contents
         if (hasToc) {
-                zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters, typoLabels, partFormat, lang)), "OEBPS/toc.xhtml");
+                zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters, typoLabels, partFormat, chapterFormat, lang)), "OEBPS/toc.xhtml");
         }
 
         // Parts and chapters
         let currentPartEpub: string | undefined;
         let partIdx = 0;
+        let chapterBodyNum = 0;
         for (let i = 0; i < chapters.length; i++) {
                 const chBody = rewriteImagePaths(chapters[i].body, pathMapping);
 
@@ -398,12 +403,13 @@ export async function buildEpub(
                 }
 
                 // Chapter heading
+                chapterBodyNum++;
                 const chAuthor = config.type === "collection" && chapters[i].author ? `<div class="chapter-author">${escapeXml(chapters[i].author!)}</div>\n` : "";
                 let headingHtml: string;
                 if (chapterFormat === "title") {
                         headingHtml = `<h1>${escapeXml(chapters[i].title)}</h1>`;
                 } else {
-                        const formatted = formatChapterHeading(chapterFormat, i + 1, chapters[i].title, typoLabels, lang);
+                        const formatted = formatChapterHeading(chapterFormat, chapterBodyNum, chapters[i].title, typoLabels, lang);
                         if (formatted.includes("\n")) {
                                 const [numLine, titleLine] = formatted.split("\n");
                                 headingHtml = `<div class="chapter-number">${escapeXml(numLine)}</div>\n<h1>${escapeXml(titleLine)}</h1>`;

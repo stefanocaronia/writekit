@@ -147,28 +147,40 @@ export async function renderBook(
         let tocItems = "";
         let currentPart: string | undefined;
         let partNum = 0;
+        let chapterNum = 0;
+        const partHasLabel = partFormat === "label_number_title" || partFormat === "label_number";
         for (let i = 0; i < chapters.length; i++) {
             const ch = chapters[i];
             if (hasParts && !ch.sectionKind && ch.part && ch.part !== currentPart) {
                 currentPart = ch.part;
                 partNum++;
                 const partText = formatPartHeading(partFormat, partNum, currentPart, typoLabels, lang);
-                const partDisplay = partText.includes("\n") ? partText.split("\n").join(" — ") : partText;
+                let partDisplay = partText.includes("\n") ? partText.split("\n").join(" — ") : partText;
+                if (partHasLabel) partDisplay = partDisplay.toUpperCase();
                 tocItems += `\n                <li class="toc-part">${escapeHtml(partDisplay)}</li>`;
             }
-            tocItems += `\n                <li><a href="#${chapterId(i)}">${escapeHtml(ch.title)}${config.type === "collection" && ch.author ? ` <span class="toc-author">${escapeHtml(ch.author)}</span>` : ""}</a></li>`;
+            if (ch.sectionKind) {
+                tocItems += `\n                <li class="toc-chapter"><a href="#${chapterId(i)}">${escapeHtml(ch.title)}</a></li>`;
+            } else {
+                chapterNum++;
+                const formatted = formatChapterHeading(chapterFormat, chapterNum, ch.title, typoLabels, lang);
+                const tocLabel = formatted.includes("\n") ? formatted.split("\n").join(" — ") : formatted;
+                const authorSuffix = config.type === "collection" && ch.author ? ` <span class="toc-author">${escapeHtml(ch.author)}</span>` : "";
+                tocItems += `\n                <li class="toc-chapter"><a href="#${chapterId(i)}">${escapeHtml(tocLabel)}${authorSuffix}</a></li>`;
+            }
         }
         toc = `
         <nav class="toc">
             <h2>${escapeHtml(labels.tableOfContents)}</h2>
-            <ol>${tocItems}
-            </ol>
+            <ul>${tocItems}
+            </ul>
         </nav>`;
     }
 
     // Chapters with navigation (hidden for single chapter)
     let currentPartForDividers: string | undefined;
     let partDividerNum = 0;
+    let chapterBodyNum = 0;
     const chapterSections = renderedChapters
         .map((html, i) => {
             const nav = showToc
@@ -193,11 +205,12 @@ export async function renderBook(
             }
 
             // Chapter heading
+            chapterBodyNum++;
             let headingHtml: string;
             if (chapterFormat === "title") {
                 headingHtml = `<h1>${escapeHtml(chapters[i].title)}</h1>`;
             } else {
-                const formatted = formatChapterHeading(chapterFormat, i + 1, chapters[i].title, typoLabels, lang);
+                const formatted = formatChapterHeading(chapterFormat, chapterBodyNum, chapters[i].title, typoLabels, lang);
                 if (formatted.includes("\n")) {
                     const [numberLine, titleLine] = formatted.split("\n");
                     headingHtml = `<div class="chapter-number">${escapeHtml(numberLine)}</div>\n            <h1>${escapeHtml(titleLine)}</h1>`;

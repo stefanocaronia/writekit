@@ -57,37 +57,29 @@ export async function renderBookMd(
     if (has("toc") && chapters.length > 1) {
         lines.push(`## ${labels.tableOfContents}`);
         lines.push("");
-        if (hasParts) {
-            // Group chapters by part, sections appear as simple entries
-            let currentPart: string | undefined;
-            let partIdx = 0;
-            let chapterNum = 0;
-            for (let i = 0; i < chapters.length; i++) {
-                if (chapters[i].sectionKind) {
-                    lines.push(chapters[i].title);
-                    continue;
-                }
-                if (chapters[i].part && chapters[i].part !== currentPart) {
-                    currentPart = chapters[i].part;
-                    partIdx++;
-                    const partText = formatPartHeading(typo.partHeading, partIdx, currentPart!, typoLabels, lang);
-                    // Render part as bold item (single line, join with " — " if multi-line)
-                    lines.push(`**${partText.replace(/\n/g, " — ")}**`);
-                    lines.push("");
-                }
-                chapterNum++;
-                lines.push(`${chapterNum}. ${chapters[i].title}${config.type === "collection" && chapters[i].author ? ` — ${chapters[i].author}` : ""}`);
+        const partHasLabel = typo.partHeading === "label_number_title" || typo.partHeading === "label_number";
+        let currentTocPart: string | undefined;
+        let tocPartIdx = 0;
+        let tocChapterNum = 0;
+        for (let i = 0; i < chapters.length; i++) {
+            if (chapters[i].sectionKind) {
+                lines.push(chapters[i].title);
+                continue;
             }
-        } else {
-            let chapterNum = 0;
-            for (let i = 0; i < chapters.length; i++) {
-                if (chapters[i].sectionKind) {
-                    lines.push(chapters[i].title);
-                    continue;
-                }
-                chapterNum++;
-                lines.push(`${chapterNum}. ${chapters[i].title}${config.type === "collection" && chapters[i].author ? ` — ${chapters[i].author}` : ""}`);
+            if (hasParts && chapters[i].part && chapters[i].part !== currentTocPart) {
+                currentTocPart = chapters[i].part;
+                tocPartIdx++;
+                const partText = formatPartHeading(typo.partHeading, tocPartIdx, currentTocPart!, typoLabels, lang);
+                let partDisplay = partText.replace(/\n/g, " — ");
+                if (partHasLabel) partDisplay = partDisplay.toUpperCase();
+                lines.push(`**${partDisplay}**`);
+                lines.push("");
             }
+            tocChapterNum++;
+            const formatted = formatChapterHeading(typo.chapterHeading, tocChapterNum, chapters[i].title, typoLabels, lang);
+            const tocLabel = formatted.includes("\n") ? formatted.split("\n").join(" — ") : formatted;
+            const authorSuffix = config.type === "collection" && chapters[i].author ? ` — ${chapters[i].author}` : "";
+            lines.push(`- ${tocLabel}${authorSuffix}`);
         }
         lines.push("");
         lines.push("---");

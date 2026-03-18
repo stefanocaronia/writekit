@@ -189,12 +189,23 @@ sup a {
   margin-bottom: 1em;
 }
 
+/* TOC list */
+nav[epub\:type="toc"] ul {
+  list-style: none;
+  padding-left: 0;
+}
+.toc-chapter {
+  list-style: none;
+}
+
 /* TOC part heading */
 .toc-part {
   font-weight: bold;
   list-style: none;
-  margin-top: 0.8em;
+  margin-top: 1.2em;
+  margin-bottom: 0.3em;
   color: #555;
+  text-transform: uppercase;
 }
 
 /* TOC author */

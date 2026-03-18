@@ -22,7 +22,7 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [ ] Images display in chapter
 
 ### DOCX — open `sandbox/int-*/build/*.docx` in Word
-- [ ] Cover image fills first page
+- [X] Cover image fills first page
 - [ ] Table of Contents present and updates
 - [ ] Chapter headings look correct
 - [ ] Tables fit within margins

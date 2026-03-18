@@ -72,21 +72,15 @@ body {
   margin-bottom: 1.5rem;
   color: var(--muted);
 }
-.toc ol {
+.toc ul {
   list-style: none;
-  counter-reset: toc;
+  padding-left: 0;
 }
 .toc li {
-  counter-increment: toc;
   margin-bottom: 0.6rem;
 }
-.toc li::before {
-  content: counter(toc, decimal-leading-zero);
-  display: inline-block;
-  width: 2.5rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
+.toc-chapter {
+  list-style: none;
 }
 .toc a {
   color: var(--text);
@@ -438,11 +432,12 @@ sup a:hover {
 .toc-part {
   font-weight: bold;
   list-style: none;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   margin-bottom: 0.3rem;
   color: var(--muted);
   font-size: 0.95rem;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* TOC author (collection) */
