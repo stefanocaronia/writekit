@@ -615,7 +615,7 @@ describe.sequential("integration: novel-parts", () => {
     it.sequential("add front matter", () => {
         run(`${CLI} add dedication`, DIR);
         writeContent(DIR, "manuscript/dedication.md", `---
-title: Dedication
+show_title: false
 ---
 
 To my family.
@@ -623,7 +623,6 @@ To my family.
 
         run(`${CLI} add prologue`, DIR);
         writeContent(DIR, "manuscript/prologue.md", `---
-title: Prologue
 ---
 
 The city stretched out below them like a map drawn by a drunk cartographer — streets that curved when they should have been straight, alleys that dead-ended into walls covered in graffiti and climbing jasmine. From up here, on the roof of the old observatory, you could see the entire valley: the river winding through its center like a silver thread, the bridges crossing it at irregular intervals, the clusters of terracotta roofs interrupted by the occasional glass tower.
@@ -698,7 +697,6 @@ What the pages described was, depending on your perspective, either the most bri
     it.sequential("add back matter", () => {
         run(`${CLI} add epilogue`, DIR);
         writeContent(DIR, "manuscript/epilogue.md", `---
-title: Epilogue
 ---
 
 The city stretched out below them like a map drawn by a drunk cartographer. From up here, on the roof of the old observatory, you could see the entire valley: the river winding through its center like a silver thread. And finally, after all those years, Marchetti understood what the city was becoming.
@@ -725,9 +723,9 @@ The city stretched out below them like a map drawn by a drunk cartographer. From
         const htmlFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".html"));
         const html = readFileSync(join(DIR, "build", htmlFiles[0]), "utf-8");
 
-        // Front/back matter content
-        expect(html).toContain("Prologue");
-        expect(html).toContain("Epilogue");
+        // Front/back matter titles (i18n Italian)
+        expect(html).toContain("Prologo");
+        expect(html).toContain("Epilogo");
 
         // Part title
         expect(html).toContain("The Beginning");
