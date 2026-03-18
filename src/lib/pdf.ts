@@ -124,12 +124,8 @@ export async function buildPdf(
                 display: block;
             }
 
-            /* Chapters start on recto (right-hand page); inserts blank if needed */
-            .chapter, .part-page { break-before: right; page-break-before: right; }
-
-            /* Mirror margins: Puppeteer has limited @page :left/:right support.
-               Uniform left/right CSS padding is used for now. True recto/verso
-               margin mirroring requires post-processing or a dedicated PDF engine. */`,
+            /* Part pages get their own page */
+            .part-page { break-before: page; page-break-before: always; }`,
         });
 
         const outPath = join(buildDir, filename);

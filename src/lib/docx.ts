@@ -20,7 +20,8 @@ import {
     Header,
     Footer,
     PageNumber,
-    SectionType,
+    TabStopType,
+    TabStopPosition,
 } from "docx";
 import type { ISectionOptions } from "docx";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
@@ -505,98 +506,51 @@ export async function buildDocx(
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
-    const docSections: ISectionOptions[] = [];
+    // Pagination: standard book layout
+    // Verso (left/even): [page number]          [book title]
+    // Recto (right/odd):  [chapter title]        [page number]
+    const headerStyle = { font: FONT, size: 18, color: MUTED, italics: true };
+    const rightTab = { type: TabStopType.RIGHT, position: TabStopPosition.MAX };
 
-    // ── Pagination helpers ──────────────────────────────────────────────────
-    // Mirror margins: use gutter to add binding-side space on alternating pages
-    const gutterTwips = typo.mirrorMargins ? convertInchesToTwip(0.3) : 0;
-
-    const defaultPageProps = {
-        page: {
-            size: PAGE_A5,
-            margin: {
-                top: PAGE_MARGIN,
-                bottom: PAGE_MARGIN,
-                left: PAGE_MARGIN,
-                right: PAGE_MARGIN,
-                gutter: gutterTwips,
-            },
-        },
-    };
-
-    // Factories — each call returns a fresh instance (docx requires unique objects per section)
-    function emptyHeader() { return new Header({ children: [] }); }
-    function emptyFooter() { return new Footer({ children: [] }); }
-
-    function pageNumberFooter(): Footer {
-        return new Footer({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.CENTER,
-                    children: [
-                        new TextRun({
-                            children: [PageNumber.CURRENT],
-                            font: FONT,
-                            size: 18,
-                            color: MUTED,
-                        }),
-                    ],
-                }),
-            ],
-        });
-    }
-
-    // Running header factories — 9pt, italic, muted
-    function makeRunningHeader(text: string): Header {
+    /** Recto header: chapter title left, page number right */
+    function rectoHeader(chapterTitle: string): Header {
         return new Header({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.CENTER,
-                    children: [
-                        new TextRun({
-                            text,
-                            font: FONT,
-                            size: 18,
-                            color: MUTED,
-                            italics: true,
-                        }),
-                    ],
-                }),
-            ],
+            children: [new Paragraph({
+                tabStops: [rightTab],
+                children: [
+                    new TextRun({ text: chapterTitle, ...headerStyle }),
+                    new TextRun({ children: ["\t"], ...headerStyle }),
+                    new TextRun({ children: [PageNumber.CURRENT], ...headerStyle }),
+                ],
+            })],
         });
     }
 
-    /** Build headers/footers for a "silent" section (no page number, no header). */
-    function silentHeadersFooters() {
-        return {
-            headers: { default: emptyHeader(), first: emptyHeader(), even: emptyHeader() },
-            footers: { default: emptyFooter(), first: emptyFooter(), even: emptyFooter() },
-        };
+    /** Verso header: page number left, book title right */
+    function versoHeader(): Header {
+        return new Header({
+            children: [new Paragraph({
+                tabStops: [rightTab],
+                children: [
+                    new TextRun({ children: [PageNumber.CURRENT], ...headerStyle }),
+                    new TextRun({ children: ["\t"], ...headerStyle }),
+                    new TextRun({ text: config.title || "", ...headerStyle }),
+                ],
+            })],
+        });
     }
 
-    /** Build headers/footers for a chapter section with running header + page numbers. */
-    function chapterHeadersFooters(chapterTitle: string) {
-        return {
-            headers: typo.runningHeader
-                ? {
-                      default: makeRunningHeader(chapterTitle),
-                      even: makeRunningHeader(config.title || ""),
-                  }
-                : undefined,
-            footers: typo.pageNumbers
-                ? {
-                      default: pageNumberFooter(),
-                      even: pageNumberFooter(),
-                  }
-                : undefined,
-        };
-    }
+    const docSections: ISectionOptions[] = [];
 
     // Cover image page — full bleed, no margins
     if (has("cover") && coverImagePath) {
         try {
             const imgData = await readFile(coverImagePath);
-            const coverWidth = Math.round(PAGE_A5.width / 20 * 1.33);
+            // A5 in EMU: 1 inch = 914400 EMU, A5 = 5.83 x 8.27 inches
+            // Page size in twips: PAGE_A5 = { width: 8391, height: 11906 }
+            // Convert twips to points for image: 1 twip = 1/20 pt, image uses pt-like units
+            // Width in px-like units for docx: A5 ≈ 420 x 595 points
+            const coverWidth = Math.round(PAGE_A5.width / 20 * 1.33); // twips to approx pixels
             const coverHeight = Math.round(PAGE_A5.height / 20 * 1.33);
             docSections.push({
                 properties: {
@@ -605,7 +559,6 @@ export async function buildDocx(
                         margin: { top: 0, bottom: 0, left: 0, right: 0 },
                     },
                 },
-                ...silentHeadersFooters(),
                 children: [
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
@@ -659,8 +612,7 @@ export async function buildDocx(
         }
 
         docSections.push({
-            properties: defaultPageProps,
-            ...silentHeadersFooters(),
+            properties: { page: { size: PAGE_A5 } },
             children: titleChildren,
         });
     } else if (has("title_block") && (config.title || config.author)) {
@@ -685,8 +637,7 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: defaultPageProps,
-            ...silentHeadersFooters(),
+            properties: { page: { size: PAGE_A5 } },
             children: blockChildren,
         });
     } else if (!has("title_page") && !has("title_block") && (config.title || config.author)) {
@@ -709,24 +660,16 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: defaultPageProps,
-            ...silentHeadersFooters(),
+            properties: { page: { size: PAGE_A5 } },
             children: headerChildren,
         });
     }
 
-    // Table of Contents — page numbers but no running header
+    // Table of Contents
     const labels = getLabels(config.language);
     if (has("toc")) {
         docSections.push({
-            properties: {
-                ...defaultPageProps,
-                type: SectionType.ODD_PAGE,
-            },
-            headers: { default: emptyHeader(), even: emptyHeader() },
-            footers: typo.pageNumbers
-                ? { default: pageNumberFooter(), even: pageNumberFooter() }
-                : { default: emptyFooter(), even: emptyFooter() },
+            properties: { page: { size: PAGE_A5 } },
             children: [
                 new Paragraph({
                     heading: HeadingLevel.HEADING_2,
@@ -822,26 +765,10 @@ export async function buildDocx(
                 }));
             }
             sectionChildren.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
-
-            // Dedication: silent (no page numbers, no header)
-            // Prologue/preface/foreword: start on recto, with page numbers + running header
-            const isDedication = chapter.sectionKind === "dedication";
-            if (isDedication) {
-                docSections.push({
-                    properties: defaultPageProps,
-                    ...silentHeadersFooters(),
-                    children: sectionChildren,
-                });
-            } else {
-                docSections.push({
-                    properties: {
-                        ...defaultPageProps,
-                        type: SectionType.ODD_PAGE,
-                    },
-                    ...chapterHeadersFooters(resolvedTitle),
-                    children: sectionChildren,
-                });
-            }
+            docSections.push({
+                properties: { page: { size: PAGE_A5 } },
+                children: sectionChildren,
+            });
             continue;
         }
 
@@ -882,11 +809,7 @@ export async function buildDocx(
                 );
             }
             docSections.push({
-                properties: {
-                    ...defaultPageProps,
-                    type: SectionType.ODD_PAGE,
-                },
-                ...silentHeadersFooters(),
+                properties: { page: { size: PAGE_A5 } },
                 children: partChildren,
             });
         }
@@ -948,25 +871,26 @@ export async function buildDocx(
         children.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
 
         docSections.push({
-            properties: {
-                ...defaultPageProps,
-                type: SectionType.ODD_PAGE,
-            },
-            ...chapterHeadersFooters(chapter.title || ""),
+            properties: { page: { size: PAGE_A5 } },
+            ...((typo.pageNumbers || typo.runningHeader) && {
+                headers: {
+                    default: rectoHeader(chapter.title),  // odd/recto: chapter title + page#
+                    even: versoHeader(),                    // even/verso: page# + book title
+                },
+            }),
             children,
         });
     }
 
-    // Back cover — no page numbers, no header
+    // Back cover
     if (has("backcover") && backcover) {
         docSections.push({
-            properties: defaultPageProps,
-            ...silentHeadersFooters(),
+            properties: { page: { size: PAGE_A5 } },
             children: parseMarkdownToDocxBlocks(backcover),
         });
     }
 
-    // About the author(s) — no page numbers, no header
+    // About the author(s)
     const NON_AUTHOR_ROLES = ["translator", "editor", "illustrator"];
     const contribsWithBio = contributors.filter((c) => c.bio && !c.roles.every((r) => NON_AUTHOR_ROLES.includes(r)));
     if (has("about") && contribsWithBio.length > 0) {
@@ -990,13 +914,12 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: defaultPageProps,
-            ...silentHeadersFooters(),
+            properties: { page: { size: PAGE_A5 } },
             children: aboutChildren,
         });
     }
 
-    // Colophon — no page numbers, no header
+    // Colophon
     const colophonLines = buildColophonLines(config);
     if (has("colophon") && colophonLines.length > 0) {
         const colophonChildren: Paragraph[] = [
@@ -1015,8 +938,7 @@ export async function buildDocx(
         }
 
         docSections.push({
-            properties: defaultPageProps,
-            ...silentHeadersFooters(),
+            properties: { page: { size: PAGE_A5 } },
             children: colophonChildren,
         });
     }
@@ -1024,12 +946,12 @@ export async function buildDocx(
     const authorStr = formatAuthors(config.author);
 
     const doc = new Document({
+        evenAndOddHeaderAndFooters: typo.runningHeader,
         title: config.title,
         subject: config.subtitle || undefined,
         creator: authorStr || undefined,
         description: config.genre ? `Genre: ${config.genre}` : undefined,
         keywords: config.genre || undefined,
-        evenAndOddHeaderAndFooters: typo.runningHeader || typo.pageNumbers,
         numbering: {
             config: [
                 {
