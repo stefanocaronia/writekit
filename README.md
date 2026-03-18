@@ -1,8 +1,8 @@
 # Write Kit
 
-A writing toolkit that turns Markdown into books. You can write a novel, essay, or paper in plain text files, and **writekit** generates ePub, HTML, PDF, and Word documents for you.
+A writing toolkit that turns Markdown into books. Write a novel, essay, or paper in plain text files, and **writekit** generates ePub, HTML, PDF, DOCX, and Markdown output.
 
-It's similar to what programmers use for building apps, but the framework is for text files, notes, configuration files, and the outcome is the assembled book. 
+It's similar to what programmers use for building apps, but for structured text: chapters, parts, characters, outlines, front/back matter — assembled into a finished book.
 
 ## Getting started
 
@@ -70,7 +70,17 @@ my-novel/
 │   ├── plot.md         The overall arc (acts, major beats)
 │   └── chapters/       One file per chapter outline
 │
-├── manuscript/         Your actual text — one file per chapter
+├── manuscript/         Your actual text
+│   ├── dedication.md       (optional) Dedication page
+│   ├── preface.md          (optional) Preface
+│   ├── foreword.md         (optional) Foreword
+│   ├── prologue.md         (optional) Prologue (novel only)
+│   ├── 01-chapter-one.md   Numbered chapter files
+│   ├── 02-chapter-two.md
+│   ├── epilogue.md         (optional) Epilogue (novel only)
+│   ├── afterword.md        (optional) Afterword
+│   └── appendix.md         (optional) Appendix
+│
 ├── characters/         Character sheets (name, role, backstory)
 ├── world/              Locations, cultures, systems
 ├── contributors/       Author, translator, editor bios
@@ -78,11 +88,49 @@ my-novel/
 ├── reference/          External material (images, PDFs, sources)
 ├── assets/             Cover image (cover.jpg or cover.png), illustrations
 │
-└── build/              Generated output (PDF, ePub, HTML, Word)
+└── build/              Generated output (PDF, ePub, HTML, DOCX, MD)
     └── reports/        Auto-generated summaries of your project
 ```
 
 **You only need to care about the folders.** The rest is handled by writekit.
+
+### Parts
+
+For longer books, you can organize chapters into parts:
+
+```
+manuscript/
+├── prologue.md
+├── part-01/
+│   ├── part.yaml           # title: "The Beginning"
+│   ├── 01-the-arrival.md
+│   └── 02-the-journey.md
+├── part-02/
+│   ├── part.yaml           # title: "The End"
+│   └── 01-the-return.md
+└── epilogue.md
+```
+
+Parts are created with `wk add part "Title"` and chapters are assigned with `wk add chapter "Title" --part 1`. Front/back matter files (prologue, epilogue, etc.) stay in the manuscript root, outside any part.
+
+When parts exist, `wk check` will warn about numbered chapter files left in the root — they should be assigned to a part.
+
+### Front and back matter
+
+These special sections are recognized by filename and rendered in the correct position:
+
+| Section | Position | Available for |
+|---|---|---|
+| `dedication.md` | front | novel, collection, essay |
+| `preface.md` | front | novel, collection, essay |
+| `foreword.md` | front | novel, collection, essay |
+| `prologue.md` | front | novel |
+| `epilogue.md` | back | novel |
+| `afterword.md` | back | novel, collection, essay |
+| `appendix.md` | back | novel, collection, essay, paper |
+| `author-note.md` | back | novel, collection, essay |
+
+Add them with `wk add prologue`, `wk add epilogue`, etc. Remove with `wk remove prologue`.
 
 ## Commands
 
@@ -93,6 +141,8 @@ my-novel/
 | `wk init <name>` | Create a new project (prompts for type, title, author, language) |
 | `wk init <name> --type essay` | Create a project of a specific type |
 | `wk add chapter <title>` | Add a new chapter |
+| `wk add chapter <title> --part 1` | Add a chapter inside part 1 |
+| `wk add part <title>` | Add a new part (creates `manuscript/part-NN/`) |
 | `wk add character <name>` | Add a character sheet (novel only) |
 | `wk add location <name>` | Add a place to your world (novel only) |
 | `wk add concept <term>` | Add a concept/term definition (essay, paper) |
@@ -104,11 +154,21 @@ my-novel/
 | `wk add editor <name>` | Add an editor (creates contributor sheet) |
 | `wk add illustrator <name>` | Add an illustrator (creates contributor sheet) |
 | `wk add source <title>` | Add a bibliography source (paper only) |
-| `wk remove author <name>` | Remove an author from the project |
+| `wk add prologue` | Add a prologue (novel only) |
+| `wk add epilogue` | Add an epilogue (novel only) |
+| `wk add dedication` | Add a dedication page |
+| `wk add preface` | Add a preface |
+| `wk add foreword` | Add a foreword |
+| `wk add afterword` | Add an afterword |
+| `wk add appendix` | Add an appendix |
+| `wk add author-note` | Add an author's note |
 | `wk remove chapter <number>` | Remove a chapter and renumber remaining |
+| `wk remove part <number>` | Remove a part (moves chapters to root) |
+| `wk remove author <name>` | Remove an author from the project |
 | `wk remove character <name>` | Remove a character sheet |
 | `wk remove location <name>` | Remove a worldbuilding entry |
 | `wk remove note <name>` | Remove a note |
+| `wk remove prologue` | Remove the prologue (and other sections similarly) |
 | `wk rename character <old> <new>` | Rename a character — updates file, frontmatter, and all references |
 | `wk rename location <old> <new>` | Rename a location — updates file, frontmatter, and all references |
 | `wk rename concept <old> <new>` | Rename a concept — updates file, frontmatter, and all references |
@@ -248,8 +308,20 @@ Writekit uses this metadata for validation, reports, and building your book. You
 | `title` | yes | Chapter title |
 | `chapter` | novel, paper | Chapter number (auto-assigned by `wk add`) |
 | `pov` | novel only | Point-of-view character |
-| `author` | collection | Per-chapter author (for anthologies) |
+| `author` | collection | Per-chapter author (for anthologies with multiple writers) |
 | `draft` | no | Draft number (tracked in reports) |
+
+**Front/back matter sections** (prologue.md, epilogue.md, etc.):
+
+| Field | Required | Description |
+|---|---|---|
+| `title` | yes | Section title (defaults to section name) |
+
+**Part definition** (part.yaml inside `manuscript/part-NN/`):
+
+| Field | Required | Description |
+|---|---|---|
+| `title` | yes | Part title (e.g. "The Beginning") |
 
 **Characters** (novel only):
 
@@ -361,9 +433,29 @@ typography:
     scene_break: "* * *"          # how --- renders in chapters
     chapter_opening: large        # large, medium, or small top space
     orphans_widows: 3             # min lines at page top/bottom
+    chapter_heading: label_number_title   # how chapter titles appear
+    part_heading: label_number_title      # how part titles appear
 ```
 
 Only include the properties you want to change — the rest use the defaults for your project type.
+
+#### Chapter and part heading formats
+
+Control how chapter and part titles are displayed:
+
+| Format | Chapter example | Part example |
+|---|---|---|
+| `title` (default) | The Arrival | The Beginning |
+| `label_number_title` | Chapter 1 / The Arrival | Part I / The Beginning |
+| `label_number` | Chapter 1 | Part I |
+| `number_title` | 1 / The Arrival | I / The Beginning |
+| `number` | 1 | I |
+
+Parts use Roman numerals (I, II, III). For Chinese/Japanese, native numerals are used (第一部, 第一章). For Korean: 제1부, 제1장.
+
+#### Collection per-chapter author
+
+In collection projects, each chapter can have an `author` field in its frontmatter. This author is displayed below the chapter title and in the table of contents — useful for anthologies with multiple contributors.
 
 ## Reports
 
