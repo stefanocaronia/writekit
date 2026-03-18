@@ -1,104 +1,60 @@
-# writekit — Agent Instructions
+# writekit — Agent Rules
 
-You are working inside a **writekit** project. This is a structured writing framework for books, essays, and papers. Follow these instructions carefully.
+You are working inside a **writekit** project. Read `README.md` for full command reference and syntax.
 
-## Project structure
+## Before writing anything
 
-Read `config.yaml` first. It contains:
-- `type` — the project type (novel, collection, essay, paper). Adapt your behavior to this type.
-- `title`, `author`, `language` — use these consistently.
-- `theme`, `build_formats`, `print_preset` — do not modify unless asked. `print_preset` controls PDF page size (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu).
+1. Read `config.yaml` — type, title, author, language. Adapt to the type.
+2. Read `style.yaml` — POV, tense, tone, voice, rules. Never break these.
+3. Read `synopsis.md` — the story/argument summary. Stay aligned.
+4. Read the type-specific instructions for your project type.
 
-Read `style.yaml` before writing or reviewing any text. It defines:
-- `pov` — point of view (first-person, third-person, omniscient). Never break POV consistency.
-- `tense` — narrative tense (past, present). Maintain throughout unless the author specifies a change.
-- `tone` — the emotional quality of the writing. Match it.
-- `voice` — the narrative voice. Keep it consistent.
-- `rules` — specific rules the author has set. Follow them strictly.
-- `typography` — (optional) override typographic conventions for this project (paragraph_indent, paragraph_spacing, text_align, line_height, hyphenation, scene_break, chapter_opening, orphans_widows). Defaults come from the project type.
+## Commands
 
-## File conventions
+Use `wk` commands. Never create, rename, or move files manually.
 
-- **manuscript/** — the actual text. One Markdown file per chapter/section, numbered `01-slug.md`. Each has YAML frontmatter with at minimum `title` and `draft`.
-- **outline/** — the planned structure. Read before writing to understand what each chapter should accomplish.
-- **characters/** — character sheets (novel/collection only). Read before writing scenes with those characters. Respect their appearance, personality, voice, and arc. Characters may have `aliases` — different names they are referred to (nicknames, titles, surnames). Use aliases consistently.
-- **world/** — worldbuilding entries (novel only). Locations, systems, cultures. Be consistent with established facts.
-- **timeline.yaml** — chronological events (novel only). Do not contradict the timeline.
-- **concepts/** — key term definitions (essay, paper). Read before writing to use terminology consistently.
-- **arguments/** — argument sheets with claim, support, counterpoint (essay only). Read before writing to maintain argumentative coherence.
-- **thesis.md** — the central thesis statement (essay only). Every section should support this thesis.
-- **abstract.md** — paper abstract (paper only). 150–300 words summarizing the paper.
-- **contributors/** — bios of authors, translators, editors, illustrators. The `roles` field is auto-derived from config.yaml — do not edit it manually. Edit only the bio text.
-- **notes/** — free-form material. Read for context but do not modify unless asked.
-- **reference/** — external material provided by the author. Read-only.
-- **synopsis.md** — the overall summary. Align your writing with it.
-- **backcover.md** — the back cover pitch. Helps understand the book's intended audience and angle.
-- **assets/cover.{jpg,png}** — cover image, auto-detected and rendered in all build formats. Can also be set explicitly in config.yaml as `cover: path/to/image`.
+```
+wk add chapter "Title"           # new chapter
+wk add chapter "Title" --part 1  # chapter inside part 1
+wk add part "Title"              # new part (manuscript/part-NN/)
+wk add prologue                  # front matter section
+wk add epilogue                  # back matter section
+wk remove chapter 3              # remove + renumber
+wk remove part 2                 # moves chapters to root
+wk rename character "Old" "New"  # updates everywhere
+wk check                         # validate project
+wk build                         # generate output
+wk stats                         # word count, balance
+```
 
-## Writing rules
+See `README.md` for the full list.
 
-1. **Always read `style.yaml` first.** Every writing or editing task must respect POV, tense, tone, and voice.
-2. **Read the relevant outline** before writing a chapter. Follow the planned events, characters, and locations.
-3. **Read character sheets** before writing dialogue or character actions. Maintain voice consistency per character.
-4. **Do not invent new characters, locations, or major plot points** without the author's approval. If the outline doesn't cover something, ask.
-5. **Maintain continuity.** Read previous chapters when writing a new one. Do not contradict established facts.
-6. **Respect the `draft` field.** A higher draft number means more polished text. Match the refinement level.
-7. **Use `wk` commands** — never create files manually. Available commands:
-   - `wk add chapter <title>` — add a chapter (manuscript + outline)
-   - `wk add character <name>` — add a character sheet (novel only)
-   - `wk add location <name>` — add a worldbuilding entry (novel only)
-   - `wk add concept <term>` — add a concept/term definition (essay, paper)
-   - `wk add argument <claim>` — add an argument sheet (essay only)
-   - `wk add note <title>` — add a note
-   - `wk add event <desc>` — add a timeline event (novel only)
-   - `wk add author <name>` — add an author (creates contributor sheet)
-   - `wk add translator <name>` — add a translator (creates contributor sheet)
-   - `wk add editor <name>` — add an editor (creates contributor sheet)
-   - `wk add illustrator <name>` — add an illustrator (creates contributor sheet)
-   - `wk add source <title>` — add a bibliography source (paper only)
-   - `wk remove author <name>` — remove an author
-   - `wk remove chapter <number>` — remove a chapter and renumber remaining
-   - `wk remove character <name>` — remove a character sheet (novel only)
-   - `wk remove location <name>` — remove a worldbuilding entry (novel only)
-   - `wk remove note <name>` — remove a note
-   - `wk rename character <old> <new>` — rename a character everywhere
-   - `wk rename location <old> <new>` — rename a location everywhere
-   - `wk rename concept <old> <new>` — rename a concept everywhere
-   - `wk sync` — synchronize derived fields (contributor roles, agents, reports)
-   - `wk stats` — show project statistics (word count, reading time, chapter balance)
-   - `wk check` — validate the project
-   - `wk build [format]` — build output (html, epub, pdf, docx, md, all)
-8. **Do not modify config.yaml, style.yaml, or timeline.yaml** unless explicitly asked. Use `wk add` and `wk remove` commands instead.
-9. **For the full command reference**, read the project's `README.md` or `node_modules/writekit/README.md`.
+## Do not
 
-## Per-chapter frontmatter
+- Edit files in `build/` or `build/reports/`
+- Edit `contributors/*.md` `roles` field — auto-derived from config.yaml
+- Create files manually in `manuscript/` — use `wk add`
+- Modify `config.yaml` or `style.yaml` unless explicitly asked
+- Invent characters, locations, or plot points without author approval
 
-When a chapter has an `author` field in its frontmatter, that person wrote this piece. In collections, different pieces may have different authors. Respect each author's style if notes are provided.
+## Manuscript structure
 
-When a chapter has a `pov` field, it overrides the global POV from style.yaml for that chapter only.
+- Chapters: `manuscript/01-slug.md` (numbered, frontmatter with `title`)
+- Parts: `manuscript/part-01/part.yaml` + chapters inside
+- Front matter: `dedication.md`, `preface.md`, `foreword.md`, `prologue.md`
+- Back matter: `epilogue.md`, `afterword.md`, `appendix.md`, `author-note.md`
+- Section titles come from i18n. Custom title via frontmatter `title:`.
+- `show_title: false` hides heading in page. `toc: false` excludes from TOC.
 
-## Validation
+## Markdown
 
-Run `wk check` after making changes. It validates:
-- Required files and directories exist
-- YAML syntax is correct
-- Frontmatter has required fields
-- Per-chapter authors match global authors
-- Naming conventions are followed
+- Footnotes: `text[^1]` + `[^1]: Note text.`
+- Images: `![alt](assets/img.jpg)` or `![alt](assets/img.jpg){width=50%}`
+- Scene breaks: `---` or `***` (never just a blank line)
 
-Run `wk build` to generate output. Check the reports in `build/reports/` for an overview of the project status.
+## Workflow
 
-## Project types
-
-- **novel** — full structure with characters, world, timeline, outline. Think long-form, multi-chapter narrative.
-- **collection** — anthology of independent pieces. Each piece may have its own author. No characters or world folders.
-- **essay** — single long-form argument. Simple structure, no characters or timeline.
-- **paper** — academic work with bibliography. Has `bibliography.yaml` for sources.
-Adapt your behavior to the type. Do not suggest creating characters for an essay, or a bibliography for a novel.
-
-**Read the type-specific instructions** for additional guidelines:
-- Novel: `node_modules/writekit/agents/types/novel.md`
-- Collection: `node_modules/writekit/agents/types/collection.md`
-- Essay: `node_modules/writekit/agents/types/essay.md`
-- Paper: `node_modules/writekit/agents/types/paper.md`
-Read only the file matching the `type` field in `config.yaml`.
+1. Read config + style + synopsis + outline
+2. Write or edit content
+3. `wk check` — fix any errors
+4. `wk build` — verify output

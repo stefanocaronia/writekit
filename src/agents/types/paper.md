@@ -1,75 +1,20 @@
-# writekit — Paper: Editorial Conventions
+# Paper — Agent Rules
 
-This project is an **academic paper**. Follow these editorial, structural, and citation conventions.
+Academic paper. Build: title block -> abstract -> content -> bibliography. No cover, TOC, colophon.
 
-## Build output
+## Context to read
+- `config.yaml` `abstract` and `keywords` — rendered at top of paper.
+- `bibliography.yaml` — all cited sources (author, title, year, url).
+- `concepts/*.md` — terminology definitions.
+- `outline/structure.md` — planned section structure.
 
-Papers render: **title block** (title, authors inline), **abstract** (from `config.yaml`), **content** (manuscript chapters), and **bibliography**. No cover image, no back cover, no table of contents, no "About the Author", no colophon.
+## Rules
+- Never fabricate citations. Only cite sources in `bibliography.yaml`.
+- If a claim needs a source and none exists, flag it — use `wk add source`.
+- Standard structure: Introduction -> Literature Review -> Methodology -> Results -> Discussion -> Conclusion. Adapt to discipline.
+- Use objective, formal language. Define technical terms on first use.
+- Tables and figures: number sequentially, reference before they appear.
+- No parts. No front/back matter except `appendix`.
 
-The `abstract` and `keywords` fields in `config.yaml` are rendered at the top of the paper, before the body text.
-
-## Paper structure
-
-Academic papers follow a standard structure. The exact sections depend on the discipline, but the common pattern is:
-
-1. **Title block** — title, author(s), affiliation(s), abstract, keywords
-2. **Abstract** — 150–300 words summarizing the paper's purpose, method, results, and conclusion
-3. **Introduction** — states the research question, context, and significance
-4. **Literature review / Background** — surveys existing work on the topic
-5. **Methodology** (empirical papers) — describes how the research was conducted
-6. **Results / Findings** — presents the data or analysis
-7. **Discussion** — interprets results, compares with existing work, acknowledges limitations
-8. **Conclusion** — summarizes contributions, suggests future work
-9. **References / Bibliography** — all cited sources
-
-Not all papers need all sections. Theoretical papers may omit Methodology and Results. Humanities papers may combine Literature Review with Discussion.
-
-## Formatting standards
-
-- **Font**: Times New Roman, 12pt (APA/MLA) or as specified by the target venue
-- **Spacing**: Double-spaced throughout (APA). Single-space footnotes and block quotes.
-- **Margins**: 1 inch (2.54 cm) on all sides
-- **Page numbers**: Top right or bottom center, starting from the title page
-- **Headings**: Use a consistent hierarchy (Level 1: centered bold, Level 2: left-aligned bold, Level 3: indented bold italic — APA style)
-
-## Citation conventions
-
-### In-text citations
-- **APA**: (Author, Year) — e.g., (Smith, 2023)
-- **MLA**: (Author Page) — e.g., (Smith 42)
-- **Chicago**: Footnotes or (Author Year) depending on variant
-- **IEEE**: Numbered references [1], [2], [3]
-
-Read `style.yaml` and `config.yaml` for any indication of the preferred citation style.
-
-### Bibliography
-- `bibliography.yaml` contains all sources with: author, title, year, url
-- Every in-text citation must have a corresponding entry in the bibliography
-- Every bibliography entry should be cited at least once in the text
-- References are ordered alphabetically by author's last name (APA/MLA/Chicago) or by order of appearance (IEEE)
-
-### Citation integrity
-- **Never fabricate citations.** Only cite sources that exist in `bibliography.yaml` or `reference/`.
-- If a claim needs a source and none is available, flag it rather than inventing one.
-- Use `wk add source` to add new sources properly.
-
-## Sections in manuscript/
-
-- Each major section is a file in `manuscript/`: `01-introduction.md`, `02-literature-review.md`, etc.
-- The abstract can be in `synopsis.md` or as the first section
-- Use heading levels consistently: `#` for the section title, `##` for subsections
-
-## Tables and figures
-
-- Tables and figures should be referenced in the text before they appear
-- Number them sequentially (Table 1, Table 2; Figure 1, Figure 2)
-- Each should have a descriptive caption
-- Place supporting images in `assets/`
-
-## Academic writing conventions
-
-- Use objective, formal language (third person unless the discipline accepts first person)
-- Define technical terms on first use
-- Avoid hedging without cause, but don't overclaim
-- Acknowledge limitations of your work
-- Distinguish between your analysis and others' work — always attribute
+## Available commands
+`chapter`, `concept`, `note`, `source`, `appendix`
