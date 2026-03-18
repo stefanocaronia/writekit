@@ -90,23 +90,11 @@ export async function buildPdf(
             waitUntil: "networkidle0",
         });
 
-        // Header/footer configuration from typography settings
-        const showPageNumbers = typography.pageNumbers;
-        const showRunningHeader = typography.runningHeader;
-        const useHeaderFooter = showPageNumbers || showRunningHeader;
-
-        // Use theme's DOCX font (body font) for header/footer, fallback to Georgia
-        const headerFont = theme.docx?.font || "Georgia";
-
-        // PDF margins: when displayHeaderFooter is true, Puppeteer needs margin
-        // space for the header and footer areas. Content uses CSS padding for
-        // left/right margins so the cover can remain full-bleed.
-        const pdfMarginTop = showRunningHeader ? "15mm" : "0";
-        const pdfMarginBottom = showPageNumbers ? "12mm" : "0";
-
-        // Compensate CSS top/bottom padding when PDF margins provide that space
-        const mt = showRunningHeader ? Math.max(0, preset.margin.top - 15) : preset.margin.top;
-        const mb = showPageNumbers ? Math.max(0, preset.margin.bottom - 12) : preset.margin.bottom;
+        // PDF via Puppeteer: preview/web format. For print-ready output with
+        // page numbers and running headers, use DOCX and export to PDF from Word.
+        // Puppeteer's displayHeaderFooter is global (can't suppress on cover/title pages).
+        const mt = preset.margin.top;
+        const mb = preset.margin.bottom;
         const ml = preset.margin.inner;
         const mr = preset.margin.outer;
 
@@ -144,32 +132,14 @@ export async function buildPdf(
                margin mirroring requires post-processing or a dedicated PDF engine. */`,
         });
 
-        // Build header template (running header with book title)
-        const headerTemplate = showRunningHeader
-            ? `<div style="font-size:8px;text-align:center;width:100%;color:#555;font-family:'${headerFont}',Georgia,serif;font-style:italic;padding:0 15mm;">` +
-              `<span class="title"></span></div>`
-            : `<div></div>`;
-
-        // Build footer template (centered page number)
-        const footerTemplate = showPageNumbers
-            ? `<div style="font-size:9px;text-align:center;width:100%;color:#555;font-family:'${headerFont}',Georgia,serif;">` +
-              `<span class="pageNumber"></span></div>`
-            : `<div></div>`;
-
         const outPath = join(buildDir, filename);
         await page.pdf({
             path: outPath,
             width: `${preset.width}mm`,
             height: `${preset.height}mm`,
-            margin: {
-                top: pdfMarginTop,
-                bottom: pdfMarginBottom,
-                left: "0",
-                right: "0",
-            },
+            margin: { top: "0", bottom: "0", left: "0", right: "0" },
             printBackground: true,
-            displayHeaderFooter: useHeaderFooter,
-            ...(useHeaderFooter && { headerTemplate, footerTemplate }),
+            displayHeaderFooter: false,
         });
 
         return outPath;

@@ -524,28 +524,27 @@ export async function buildDocx(
         },
     };
 
-    // Empty header/footer — suppresses inherited headers/footers on front matter
-    const emptyHeader = new Header({ children: [] });
-    const emptyFooter = new Footer({ children: [] });
+    // Factories — each call returns a fresh instance (docx requires unique objects per section)
+    function emptyHeader() { return new Header({ children: [] }); }
+    function emptyFooter() { return new Footer({ children: [] }); }
 
-    // Page number footer: centered, 9pt, muted
-    const pageNumberFooter = typo.pageNumbers
-        ? new Footer({
-              children: [
-                  new Paragraph({
-                      alignment: AlignmentType.CENTER,
-                      children: [
-                          new TextRun({
-                              children: [PageNumber.CURRENT],
-                              font: FONT,
-                              size: 18,
-                              color: MUTED,
-                          }),
-                      ],
-                  }),
-              ],
-          })
-        : undefined;
+    function pageNumberFooter(): Footer {
+        return new Footer({
+            children: [
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new TextRun({
+                            children: [PageNumber.CURRENT],
+                            font: FONT,
+                            size: 18,
+                            color: MUTED,
+                        }),
+                    ],
+                }),
+            ],
+        });
+    }
 
     // Running header factories — 9pt, italic, muted
     function makeRunningHeader(text: string): Header {
@@ -567,16 +566,11 @@ export async function buildDocx(
         });
     }
 
-    // Book title header for verso (even) pages
-    const bookTitleHeader = typo.runningHeader
-        ? makeRunningHeader(config.title || "")
-        : undefined;
-
     /** Build headers/footers for a "silent" section (no page number, no header). */
     function silentHeadersFooters() {
         return {
-            headers: { default: emptyHeader, first: emptyHeader, even: emptyHeader },
-            footers: { default: emptyFooter, first: emptyFooter, even: emptyFooter },
+            headers: { default: emptyHeader(), first: emptyHeader(), even: emptyHeader() },
+            footers: { default: emptyFooter(), first: emptyFooter(), even: emptyFooter() },
         };
     }
 
@@ -585,14 +579,14 @@ export async function buildDocx(
         return {
             headers: typo.runningHeader
                 ? {
-                      default: makeRunningHeader(chapterTitle), // odd (recto) pages: chapter title
-                      even: bookTitleHeader,                     // even (verso) pages: book title
+                      default: makeRunningHeader(chapterTitle),
+                      even: makeRunningHeader(config.title || ""),
                   }
                 : undefined,
-            footers: pageNumberFooter
+            footers: typo.pageNumbers
                 ? {
-                      default: pageNumberFooter,
-                      even: pageNumberFooter,
+                      default: pageNumberFooter(),
+                      even: pageNumberFooter(),
                   }
                 : undefined,
         };
@@ -729,10 +723,10 @@ export async function buildDocx(
                 ...defaultPageProps,
                 type: SectionType.ODD_PAGE,
             },
-            headers: { default: emptyHeader, even: emptyHeader },
-            footers: pageNumberFooter
-                ? { default: pageNumberFooter, even: pageNumberFooter }
-                : { default: emptyFooter, even: emptyFooter },
+            headers: { default: emptyHeader(), even: emptyHeader() },
+            footers: typo.pageNumbers
+                ? { default: pageNumberFooter(), even: pageNumberFooter() }
+                : { default: emptyFooter(), even: emptyFooter() },
             children: [
                 new Paragraph({
                     heading: HeadingLevel.HEADING_2,
