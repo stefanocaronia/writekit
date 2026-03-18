@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { loadType, isValidType } from "./project-type.js";
 
+export type HeadingFormat = "label_number_title" | "label_number" | "number_title" | "number" | "title";
+
 export interface Typography {
     paragraphIndent: string;
     paragraphSpacing: string;
@@ -15,6 +17,8 @@ export interface Typography {
     lineHeight: string;
     hyphenation: boolean;
     orphansWidows: number;
+    partHeading: HeadingFormat;
+    chapterHeading: HeadingFormat;
 }
 
 const FALLBACK: Typography = {
@@ -29,6 +33,8 @@ const FALLBACK: Typography = {
     lineHeight: "1.6",
     hyphenation: true,
     orphansWidows: 2,
+    partHeading: "label_number_title",
+    chapterHeading: "title",
 };
 
 function yamlToTypography(raw: Record<string, unknown>): Partial<Typography> {
@@ -44,6 +50,8 @@ function yamlToTypography(raw: Record<string, unknown>): Partial<Typography> {
     if (raw.line_height !== undefined) t.lineHeight = String(raw.line_height);
     if (raw.hyphenation !== undefined) t.hyphenation = !!raw.hyphenation;
     if (raw.orphans_widows !== undefined) t.orphansWidows = Number(raw.orphans_widows);
+    if (raw.part_heading !== undefined) t.partHeading = String(raw.part_heading) as HeadingFormat;
+    if (raw.chapter_heading !== undefined) t.chapterHeading = String(raw.chapter_heading) as HeadingFormat;
     return t;
 }
 
@@ -111,4 +119,109 @@ export function typographyCssVars(typo: Typography): string {
         `--orphans: ${typo.orphansWidows}`,
         `--widows: ${typo.orphansWidows}`,
     ].join("; ");
+}
+
+// --- Numeral helpers ---
+
+const ROMAN_MAP: [number, string][] = [
+    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+    [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+    [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+];
+
+export function toRoman(n: number): string {
+    let result = "";
+    for (const [value, numeral] of ROMAN_MAP) {
+        while (n >= value) { result += numeral; n -= value; }
+    }
+    return result;
+}
+
+const CJK_DIGITS = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+const CJK_TENS = ["", "十", "百", "千"];
+
+export function toCjk(n: number): string {
+    if (n <= 0 || n > 9999) return String(n);
+    if (n <= 10) return n === 10 ? "十" : CJK_DIGITS[n];
+    const digits = String(n).split("").map(Number);
+    let result = "";
+    for (let i = 0; i < digits.length; i++) {
+        const place = digits.length - 1 - i;
+        if (digits[i] === 0) continue;
+        if (digits[i] === 1 && place === 1 && i === 0) {
+            result += CJK_TENS[place]; // 十 not 一十
+        } else {
+            result += CJK_DIGITS[digits[i]] + CJK_TENS[place];
+        }
+    }
+    return result;
+}
+
+const CJK_LANGS = ["zh", "ja"];
+const ARABIC_NUM_LANGS = ["ko", "ar", "hi"];
+
+function partNumber(n: number, lang: string): string {
+    const base = lang.split("-")[0];
+    if (CJK_LANGS.includes(base)) return toCjk(n);
+    if (ARABIC_NUM_LANGS.includes(base)) return String(n);
+    return toRoman(n);
+}
+
+function chapterNumber(n: number, lang: string): string {
+    const base = lang.split("-")[0];
+    if (CJK_LANGS.includes(base)) return toCjk(n);
+    return String(n);
+}
+
+export interface Labels {
+    part: string;
+    chapter_label: string;
+    partSuffix: string;
+    chapterSuffix: string;
+}
+
+/**
+ * Format a part heading according to the heading format.
+ */
+export function formatPartHeading(
+    format: HeadingFormat, n: number, title: string,
+    labels: Labels, lang: string,
+): string {
+    const num = partNumber(n, lang);
+    const label = labels.part;
+    const suffix = labels.partSuffix;
+    const base = lang.split("-")[0];
+    const isCjk = CJK_LANGS.includes(base);
+    // CJK: 第一部 (no space between label, number, suffix)
+    // Western: Part I (space between label and number)
+    const labelNum = isCjk ? `${label}${num}${suffix}` : `${label} ${num}`;
+    switch (format) {
+        case "label_number_title": return title ? `${labelNum}\n${title}` : labelNum;
+        case "label_number": return labelNum;
+        case "number_title": return title ? `${isCjk ? `${num}${suffix}` : num}\n${title}` : (isCjk ? `${num}${suffix}` : num);
+        case "number": return isCjk ? `${num}${suffix}` : num;
+        case "title": return title || labelNum;
+    }
+}
+
+/**
+ * Format a chapter heading according to the heading format.
+ */
+export function formatChapterHeading(
+    format: HeadingFormat, n: number, title: string,
+    labels: Labels, lang: string,
+): string {
+    const num = chapterNumber(n, lang);
+    const label = labels.chapter_label;
+    const suffix = labels.chapterSuffix;
+    const base = lang.split("-")[0];
+    const isCjk = CJK_LANGS.includes(base);
+    const labelNum = isCjk ? `${label}${num}${suffix}` : `${label} ${num}`;
+    switch (format) {
+        case "label_number_title": return title ? `${labelNum}\n${title}` : labelNum;
+        case "label_number": return labelNum;
+        case "number_title": return title ? `${isCjk ? `${num}${suffix}` : num}\n${title}` : (isCjk ? `${num}${suffix}` : num);
+        case "number": return isCjk ? `${num}${suffix}` : num;
+        case "title": return title;
+    }
 }

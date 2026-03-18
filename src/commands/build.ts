@@ -96,7 +96,7 @@ async function buildMd(
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
-    const md = renderBookMd(config, chapters, contributors, backcover, sections);
+    const md = await renderBookMd(projectDir, config, chapters, contributors, backcover, sections);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
     const outPath = join(buildDir, buildFilename(config, "md"));

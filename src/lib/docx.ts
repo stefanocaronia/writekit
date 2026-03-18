@@ -26,7 +26,8 @@ import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
 import type { DocxStyle } from "./theme.js";
 import type { Section } from "./project-type.js";
-import { loadTypography } from "./typography.js";
+import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
+import type { Labels as TypoLabels } from "./typography.js";
 // Template support removed — externalStyles doesn't work reliably. See PLAN.md.
 
 // Module-level style, set by buildDocx before rendering
@@ -697,18 +698,136 @@ export async function buildDocx(
         } catch { /* skip */ }
     }
 
-    // Chapters
-    for (const chapter of chapters) {
-        const children: (Paragraph | Table)[] = [
-            new Paragraph({
-                heading: HeadingLevel.HEADING_1,
-                children: [
-                    new TextRun({ text: chapter.title, font: FONT, size: 36, color: ACCENT }),
-                ],
-                spacing: { before: 600, after: 400 },
-            }),
-            ...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap),
-        ];
+    // Chapters (with part dividers and formatted headings)
+    const hasParts = config.type !== "paper" && chapters.some((c) => !!c.part);
+    const typoLabels: TypoLabels = {
+        part: labels.part,
+        chapter_label: labels.chapter_label,
+        partSuffix: labels.partSuffix,
+        chapterSuffix: labels.chapterSuffix,
+    };
+    const lang = config.language || "en";
+    let currentPart: string | undefined;
+    let partIndex = 0;
+    let chapterIndex = 0;
+
+    for (let ci = 0; ci < chapters.length; ci++) {
+        const chapter = chapters[ci];
+
+        // Front/back matter section: simple title + body, no numbering/part/author
+        if (chapter.sectionKind) {
+            const sectionChildren: (Paragraph | Table)[] = [
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    children: [new TextRun({ text: chapter.title, font: FONT, size: 36, color: ACCENT })],
+                    spacing: { before: 600, after: 400 },
+                }),
+                ...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap),
+            ];
+            docSections.push({
+                properties: { page: { size: PAGE_A5 } },
+                children: sectionChildren,
+            });
+            continue;
+        }
+
+        // Part divider page
+        if (hasParts && chapter.part && chapter.part !== currentPart) {
+            currentPart = chapter.part;
+            partIndex++;
+            const partText = formatPartHeading(typo.partHeading, partIndex, currentPart, typoLabels, lang);
+            const partLines = partText.split("\n");
+            const partChildren: Paragraph[] = [
+                // Generous top spacing to center vertically
+                new Paragraph({ spacing: { before: 6000 } }),
+            ];
+            if (partLines.length > 1) {
+                // First line: number/label in smaller font
+                partChildren.push(
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [new TextRun({ text: partLines[0], font: FONT, size: 48, color: MUTED })],
+                        spacing: { after: 200 },
+                    }),
+                );
+                // Second line: title in large font
+                partChildren.push(
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [new TextRun({ text: partLines[1], font: FONT, size: 72, color: ACCENT })],
+                        spacing: { after: 400 },
+                    }),
+                );
+            } else {
+                partChildren.push(
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [new TextRun({ text: partLines[0], font: FONT, size: 72, color: ACCENT })],
+                        spacing: { after: 400 },
+                    }),
+                );
+            }
+            docSections.push({
+                properties: { page: { size: PAGE_A5 } },
+                children: partChildren,
+            });
+        }
+
+        // Chapter heading
+        chapterIndex++;
+        const children: (Paragraph | Table)[] = [];
+        if (typo.chapterHeading === "title") {
+            // Default: just the title
+            children.push(
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    children: [
+                        new TextRun({ text: chapter.title, font: FONT, size: 36, color: ACCENT }),
+                    ],
+                    spacing: { before: 600, after: 400 },
+                }),
+            );
+        } else {
+            const headingText = formatChapterHeading(typo.chapterHeading, chapterIndex, chapter.title, typoLabels, lang);
+            const headingLines = headingText.split("\n");
+            if (headingLines.length > 1) {
+                // First line: chapter number/label in smaller text
+                children.push(
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [new TextRun({ text: headingLines[0], font: FONT, size: 24, color: MUTED })],
+                        spacing: { before: 600, after: 100 },
+                    }),
+                );
+                // Second line: main title as H1
+                children.push(
+                    new Paragraph({
+                        heading: HeadingLevel.HEADING_1,
+                        children: [
+                            new TextRun({ text: headingLines[1], font: FONT, size: 36, color: ACCENT }),
+                        ],
+                        spacing: { after: 400 },
+                    }),
+                );
+            } else {
+                children.push(
+                    new Paragraph({
+                        heading: HeadingLevel.HEADING_1,
+                        children: [
+                            new TextRun({ text: headingLines[0], font: FONT, size: 36, color: ACCENT }),
+                        ],
+                        spacing: { before: 600, after: 400 },
+                    }),
+                );
+            }
+        }
+        if (config.type === "collection" && chapter.author) {
+            children.push(new Paragraph({
+                children: [new TextRun({ text: chapter.author, font: FONT, size: 22, color: MUTED, italics: true })],
+                spacing: { after: 200 },
+            }));
+        }
+        children.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
 
         docSections.push({
             properties: { page: { size: PAGE_A5 } },
@@ -725,7 +844,8 @@ export async function buildDocx(
     }
 
     // About the author(s)
-    const contribsWithBio = contributors.filter((c) => c.bio);
+    const NON_AUTHOR_ROLES = ["translator", "editor", "illustrator"];
+    const contribsWithBio = contributors.filter((c) => c.bio && !c.roles.every((r) => NON_AUTHOR_ROLES.includes(r)));
     if (has("about") && contribsWithBio.length > 0) {
         const aboutChildren: Paragraph[] = [
             new Paragraph({

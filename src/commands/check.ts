@@ -1,7 +1,8 @@
 import { Command } from "commander";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { fileExists, dirExists } from "../lib/fs-utils.js";
+import { SECTION_FILE_MAP } from "../lib/parse.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
 import { listThemes } from "../lib/theme.js";
 import { supportedLanguages } from "../lib/i18n.js";
@@ -233,13 +234,35 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         }
     }
 
-    // Check manuscript naming convention (NN-slug.md)
-    const manuscriptFiles = await getMdFiles(join(projectDir, "manuscript"));
+    // Check manuscript naming convention (NN-slug.md) and parts
+    const manuscriptDir = join(projectDir, "manuscript");
+    const manuscriptFiles = await getMdFiles(manuscriptDir);
+    const sectionFileNames = Object.keys(SECTION_FILE_MAP);
+    let hasParts = false;
+    try {
+        const entries = await readdir(manuscriptDir);
+        for (const e of entries) {
+            if (e.startsWith("part-")) {
+                const s = await stat(join(manuscriptDir, e));
+                if (s.isDirectory()) { hasParts = true; break; }
+            }
+        }
+    } catch { /* empty */ }
+
     for (const file of manuscriptFiles) {
+        // Skip known section files (prologue.md, epilogue.md, etc.)
+        if (sectionFileNames.includes(file)) continue;
         if (!/^\d{2,}-.+\.md$/.test(file)) {
             issues.push({
                 level: "warning",
                 message: `manuscript/${file}: doesn't follow naming convention NN-slug.md`,
+            });
+        }
+        // Warn about loose chapters when parts exist
+        if (hasParts && /^\d{2,}-.+\.md$/.test(file)) {
+            issues.push({
+                level: "warning",
+                message: `manuscript/${file}: chapter in root but parts exist — assign to a part`,
             });
         }
     }

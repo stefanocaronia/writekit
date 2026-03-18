@@ -6,8 +6,8 @@ import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
-import type { Typography } from "./typography.js";
-import { typographyClasses, typographyCssVars } from "./typography.js";
+import type { Typography, Labels as TypoLabels } from "./typography.js";
+import { typographyClasses, typographyCssVars, formatPartHeading, formatChapterHeading } from "./typography.js";
 import type { Section } from "./project-type.js";
 
 const JS = `
@@ -128,19 +128,47 @@ export async function renderBook(
         }
     }
 
+    // Parts support: only for non-paper types when at least one chapter has a part
+    const hasParts = config.type !== "paper" && chapters.some((ch) => ch.part);
+    const lang = config.language || "it";
+    const typoLabels: TypoLabels = {
+        part: labels.part,
+        chapter_label: labels.chapter_label,
+        partSuffix: labels.partSuffix,
+        chapterSuffix: labels.chapterSuffix,
+    };
+    const chapterFormat = typography?.chapterHeading ?? "title";
+    const partFormat = typography?.partHeading ?? "label_number_title";
+
     // Table of contents (only if section enabled and multiple chapters)
     const showToc = has("toc") && chapters.length > 1;
-    const toc = showToc
-        ? `
+    let toc = "";
+    if (showToc) {
+        let tocItems = "";
+        let currentPart: string | undefined;
+        let partNum = 0;
+        for (let i = 0; i < chapters.length; i++) {
+            const ch = chapters[i];
+            if (hasParts && !ch.sectionKind && ch.part && ch.part !== currentPart) {
+                currentPart = ch.part;
+                partNum++;
+                const partText = formatPartHeading(partFormat, partNum, currentPart, typoLabels, lang);
+                const partDisplay = partText.includes("\n") ? partText.split("\n").join(" — ") : partText;
+                tocItems += `\n                <li class="toc-part">${escapeHtml(partDisplay)}</li>`;
+            }
+            tocItems += `\n                <li><a href="#${chapterId(i)}">${escapeHtml(ch.title)}${config.type === "collection" && ch.author ? ` <span class="toc-author">${escapeHtml(ch.author)}</span>` : ""}</a></li>`;
+        }
+        toc = `
         <nav class="toc">
             <h2>${escapeHtml(labels.tableOfContents)}</h2>
-            <ol>
-                ${chapters.map((ch, i) => `<li><a href="#${chapterId(i)}">${escapeHtml(ch.title)}</a></li>`).join("\n                ")}
+            <ol>${tocItems}
             </ol>
-        </nav>`
-        : "";
+        </nav>`;
+    }
 
     // Chapters with navigation (hidden for single chapter)
+    let currentPartForDividers: string | undefined;
+    let partDividerNum = 0;
     const chapterSections = renderedChapters
         .map((html, i) => {
             const nav = showToc
@@ -156,9 +184,45 @@ export async function renderBook(
                 })()
                 : "";
 
-            return `
-        <section class="chapter" id="${chapterId(i)}">
+            // Front/back matter sections: simple rendering, no numbering/part/author
+            if (chapters[i].sectionKind) {
+                return `\n        <section class="chapter section-${chapters[i].sectionKind}" id="${chapterId(i)}">
             <h1>${escapeHtml(chapters[i].title)}</h1>
+            ${html}${nav}
+        </section>`;
+            }
+
+            // Chapter heading
+            let headingHtml: string;
+            if (chapterFormat === "title") {
+                headingHtml = `<h1>${escapeHtml(chapters[i].title)}</h1>`;
+            } else {
+                const formatted = formatChapterHeading(chapterFormat, i + 1, chapters[i].title, typoLabels, lang);
+                if (formatted.includes("\n")) {
+                    const [numberLine, titleLine] = formatted.split("\n");
+                    headingHtml = `<div class="chapter-number">${escapeHtml(numberLine)}</div>\n            <h1>${escapeHtml(titleLine)}</h1>`;
+                } else {
+                    headingHtml = `<h1>${escapeHtml(formatted)}</h1>`;
+                }
+            }
+
+            // Part divider page
+            let partPage = "";
+            if (hasParts && chapters[i].part && chapters[i].part !== currentPartForDividers) {
+                currentPartForDividers = chapters[i].part;
+                partDividerNum++;
+                const partFormatted = formatPartHeading(partFormat, partDividerNum, currentPartForDividers!, typoLabels, lang);
+                if (partFormatted.includes("\n")) {
+                    const [numLine, titleLine] = partFormatted.split("\n");
+                    partPage = `\n        <section class="part-page">\n            <div class="part-number">${escapeHtml(numLine)}</div>\n            <h1>${escapeHtml(titleLine)}</h1>\n        </section>`;
+                } else {
+                    partPage = `\n        <section class="part-page">\n            <h1>${escapeHtml(partFormatted)}</h1>\n        </section>`;
+                }
+            }
+
+            return `${partPage}
+        <section class="chapter" id="${chapterId(i)}">
+            ${headingHtml}${config.type === "collection" && chapters[i].author ? `\n            <div class="chapter-author">${escapeHtml(chapters[i].author!)}</div>` : ""}
             ${html}${nav}
         </section>`;
         })
@@ -172,8 +236,9 @@ export async function renderBook(
     // About the author(s)
     let aboutSection = "";
     if (has("about") && contributors && contributors.length > 0) {
+        const NON_AUTHOR_ROLES = ["translator", "editor", "illustrator"];
         const bios = contributors
-            .filter((c) => c.bio)
+            .filter((c) => c.bio && !c.roles.every((r) => NON_AUTHOR_ROLES.includes(r)))
             .map((c) => `<p><strong>${escapeHtml(c.name)}</strong> ${escapeHtml(c.bio)}</p>`)
             .join("\n      ");
         if (bios) {

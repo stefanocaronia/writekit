@@ -154,3 +154,50 @@ sup a {
   color: #0066cc;
   text-decoration: none;
 }
+
+/* Part pages */
+.part-page {
+  text-align: center;
+  margin-top: 30%;
+}
+.part-page .part-number {
+  font-size: 1.2em;
+  letter-spacing: 0.1em;
+  color: #717171;
+  margin-bottom: 0.5em;
+}
+.part-page h1 {
+  font-size: 2em;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+}
+
+/* Chapter number */
+.chapter-number {
+  font-size: 0.85em;
+  letter-spacing: 0.1em;
+  color: #717171;
+  margin-bottom: 0.3em;
+  text-align: center;
+}
+
+/* Chapter author */
+.chapter-author {
+  font-style: italic;
+  color: #717171;
+  margin-bottom: 1em;
+}
+
+/* TOC part heading */
+.toc-part {
+  font-weight: bold;
+  list-style: none;
+  margin-top: 0.8em;
+  color: #717171;
+}
+
+/* TOC author */
+.toc-author {
+  color: #717171;
+  font-style: italic;
+}

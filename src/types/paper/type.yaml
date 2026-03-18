@@ -17,6 +17,7 @@ typography:
     line_height: "2.0"
     hyphenation: true
     orphans_widows: 3
+    chapter_heading: title
 dirs:
     - outline
     - manuscript
@@ -36,6 +37,7 @@ add_commands:
     - concept
     - note
     - source
+    - appendix
 reports:
     - status
 schemas:

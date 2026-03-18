@@ -599,6 +599,173 @@ Water in Italian culture carries deep symbolic weight: purification, memory, the
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// NOVEL WITH PARTS AND FRONT/BACK MATTER
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe.sequential("integration: novel-parts", () => {
+    const DIR = join(SANDBOX, "int-novel-parts");
+
+    beforeAll(() => {
+        mkdirSync(SANDBOX, { recursive: true });
+        rmSync(DIR, { recursive: true, force: true });
+        run(`${CLI} init int-novel-parts --yes --type novel`, SANDBOX);
+        installCover(DIR);
+    });
+
+    it.sequential("add front matter", () => {
+        run(`${CLI} add dedication`, DIR);
+        writeContent(DIR, "manuscript/dedication.md", `---
+title: Dedication
+---
+
+To my family.
+`);
+
+        run(`${CLI} add prologue`, DIR);
+        writeContent(DIR, "manuscript/prologue.md", `---
+title: Prologue
+---
+
+The city stretched out below them like a map drawn by a drunk cartographer — streets that curved when they should have been straight, alleys that dead-ended into walls covered in graffiti and climbing jasmine. From up here, on the roof of the old observatory, you could see the entire valley: the river winding through its center like a silver thread, the bridges crossing it at irregular intervals, the clusters of terracotta roofs interrupted by the occasional glass tower.
+
+There was a time, not so long ago, when all of this had been fields. Wheat fields, mostly, with the occasional vineyard breaking the monotony of gold with streaks of deep green. The old photographs in the municipal archive showed a landscape that was almost unrecognizable — vast and empty and silent, with only the church steeple and the water tower rising above the horizon line.
+`);
+
+        expect(existsSync(join(DIR, "manuscript", "dedication.md"))).toBe(true);
+        expect(existsSync(join(DIR, "manuscript", "prologue.md"))).toBe(true);
+    });
+
+    it.sequential("add parts", { timeout: 30_000 }, () => {
+        run(`${CLI} add part "The Beginning"`, DIR);
+        run(`${CLI} add part "The End"`, DIR);
+
+        expect(existsSync(join(DIR, "manuscript", "part-01", "part.yaml"))).toBe(true);
+        expect(existsSync(join(DIR, "manuscript", "part-02", "part.yaml"))).toBe(true);
+    });
+
+    it.sequential("add chapters to parts", { timeout: 30_000 }, () => {
+        run(`${CLI} add chapter "The Arrival" --part 1`, DIR);
+        run(`${CLI} add chapter "The Journey" --part 1`, DIR);
+        run(`${CLI} add chapter "The Return" --part 2`, DIR);
+
+        writeContent(DIR, "manuscript/part-01/01-the-arrival.md", `---
+chapter: 1
+title: The Arrival
+pov: ""
+draft: 1
+---
+
+# The Arrival
+
+Professor Marchetti had spent forty years studying the transformation. She had measured it in census data and building permits, in water consumption records and electricity usage patterns. She had mapped the expansion year by year, decade by decade, watching the city grow like an organism — first slowly, then with alarming speed, consuming the countryside the way a fire consumes dry grass.
+
+But numbers, she knew, told only part of the story. The real transformation was happening at a level that no statistic could capture — in the way people walked through the streets, in the conversations they had in cafes, in the dreams they dreamed at night. The city was not just growing; it was *becoming* something. Something new and strange and not entirely human.
+`);
+
+        writeContent(DIR, "manuscript/part-01/02-the-journey.md", `---
+chapter: 2
+title: The Journey
+pov: ""
+draft: 1
+---
+
+# The Journey
+
+The question that kept her awake at night, the question she had been circling for four decades without ever quite reaching its center, was simple: *What was it becoming?* And the corollary, which was perhaps even more troubling: *Was there anything anyone could do to stop it?*
+
+In the basement of the university library, behind a locked door that required three separate keys and a six-digit code, there was a room that contained the answer. Or at least, it contained the closest thing to an answer that anyone had ever found. The room was small — barely large enough for a desk, a chair, and a single filing cabinet — and it smelled of dust and old paper and something else, something faintly chemical, like the residue of a long-extinguished fire.
+`);
+
+        writeContent(DIR, "manuscript/part-02/01-the-return.md", `---
+chapter: 3
+title: The Return
+pov: ""
+draft: 1
+---
+
+# The Return
+
+The filing cabinet held seven folders. Each folder contained exactly thirteen pages. Each page was covered in handwriting so small and dense that it required a magnifying glass to read. The handwriting belonged to a man named Alessandro Ferretti, who had been the city's chief urban planner from 1952 to 1971, and who had disappeared one Tuesday morning in November of that year without leaving any trace except these ninety-one pages of closely written text.
+
+What the pages described was, depending on your perspective, either the most brilliant piece of urban theory ever written or the ravings of a man who had lost his mind. Marchetti had read them seventeen times. Each time, she came away with a different understanding. Each time, she was more convinced that Ferretti had been right about everything.
+`);
+
+        expect(existsSync(join(DIR, "manuscript", "part-01", "01-the-arrival.md"))).toBe(true);
+        expect(existsSync(join(DIR, "manuscript", "part-01", "02-the-journey.md"))).toBe(true);
+        expect(existsSync(join(DIR, "manuscript", "part-02", "01-the-return.md"))).toBe(true);
+    });
+
+    it.sequential("add back matter", () => {
+        run(`${CLI} add epilogue`, DIR);
+        writeContent(DIR, "manuscript/epilogue.md", `---
+title: Epilogue
+---
+
+The city stretched out below them like a map drawn by a drunk cartographer. From up here, on the roof of the old observatory, you could see the entire valley: the river winding through its center like a silver thread. And finally, after all those years, Marchetti understood what the city was becoming.
+`);
+
+        expect(existsSync(join(DIR, "manuscript", "epilogue.md"))).toBe(true);
+    });
+
+    it.sequential("verify part.yaml contents", () => {
+        const part1 = readFileSync(join(DIR, "manuscript", "part-01", "part.yaml"), "utf-8");
+        expect(part1).toContain("The Beginning");
+        const part2 = readFileSync(join(DIR, "manuscript", "part-02", "part.yaml"), "utf-8");
+        expect(part2).toContain("The End");
+    });
+
+    it.sequential("build all formats", { timeout: 30_000 }, () => {
+        run(`${CLI} build`, DIR);
+        const buildFiles = readdirSync(join(DIR, "build"));
+        const htmlFiles = buildFiles.filter((f) => f.endsWith(".html"));
+        expect(htmlFiles.length).toBeGreaterThan(0);
+    });
+
+    it.sequential("html contains expected content", () => {
+        const htmlFiles = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".html"));
+        const html = readFileSync(join(DIR, "build", htmlFiles[0]), "utf-8");
+
+        // Front/back matter content
+        expect(html).toContain("Prologue");
+        expect(html).toContain("Epilogue");
+
+        // Part title
+        expect(html).toContain("The Beginning");
+
+        // Chapter title
+        expect(html).toContain("The Arrival");
+
+        // Part divider
+        expect(html).toContain("part-page");
+
+        // Section class for front/back matter
+        expect(html).toMatch(/section-prologue|section-epilogue/);
+    });
+
+    it.sequential("check passes", () => {
+        const out = run(`${CLI} check`, DIR);
+        expect(out).toMatch(/0 error|All good/);
+    });
+
+    it.sequential("remove part 2 moves chapters to root", () => {
+        run(`${CLI} remove part 2`, DIR);
+
+        // Part directory should no longer exist
+        expect(existsSync(join(DIR, "manuscript", "part-02"))).toBe(false);
+
+        // The moved chapter should exist in manuscript root
+        const rootFiles = readdirSync(join(DIR, "manuscript")).filter((f) => f.endsWith(".md") && /^\d+-/.test(f));
+        const movedChapter = rootFiles.find((f) => f.includes("the-return"));
+        expect(movedChapter).toBeDefined();
+    });
+
+    it.sequential("remove prologue", () => {
+        run(`${CLI} remove prologue`, DIR);
+        expect(existsSync(join(DIR, "manuscript", "prologue.md"))).toBe(false);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ESSAY
 // ─────────────────────────────────────────────────────────────────────────────
 

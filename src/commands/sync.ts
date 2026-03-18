@@ -3,6 +3,7 @@ import { readdir, readFile, writeFile, rename } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml, stringify } from "yaml";
 import { assertProject } from "../lib/fs-utils.js";
+import { SECTION_FILE_MAP } from "../lib/parse.js";
 import { padNumber } from "../lib/slug.js";
 import { ensureAgentsMd } from "../lib/agents.js";
 import { generateReports } from "../lib/reports.js";
@@ -85,10 +86,10 @@ async function syncContributorRoles(projectDir: string): Promise<number> {
 async function syncChapterNumbering(projectDir: string): Promise<number> {
     let renamed = 0;
 
-    // Manuscript
+    // Manuscript (skip front/back matter section files)
     const msDir = join(projectDir, "manuscript");
     try {
-        const files = (await readdir(msDir)).filter((f) => extname(f) === ".md").sort();
+        const files = (await readdir(msDir)).filter((f) => extname(f) === ".md" && !(f in SECTION_FILE_MAP)).sort();
         for (let i = 0; i < files.length; i++) {
             const expected = `${padNumber(i + 1)}-`;
             if (!files[i].startsWith(expected)) {

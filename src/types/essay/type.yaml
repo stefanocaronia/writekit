@@ -20,6 +20,8 @@ typography:
     line_height: "1.6"
     hyphenation: true
     orphans_widows: 2
+    part_heading: label_number_title
+    chapter_heading: title
 dirs:
     - outline
     - manuscript
@@ -37,9 +39,16 @@ files:
     - backcover.md
 add_commands:
     - chapter
+    - part
     - argument
     - concept
     - note
+    - dedication
+    - preface
+    - foreword
+    - afterword
+    - appendix
+    - author-note
 reports:
     - status
 schemas:

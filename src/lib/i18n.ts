@@ -24,6 +24,18 @@ export interface Labels {
     allRightsReserved: string;
     license: string;
     abstract: string;
+    part: string;
+    chapter_label: string;
+    partSuffix: string;
+    chapterSuffix: string;
+    prologue: string;
+    epilogue: string;
+    preface: string;
+    foreword: string;
+    afterword: string;
+    appendix: string;
+    authorNote: string;
+    dedication: string;
 }
 
 const en: Labels = {
@@ -45,6 +57,18 @@ const en: Labels = {
     allRightsReserved: "All rights reserved",
     license: "License",
     abstract: "Abstract",
+    part: "Part",
+    chapter_label: "Chapter",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prologue",
+    epilogue: "Epilogue",
+    preface: "Preface",
+    foreword: "Foreword",
+    afterword: "Afterword",
+    appendix: "Appendix",
+    authorNote: "Author's Note",
+    dedication: "Dedication",
 };
 
 const it: Labels = {
@@ -66,6 +90,18 @@ const it: Labels = {
     allRightsReserved: "Tutti i diritti riservati",
     license: "Licenza",
     abstract: "Abstract",
+    part: "Parte",
+    chapter_label: "Capitolo",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prologo",
+    epilogue: "Epilogo",
+    preface: "Prefazione",
+    foreword: "Premessa",
+    afterword: "Postfazione",
+    appendix: "Appendice",
+    authorNote: "Nota dell'Autore",
+    dedication: "Dedica",
 };
 
 const fr: Labels = {
@@ -87,6 +123,18 @@ const fr: Labels = {
     allRightsReserved: "Tous droits réservés",
     license: "Licence",
     abstract: "Résumé",
+    part: "Partie",
+    chapter_label: "Chapitre",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prologue",
+    epilogue: "Épilogue",
+    preface: "Préface",
+    foreword: "Avant-propos",
+    afterword: "Postface",
+    appendix: "Annexe",
+    authorNote: "Note de l'auteur",
+    dedication: "Dédicace",
 };
 
 const de: Labels = {
@@ -108,6 +156,18 @@ const de: Labels = {
     allRightsReserved: "Alle Rechte vorbehalten",
     license: "Lizenz",
     abstract: "Zusammenfassung",
+    part: "Teil",
+    chapter_label: "Kapitel",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prolog",
+    epilogue: "Epilog",
+    preface: "Vorwort",
+    foreword: "Geleitwort",
+    afterword: "Nachwort",
+    appendix: "Anhang",
+    authorNote: "Anmerkung des Autors",
+    dedication: "Widmung",
 };
 
 const es: Labels = {
@@ -129,6 +189,18 @@ const es: Labels = {
     allRightsReserved: "Todos los derechos reservados",
     license: "Licencia",
     abstract: "Resumen",
+    part: "Parte",
+    chapter_label: "Capítulo",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prólogo",
+    epilogue: "Epílogo",
+    preface: "Prefacio",
+    foreword: "Prólogo editorial",
+    afterword: "Epílogo editorial",
+    appendix: "Apéndice",
+    authorNote: "Nota del autor",
+    dedication: "Dedicatoria",
 };
 
 const pt: Labels = {
@@ -150,6 +222,18 @@ const pt: Labels = {
     allRightsReserved: "Todos os direitos reservados",
     license: "Licença",
     abstract: "Resumo",
+    part: "Parte",
+    chapter_label: "Capítulo",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prólogo",
+    epilogue: "Epílogo",
+    preface: "Prefácio",
+    foreword: "Prefácio editorial",
+    afterword: "Posfácio",
+    appendix: "Apêndice",
+    authorNote: "Nota do autor",
+    dedication: "Dedicatória",
 };
 
 const ru: Labels = {
@@ -171,6 +255,18 @@ const ru: Labels = {
     allRightsReserved: "Все права защищены",
     license: "Лицензия",
     abstract: "Аннотация",
+    part: "Часть",
+    chapter_label: "Глава",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Пролог",
+    epilogue: "Эпилог",
+    preface: "Предисловие",
+    foreword: "Вступление",
+    afterword: "Послесловие",
+    appendix: "Приложение",
+    authorNote: "Заметка автора",
+    dedication: "Посвящение",
 };
 
 const ar: Labels = {
@@ -192,6 +288,18 @@ const ar: Labels = {
     allRightsReserved: "جميع الحقوق محفوظة",
     license: "الرخصة",
     abstract: "ملخص",
+    part: "الجزء",
+    chapter_label: "الفصل",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "مقدمة",
+    epilogue: "خاتمة",
+    preface: "تمهيد",
+    foreword: "تقديم",
+    afterword: "كلمة ختامية",
+    appendix: "ملحق",
+    authorNote: "ملاحظة المؤلف",
+    dedication: "إهداء",
 };
 
 const hi: Labels = {
@@ -213,6 +321,18 @@ const hi: Labels = {
     allRightsReserved: "सर्वाधिकार सुरक्षित",
     license: "लाइसेंस",
     abstract: "सारांश",
+    part: "भाग",
+    chapter_label: "अध्याय",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "प्रस्तावना",
+    epilogue: "उपसंहार",
+    preface: "भूमिका",
+    foreword: "प्राक्कथन",
+    afterword: "परिशिष्ट लेख",
+    appendix: "परिशिष्ट",
+    authorNote: "लेखक की टिप्पणी",
+    dedication: "समर्पण",
 };
 
 const zh: Labels = {
@@ -234,6 +354,18 @@ const zh: Labels = {
     allRightsReserved: "版权所有",
     license: "许可协议",
     abstract: "摘要",
+    part: "第",
+    chapter_label: "第",
+    partSuffix: "部",
+    chapterSuffix: "章",
+    prologue: "序章",
+    epilogue: "尾声",
+    preface: "前言",
+    foreword: "序",
+    afterword: "后记",
+    appendix: "附录",
+    authorNote: "作者的话",
+    dedication: "献词",
 };
 
 const ko: Labels = {
@@ -255,6 +387,18 @@ const ko: Labels = {
     allRightsReserved: "모든 권리 보유",
     license: "라이선스",
     abstract: "초록",
+    part: "제",
+    chapter_label: "제",
+    partSuffix: "부",
+    chapterSuffix: "장",
+    prologue: "프롤로그",
+    epilogue: "에필로그",
+    preface: "서문",
+    foreword: "추천사",
+    afterword: "후기",
+    appendix: "부록",
+    authorNote: "저자의 말",
+    dedication: "헌사",
 };
 
 const ja: Labels = {
@@ -276,6 +420,18 @@ const ja: Labels = {
     allRightsReserved: "無断転載を禁じます",
     license: "ライセンス",
     abstract: "要旨",
+    part: "第",
+    chapter_label: "第",
+    partSuffix: "部",
+    chapterSuffix: "章",
+    prologue: "序章",
+    epilogue: "終章",
+    preface: "序文",
+    foreword: "推薦文",
+    afterword: "あとがき",
+    appendix: "付録",
+    authorNote: "著者ノート",
+    dedication: "献辞",
 };
 
 const nl: Labels = {
@@ -297,6 +453,18 @@ const nl: Labels = {
     allRightsReserved: "Alle rechten voorbehouden",
     license: "Licentie",
     abstract: "Samenvatting",
+    part: "Deel",
+    chapter_label: "Hoofdstuk",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Proloog",
+    epilogue: "Epiloog",
+    preface: "Voorwoord",
+    foreword: "Woord vooraf",
+    afterword: "Nawoord",
+    appendix: "Bijlage",
+    authorNote: "Woord van de auteur",
+    dedication: "Opdracht",
 };
 
 const pl: Labels = {
@@ -318,6 +486,18 @@ const pl: Labels = {
     allRightsReserved: "Wszelkie prawa zastrzeżone",
     license: "Licencja",
     abstract: "Streszczenie",
+    part: "Część",
+    chapter_label: "Rozdział",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prolog",
+    epilogue: "Epilog",
+    preface: "Przedmowa",
+    foreword: "Słowo wstępne",
+    afterword: "Posłowie",
+    appendix: "Dodatek",
+    authorNote: "Nota autora",
+    dedication: "Dedykacja",
 };
 
 const tr: Labels = {
@@ -339,6 +519,18 @@ const tr: Labels = {
     allRightsReserved: "Tüm hakları saklıdır",
     license: "Lisans",
     abstract: "Özet",
+    part: "Kısım",
+    chapter_label: "Bölüm",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Önsöz",
+    epilogue: "Sonsöz",
+    preface: "Önyazı",
+    foreword: "Takdim",
+    afterword: "Son söz",
+    appendix: "Ek",
+    authorNote: "Yazarın notu",
+    dedication: "İthaf",
 };
 
 const sv: Labels = {
@@ -360,6 +552,18 @@ const sv: Labels = {
     allRightsReserved: "Alla rättigheter förbehållna",
     license: "Licens",
     abstract: "Sammanfattning",
+    part: "Del",
+    chapter_label: "Kapitel",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Prolog",
+    epilogue: "Epilog",
+    preface: "Förord",
+    foreword: "Företal",
+    afterword: "Efterord",
+    appendix: "Bilaga",
+    authorNote: "Författarens anmärkning",
+    dedication: "Dedikation",
 };
 
 const el: Labels = {
@@ -381,6 +585,18 @@ const el: Labels = {
     allRightsReserved: "Με επιφύλαξη παντός δικαιώματος",
     license: "Άδεια",
     abstract: "Περίληψη",
+    part: "Μέρος",
+    chapter_label: "Κεφάλαιο",
+    partSuffix: "",
+    chapterSuffix: "",
+    prologue: "Πρόλογος",
+    epilogue: "Επίλογος",
+    preface: "Πρόλογος συγγραφέα",
+    foreword: "Εισαγωγικό σημείωμα",
+    afterword: "Μετάλογος",
+    appendix: "Παράρτημα",
+    authorNote: "Σημείωμα συγγραφέα",
+    dedication: "Αφιέρωση",
 };
 
 const catalog: Record<string, Labels> = {

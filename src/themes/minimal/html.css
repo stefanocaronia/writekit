@@ -396,3 +396,58 @@ sup a:hover {
   }
   .chapter-nav { display: none; }
 }
+
+/* Part pages */
+.part-page {
+  text-align: center;
+  padding: 12rem 2rem 8rem;
+  break-after: page;
+  page-break-after: always;
+}
+.part-page .part-number {
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.part-page h1 {
+  font-size: 2.4rem;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+}
+
+/* Chapter number (when chapter_heading is not "title") */
+.chapter-number {
+  font-size: 0.9rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+/* Chapter author (collection per-piece author) */
+.chapter-author {
+  font-style: italic;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+/* TOC part heading */
+.toc-part {
+  font-weight: bold;
+  list-style: none;
+  margin-top: 1rem;
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+}
+
+/* TOC author (collection) */
+.toc-author {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.9em;
+}

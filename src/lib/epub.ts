@@ -10,8 +10,9 @@ import type { Section } from "./project-type.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import { collectImagePaths, rewriteImagePaths } from "./images.js";
-import { loadTypography } from "./typography.js";
+import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
 import { typographyClasses, typographyCssVars } from "./typography.js";
+import type { Labels as TypoLabels } from "./typography.js";
 
 function escapeXml(text: string): string {
         return text
@@ -57,7 +58,7 @@ function generateContainerXml(): string {
 </container>`;
 }
 
-function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = [], hasColophon = true, hasTitlePage = true, hasToc = true): string {
+function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = [], hasColophon = true, hasTitlePage = true, hasToc = true, partFiles: number[] = []): string {
         const uuid = `urn:uuid:${simpleUuid()}`;
 
         const metadataLines = [
@@ -98,7 +99,20 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcove
                 spineItems.unshift(`    <itemref idref="cover" />`);
         }
 
+        // Part divider pages
+        for (const pn of partFiles) {
+                manifestItems.push(`    <item id="part-${pn}" href="part-${pn}.xhtml" media-type="application/xhtml+xml" />`);
+        }
+
+        // Chapters (with part refs interleaved in spine)
+        let currentPartChapter: string | undefined;
+        let partCounter = 0;
         for (let i = 0; i < chapters.length; i++) {
+                if (partFiles.length > 0 && !chapters[i].sectionKind && chapters[i].part && chapters[i].part !== currentPartChapter) {
+                        currentPartChapter = chapters[i].part;
+                        partCounter++;
+                        spineItems.push(`    <itemref idref="part-${partCounter}" />`);
+                }
                 const id = `chapter-${i + 1}`;
                 manifestItems.push(`    <item id="${id}" href="${id}.xhtml" media-type="application/xhtml+xml" />`);
                 spineItems.push(`    <itemref idref="${id}" />`);
@@ -145,21 +159,35 @@ ${spineItems.join("\n")}
 </package>`;
 }
 
-function generateTocXhtml(config: BookConfig, chapters: Chapter[]): string {
+function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: TypoLabels, partFormat: string, lang: string): string {
         const labels = getLabels(config.language);
-        const items = chapters
-                .map(
-                        (ch, i) =>
-                                `      <li><a href="chapter-${i + 1}.xhtml">${escapeXml(ch.title)}</a></li>`,
-                )
-                .join("\n");
+        const hasParts = config.type !== "paper" && chapters.some((c) => c.part);
+        let items = "";
+        if (hasParts) {
+                let currentPart: string | undefined;
+                let partNum = 0;
+                for (let i = 0; i < chapters.length; i++) {
+                        if (!chapters[i].sectionKind && chapters[i].part && chapters[i].part !== currentPart) {
+                                currentPart = chapters[i].part;
+                                partNum++;
+                                const partText = formatPartHeading(partFormat as any, partNum, currentPart!, typoLabels, lang);
+                                const partDisplay = partText.includes("\n") ? partText.split("\n").join(" — ") : partText;
+                                items += `\n      <li class="toc-part">${escapeXml(partDisplay)}</li>`;
+                        }
+                        items += `\n      <li><a href="chapter-${i + 1}.xhtml">${escapeXml(chapters[i].title)}${config.type === "collection" && chapters[i].author ? ` — ${escapeXml(chapters[i].author!)}` : ""}</a></li>`;
+                }
+        } else {
+                items = chapters
+                        .map((ch, i) =>
+                                `\n      <li><a href="chapter-${i + 1}.xhtml">${escapeXml(ch.title)}${config.type === "collection" && ch.author ? ` — ${escapeXml(ch.author!)}` : ""}</a></li>`)
+                        .join("");
+        }
 
         return wrapXhtml(
                 labels.tableOfContents,
                 `<nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc">
     <h1>${escapeXml(labels.tableOfContents)}</h1>
-    <ol>
-${items}
+    <ol>${items}
     </ol>
 </nav>`,
                 config.language || "it",
@@ -203,10 +231,12 @@ function generateColophon(config: BookConfig): string {
         return wrapXhtml(labels.colophon, body, config.language || "it");
 }
 
+const NON_AUTHOR_ROLES = ["translator", "editor", "illustrator"];
+
 function generateAboutAuthors(config: BookConfig, contributors: Contributor[]): string {
         const labels = getLabels(config.language);
         const bios = contributors
-                .filter((c) => c.bio)
+                .filter((c) => c.bio && !c.roles.every((r) => NON_AUTHOR_ROLES.includes(r)))
                 .map((c) => `<p><strong>${escapeXml(c.name)}</strong> ${escapeXml(c.bio)}</p>`)
                 .join("\n");
         if (!bios) return "";
@@ -275,11 +305,38 @@ export async function buildEpub(
 
         // OEBPS
         const hasBackcover = has("backcover") && !!backcover;
-        const hasAbout = has("about") && contributors.some((c) => c.bio);
+        const hasAbout = has("about") && contributors.some((c) => c.bio && !c.roles.every((r) => NON_AUTHOR_ROLES.includes(r)));
         const hasColophon = has("colophon");
         const hasTitlePage = true; // always emit: full, block, or article-header fallback
         const hasToc = has("toc") && chapters.length > 1;
-        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc)), "OEBPS/content.opf");
+
+        const lang = config.language || "it";
+        const labels = getLabels(config.language);
+        const typoLabels: TypoLabels = {
+                part: labels.part,
+                chapter_label: labels.chapter_label,
+                partSuffix: labels.partSuffix,
+                chapterSuffix: labels.chapterSuffix,
+        };
+        const hasParts = config.type !== "paper" && chapters.some((c) => c.part);
+        const chapterFormat = typo.chapterHeading;
+        const partFormat = typo.partHeading;
+
+        // Collect part info for manifest/spine (skip front/back matter sections)
+        const partFiles: number[] = []; // part indices that have files
+        if (hasParts) {
+                let currentPart: string | undefined;
+                let partNum = 0;
+                for (const ch of chapters) {
+                        if (!ch.sectionKind && ch.part && ch.part !== currentPart) {
+                                currentPart = ch.part;
+                                partNum++;
+                                partFiles.push(partNum);
+                        }
+                }
+        }
+
+        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc, partFiles)), "OEBPS/content.opf");
         // Prepend typography CSS variables to theme CSS
         const epubCss = `:root { ${typoVars} }\n${theme.epubCss}`;
         zip.addBuffer(Buffer.from(epubCss), "OEBPS/style.css");
@@ -288,38 +345,74 @@ export async function buildEpub(
         if (has("title_page")) {
                 zip.addBuffer(Buffer.from(generateTitlePage(config)), "OEBPS/titlepage.xhtml");
         } else if (has("title_block")) {
-                // Academic style: simpler header
                 const c = "text-align:center;text-indent:0";
-                const lines = [
+                const tpLines = [
                         `<p style="font-size:2em;font-weight:bold;color:#2c2c2c;margin:0;padding:0;${c}">${escapeXml(config.title)}</p>`,
                 ];
                 if (config.author) {
-                        lines.push(`<p style="font-size:1em;margin-top:1em;color:#444;${c}">${escapeXml(formatAuthors(config.author))}</p>`);
+                        tpLines.push(`<p style="font-size:1em;margin-top:1em;color:#444;${c}">${escapeXml(formatAuthors(config.author))}</p>`);
                 }
-                const body = `<div style="margin-top:10%;text-align:center">\n${lines.join("\n")}\n</div>`;
-                zip.addBuffer(Buffer.from(wrapXhtml(config.title, body, config.language || "it")), "OEBPS/titlepage.xhtml");
+                const tpBody = `<div style="margin-top:10%;text-align:center">\n${tpLines.join("\n")}\n</div>`;
+                zip.addBuffer(Buffer.from(wrapXhtml(config.title, tpBody, lang)), "OEBPS/titlepage.xhtml");
         } else {
-                // Article-like types: minimal header with title and author
-                const headerLines = [
-                        `<h1>${escapeXml(config.title)}</h1>`,
-                ];
+                const headerLines = [`<h1>${escapeXml(config.title)}</h1>`];
                 if (config.author) {
                         headerLines.push(`<p class="author">${escapeXml(formatAuthors(config.author))}</p>`);
                 }
-                const body = `<div class="article-header">\n${headerLines.join("\n")}\n</div>`;
-                zip.addBuffer(Buffer.from(wrapXhtml(config.title, body, config.language || "it")), "OEBPS/titlepage.xhtml");
+                const hBody = `<div class="article-header">\n${headerLines.join("\n")}\n</div>`;
+                zip.addBuffer(Buffer.from(wrapXhtml(config.title, hBody, lang)), "OEBPS/titlepage.xhtml");
         }
 
         // Table of contents
         if (hasToc) {
-                zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters)), "OEBPS/toc.xhtml");
+                zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters, typoLabels, partFormat, lang)), "OEBPS/toc.xhtml");
         }
 
-        // Chapters (with rewritten image paths)
+        // Parts and chapters
+        let currentPartEpub: string | undefined;
+        let partIdx = 0;
         for (let i = 0; i < chapters.length; i++) {
-                const body = rewriteImagePaths(chapters[i].body, pathMapping);
-                const htmlBody = `<h1>${escapeXml(chapters[i].title)}</h1>\n` + await marked(body);
-                const xhtml = wrapXhtml(chapters[i].title, htmlBody, config.language || "it", typoClass);
+                const chBody = rewriteImagePaths(chapters[i].body, pathMapping);
+
+                // Front/back matter sections: simple rendering, no numbering/part/author
+                if (chapters[i].sectionKind) {
+                        const sectionHtml = `<h1>${escapeXml(chapters[i].title)}</h1>\n` + await marked(chBody);
+                        const xhtml = wrapXhtml(chapters[i].title, sectionHtml, lang, `${typoClass} section-${chapters[i].sectionKind}`);
+                        zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
+                        continue;
+                }
+
+                // Part divider page
+                if (hasParts && chapters[i].part && chapters[i].part !== currentPartEpub) {
+                        currentPartEpub = chapters[i].part;
+                        partIdx++;
+                        const partText = formatPartHeading(partFormat, partIdx, currentPartEpub!, typoLabels, lang);
+                        const partLines = partText.split("\n");
+                        let partBody: string;
+                        if (partLines.length > 1) {
+                                partBody = `<div class="part-page"><div class="part-number">${escapeXml(partLines[0])}</div><h1>${escapeXml(partLines[1])}</h1></div>`;
+                        } else {
+                                partBody = `<div class="part-page"><h1>${escapeXml(partLines[0])}</h1></div>`;
+                        }
+                        zip.addBuffer(Buffer.from(wrapXhtml(`Part ${partIdx}`, partBody, lang, typoClass)), `OEBPS/part-${partIdx}.xhtml`);
+                }
+
+                // Chapter heading
+                const chAuthor = config.type === "collection" && chapters[i].author ? `<div class="chapter-author">${escapeXml(chapters[i].author!)}</div>\n` : "";
+                let headingHtml: string;
+                if (chapterFormat === "title") {
+                        headingHtml = `<h1>${escapeXml(chapters[i].title)}</h1>`;
+                } else {
+                        const formatted = formatChapterHeading(chapterFormat, i + 1, chapters[i].title, typoLabels, lang);
+                        if (formatted.includes("\n")) {
+                                const [numLine, titleLine] = formatted.split("\n");
+                                headingHtml = `<div class="chapter-number">${escapeXml(numLine)}</div>\n<h1>${escapeXml(titleLine)}</h1>`;
+                        } else {
+                                headingHtml = `<h1>${escapeXml(formatted)}</h1>`;
+                        }
+                }
+                const htmlBody = `${headingHtml}\n${chAuthor}` + await marked(chBody);
+                const xhtml = wrapXhtml(chapters[i].title, htmlBody, lang, typoClass);
                 zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
         }
 

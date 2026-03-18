@@ -20,6 +20,8 @@ typography:
     line_height: "1.6"
     hyphenation: true
     orphans_widows: 2
+    part_heading: label_number_title
+    chapter_heading: title
 dirs:
     - outline
     - outline/chapters
@@ -39,10 +41,19 @@ files:
     - outline/plot.md
 add_commands:
     - chapter
+    - part
     - character
     - location
     - note
     - event
+    - dedication
+    - preface
+    - foreword
+    - prologue
+    - epilogue
+    - afterword
+    - appendix
+    - author-note
 reports:
     - status
     - cast

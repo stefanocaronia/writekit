@@ -3,7 +3,7 @@ import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
 import { slugify, padNumber } from "../lib/slug.js";
-import { fileExists, assertProject, frontmatter } from "../lib/fs-utils.js";
+import { fileExists, dirExists, assertProject, frontmatter } from "../lib/fs-utils.js";
 import { loadType, isValidType } from "../lib/project-type.js";
 import { c, icon } from "../lib/ui.js";
 
@@ -74,7 +74,8 @@ async function getTypeSchema(projectDir: string): Promise<{ manuscript: Set<stri
 const addChapter = new Command("chapter")
     .description("Add a new chapter to manuscript and outline")
     .argument("<title>", "Chapter title")
-    .action(async (title: string) => {
+    .option("-p, --part <number>", "Add chapter inside a part directory")
+    .action(async (title: string, opts: { part?: string }) => {
         const projectDir = process.cwd();
         await assertProject(projectDir);
 
@@ -83,15 +84,33 @@ const addChapter = new Command("chapter")
         const manuscriptDir = join(projectDir, "manuscript");
         await ensureDir(manuscriptDir);
 
-        const existing = await countMdFiles(manuscriptDir);
+        let targetDir = manuscriptDir;
+        let partLabel = "";
+        if (opts.part) {
+            const partNum = parseInt(opts.part, 10);
+            if (isNaN(partNum) || partNum < 1) {
+                console.error(`\n${icon.error} ${c.red("Invalid part number.")}\n`);
+                process.exit(1);
+            }
+            const partDirName = `part-${padNumber(partNum)}`;
+            targetDir = join(manuscriptDir, partDirName);
+            if (!(await dirExists(targetDir))) {
+                console.error(`\n${icon.error} ${c.red(`Part directory manuscript/${partDirName}/ does not exist.`)}`);
+                console.error(`  ${c.dim('Create it first with: wk add part "Title"')}\n`);
+                process.exit(1);
+            }
+            partLabel = `${partDirName}/`;
+        }
+
+        const existing = await countMdFiles(targetDir);
         const num = existing + 1;
         const pad = padNumber(num);
         const slug = slugify(title);
 
-        const manuscriptFile = join(manuscriptDir, `${pad}-${slug}.md`);
+        const manuscriptFile = join(targetDir, `${pad}-${slug}.md`);
 
         if (await fileExists(manuscriptFile)) {
-            console.error(`\nFile already exists: manuscript/${pad}-${slug}.md\n`);
+            console.error(`\nFile already exists: manuscript/${partLabel}${pad}-${slug}.md\n`);
             process.exit(1);
         }
 
@@ -126,7 +145,7 @@ const addChapter = new Command("chapter")
         }
 
         console.log(`\n${icon.chapter} ${c.green(`Added chapter ${num}:`)} ${c.bold(title)}\n`);
-        console.log(`  ${c.dim(`manuscript/${pad}-${slug}.md`)}`);
+        console.log(`  ${c.dim(`manuscript/${partLabel}${pad}-${slug}.md`)}`);
         if (schema.hasOutlineChapters) {
             console.log(`  ${c.dim(`outline/chapters/${pad}.md`)}`);
         }
@@ -472,12 +491,97 @@ const addSource = new Command("source")
         console.log(`  ${c.dim(`bibliography.yaml (${data.sources.length} sources)`)}\n`);
     });
 
+// --- wk add part ---
+
+async function countPartDirs(manuscriptDir: string): Promise<number> {
+    try {
+        const entries = await readdir(manuscriptDir);
+        return entries.filter((e) => e.startsWith("part-")).length;
+    } catch {
+        return 0;
+    }
+}
+
+const addPart = new Command("part")
+    .description("Add a new part directory to the manuscript")
+    .argument("<title>", "Part title")
+    .action(async (title: string) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+        await assertAddCommand(projectDir, "part");
+
+        const manuscriptDir = join(projectDir, "manuscript");
+        await ensureDir(manuscriptDir);
+
+        const existing = await countPartDirs(manuscriptDir);
+        const num = existing + 1;
+        const pad = padNumber(num);
+        const partDirName = `part-${pad}`;
+        const partDir = join(manuscriptDir, partDirName);
+
+        await mkdir(partDir, { recursive: true });
+        await writeFile(join(partDir, "part.yaml"), stringify({ title }));
+
+        console.log(`\n${icon.folder} ${c.green(`Added part ${num}:`)} ${c.bold(title)}\n`);
+        console.log(`  ${c.dim(`manuscript/${partDirName}/`)}`);
+        console.log(`  ${c.dim(`manuscript/${partDirName}/part.yaml`)}\n`);
+    });
+
+// --- wk add front/back matter sections ---
+
+interface SectionDef {
+    command: string;
+    filename: string;
+    displayTitle: string;
+}
+
+const SECTION_DEFS: SectionDef[] = [
+    { command: "dedication", filename: "dedication.md", displayTitle: "Dedication" },
+    { command: "preface", filename: "preface.md", displayTitle: "Preface" },
+    { command: "foreword", filename: "foreword.md", displayTitle: "Foreword" },
+    { command: "prologue", filename: "prologue.md", displayTitle: "Prologue" },
+    { command: "epilogue", filename: "epilogue.md", displayTitle: "Epilogue" },
+    { command: "afterword", filename: "afterword.md", displayTitle: "Afterword" },
+    { command: "appendix", filename: "appendix.md", displayTitle: "Appendix" },
+    { command: "author-note", filename: "author-note.md", displayTitle: "Author's Note" },
+];
+
+function makeSectionCommand(def: SectionDef): Command {
+    return new Command(def.command)
+        .description(`Add ${def.displayTitle.toLowerCase()} to the manuscript`)
+        .action(async () => {
+            const projectDir = process.cwd();
+            await assertProject(projectDir);
+            await assertAddCommand(projectDir, def.command);
+
+            const manuscriptDir = join(projectDir, "manuscript");
+            await ensureDir(manuscriptDir);
+
+            const filePath = join(manuscriptDir, def.filename);
+            if (await fileExists(filePath)) {
+                console.error(`\n${icon.error} ${c.red(`File already exists: manuscript/${def.filename}`)}\n`);
+                process.exit(1);
+            }
+
+            await writeFile(
+                filePath,
+                frontmatter({ title: def.displayTitle }, `# ${def.displayTitle}\n\n`),
+            );
+
+            console.log(`\n${icon.note} ${c.green(`Added ${def.displayTitle.toLowerCase()}`)}\n`);
+            console.log(`  ${c.dim(`manuscript/${def.filename}`)}\n`);
+        });
+}
+
+const sectionCommands = SECTION_DEFS.map(makeSectionCommand);
+
 // --- wkadd (parent command) ---
 
 export const addCommand = new Command("add")
-    .description("Add chapters, characters, locations, notes, events, authors, or sources");
+    .description("Add chapters, parts, characters, locations, notes, events, sections, or sources");
 
 addCommand.addCommand(addChapter);
+addCommand.addCommand(addPart);
 addCommand.addCommand(addCharacter);
 addCommand.addCommand(addLocation);
 addCommand.addCommand(addConcept);
@@ -489,3 +593,4 @@ addCommand.addCommand(addTranslator);
 addCommand.addCommand(addEditor);
 addCommand.addCommand(addIllustrator);
 addCommand.addCommand(addSource);
+for (const cmd of sectionCommands) addCommand.addCommand(cmd);

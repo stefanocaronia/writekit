@@ -1,8 +1,9 @@
 import { Command } from "commander";
-import { readFile, writeFile, readdir, unlink, rename } from "node:fs/promises";
+import { readFile, writeFile, readdir, unlink, rename, rm } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
-import { assertProject, fileExists } from "../lib/fs-utils.js";
+import { assertProject, fileExists, dirExists } from "../lib/fs-utils.js";
+import { SECTION_FILE_MAP } from "../lib/parse.js";
 import { slugify, padNumber } from "../lib/slug.js";
 import { loadType, isValidType, getRemoveCommands } from "../lib/project-type.js";
 import { c, icon } from "../lib/ui.js";
@@ -75,7 +76,7 @@ const removeAuthor = new Command("author")
 // --- wk remove chapter ---
 
 async function renumberChapters(dir: string): Promise<number> {
-    const files = (await readdir(dir)).filter((f) => extname(f) === ".md").sort();
+    const files = (await readdir(dir)).filter((f) => extname(f) === ".md" && !(f in SECTION_FILE_MAP)).sort();
     let renamed = 0;
     for (let i = 0; i < files.length; i++) {
         const expected = `${padNumber(i + 1)}-`;
@@ -150,6 +151,66 @@ const removeChapter = new Command("chapter")
         console.log();
     });
 
+// --- wk remove part ---
+
+const removePart = new Command("part")
+    .description("Remove a part: move its chapters to manuscript root and delete the part directory")
+    .argument("<number>", "Part number to remove")
+    .action(async (num: string) => {
+        const projectDir = process.cwd();
+        await assertProject(projectDir);
+        await assertRemoveCommand(projectDir, "part");
+
+        const partNum = parseInt(num, 10);
+        if (isNaN(partNum) || partNum < 1) {
+            console.error(`\n${icon.error} ${c.red("Invalid part number.")}\n`);
+            process.exit(1);
+        }
+
+        const manuscriptDir = join(projectDir, "manuscript");
+        const partDirName = `part-${padNumber(partNum)}`;
+        const partDir = join(manuscriptDir, partDirName);
+
+        if (!(await dirExists(partDir))) {
+            console.error(`\n${icon.error} ${c.red(`Part directory manuscript/${partDirName}/ does not exist.`)}\n`);
+            process.exit(1);
+        }
+
+        // Count existing root .md chapter files for renumbering
+        const rootFiles = (await readdir(manuscriptDir)).filter(
+            (f) => extname(f) === ".md" && /^\d+-/.test(f),
+        );
+        let nextNum = rootFiles.length + 1;
+
+        // Move .md files from part dir to manuscript root
+        const partEntries = await readdir(partDir);
+        const partMdFiles = partEntries.filter((f) => extname(f) === ".md").sort();
+        const moved: string[] = [];
+
+        for (const file of partMdFiles) {
+            const slug = file.replace(/^\d+-/, "");
+            const newName = `${padNumber(nextNum)}-${slug}`;
+            await rename(join(partDir, file), join(manuscriptDir, newName));
+            moved.push(newName);
+            nextNum++;
+        }
+
+        // Delete part.yaml and the directory
+        if (await fileExists(join(partDir, "part.yaml"))) {
+            await unlink(join(partDir, "part.yaml"));
+        }
+        await rm(partDir, { recursive: true });
+
+        console.log(`\n${icon.done} ${c.green(`Removed part ${partNum}`)}`);
+        if (moved.length > 0) {
+            console.log(`  ${c.dim(`Moved ${moved.length} chapter(s) to manuscript/`)}`);
+            for (const f of moved) {
+                console.log(`  ${c.dim(`  → ${f}`)}`);
+            }
+        }
+        console.log();
+    });
+
 // --- wk remove character/location/note ---
 
 function makeFileRemoveCommand(
@@ -193,13 +254,56 @@ const removeCharacter = makeFileRemoveCommand("character", "characters", "charac
 const removeLocation = makeFileRemoveCommand("location", "world", "location");
 const removeNote = makeFileRemoveCommand("note", "notes", "note");
 
+// --- wk remove front/back matter sections ---
+
+interface SectionRemoveDef {
+    command: string;
+    filename: string;
+    displayTitle: string;
+}
+
+const SECTION_REMOVE_DEFS: SectionRemoveDef[] = [
+    { command: "dedication", filename: "dedication.md", displayTitle: "Dedication" },
+    { command: "preface", filename: "preface.md", displayTitle: "Preface" },
+    { command: "foreword", filename: "foreword.md", displayTitle: "Foreword" },
+    { command: "prologue", filename: "prologue.md", displayTitle: "Prologue" },
+    { command: "epilogue", filename: "epilogue.md", displayTitle: "Epilogue" },
+    { command: "afterword", filename: "afterword.md", displayTitle: "Afterword" },
+    { command: "appendix", filename: "appendix.md", displayTitle: "Appendix" },
+    { command: "author-note", filename: "author-note.md", displayTitle: "Author's Note" },
+];
+
+function makeSectionRemoveCommand(def: SectionRemoveDef): Command {
+    return new Command(def.command)
+        .description(`Remove ${def.displayTitle.toLowerCase()} from the manuscript`)
+        .action(async () => {
+            const projectDir = process.cwd();
+            await assertProject(projectDir);
+            await assertRemoveCommand(projectDir, def.command);
+
+            const filePath = join(projectDir, "manuscript", def.filename);
+            if (!(await fileExists(filePath))) {
+                console.error(`\n${icon.error} ${c.red(`File not found: manuscript/${def.filename}`)}\n`);
+                process.exit(1);
+            }
+
+            await unlink(filePath);
+            console.log(`\n${icon.done} ${c.green(`Removed ${def.displayTitle.toLowerCase()}`)}`);
+            console.log(`  ${c.red("deleted")} manuscript/${def.filename}\n`);
+        });
+}
+
+const sectionRemoveCommands = SECTION_REMOVE_DEFS.map(makeSectionRemoveCommand);
+
 // --- wk remove (parent) ---
 
 export const removeCommand = new Command("remove")
-    .description("Remove chapters, characters, locations, notes, or authors");
+    .description("Remove chapters, parts, characters, locations, notes, sections, or authors");
 
 removeCommand.addCommand(removeAuthor);
 removeCommand.addCommand(removeChapter);
+removeCommand.addCommand(removePart);
 removeCommand.addCommand(removeCharacter);
 removeCommand.addCommand(removeLocation);
 removeCommand.addCommand(removeNote);
+for (const cmd of sectionRemoveCommands) removeCommand.addCommand(cmd);
