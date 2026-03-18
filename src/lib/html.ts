@@ -9,7 +9,7 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import type { Typography, Labels as TypoLabels } from "./typography.js";
 import { typographyClasses, typographyCssVars, formatPartHeading, formatChapterHeading } from "./typography.js";
-import type { Section } from "./project-type.js";
+import type { Section, TypeFeatures } from "./project-type.js";
 
 const JS = `
     // Smooth scroll for TOC links
@@ -45,6 +45,7 @@ export async function renderBook(
     projectDir?: string,
     typography?: Typography,
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<string> {
     const has = (s: Section) => !sections || sections.includes(s);
     const labels = getLabels(config.language);
@@ -129,8 +130,8 @@ export async function renderBook(
         }
     }
 
-    // Parts support: only for non-paper types when at least one chapter has a part
-    const hasParts = config.type !== "paper" && chapters.some((ch) => ch.part);
+    // Parts support: only when features allow it and at least one chapter has a part
+    const hasParts = features?.supports_parts !== false && chapters.some((ch) => ch.part);
     const lang = config.language || "it";
     const typoLabels: TypoLabels = {
         part: labels.part,
@@ -169,7 +170,7 @@ export async function renderBook(
                 chapterNum++;
                 const formatted = formatChapterHeading(chapterFormat, chapterNum, ch.title, typoLabels, lang);
                 const tocLabel = formatted.includes("\n") ? formatted.split("\n").join(" — ") : formatted;
-                const authorSuffix = config.type === "collection" && ch.author ? ` <span class="toc-author">${escapeHtml(ch.author)}</span>` : "";
+                const authorSuffix = features?.show_chapter_author === true && ch.author ? ` <span class="toc-author">${escapeHtml(ch.author)}</span>` : "";
                 tocItems += `\n                <li class="toc-chapter"><a href="#${chapterId(i)}">${escapeHtml(tocLabel)}${authorSuffix}</a></li>`;
             }
         }
@@ -240,7 +241,7 @@ export async function renderBook(
 
             return `${partPage}
         <section class="chapter" id="${chapterId(i)}">
-            ${headingHtml}${config.type === "collection" && chapters[i].author ? `\n            <div class="chapter-author">${escapeHtml(chapters[i].author!)}</div>` : ""}
+            ${headingHtml}${features?.show_chapter_author === true && chapters[i].author ? `\n            <div class="chapter-author">${escapeHtml(chapters[i].author!)}</div>` : ""}
             ${html}${nav}
         </section>`;
         })

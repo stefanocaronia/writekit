@@ -12,7 +12,7 @@ import { assertProject, bookFilename } from "../lib/fs-utils.js";
 import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
 import { loadTypography } from "../lib/typography.js";
-import { loadType, isValidType, type Section } from "../lib/project-type.js";
+import { loadType, isValidType, type Section, type TypeFeatures } from "../lib/project-type.js";
 
 const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
 type Format = (typeof SUPPORTED_FORMATS)[number];
@@ -27,12 +27,13 @@ async function buildHtml(
     chapters: Chapter[],
     theme: Theme,
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
     const typography = await loadTypography(projectDir);
-    const html = await renderBook(config, chapters, theme, contributors, backcover, coverPath, projectDir, typography, sections);
+    const html = await renderBook(config, chapters, theme, contributors, backcover, coverPath, projectDir, typography, sections, features);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
@@ -48,11 +49,12 @@ async function buildEpub(
     chapters: Chapter[],
     theme: Theme,
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const outPath = await buildEpubFile(projectDir, config, chapters, theme, buildFilename(config,"epub"), contributors, backcover, coverPath, sections);
+    const outPath = await buildEpubFile(projectDir, config, chapters, theme, buildFilename(config,"epub"), contributors, backcover, coverPath, sections, features);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -63,11 +65,12 @@ async function buildPdf(
     chapters: Chapter[],
     theme: Theme,
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"), contributors, backcover, coverPath, sections);
+    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"), contributors, backcover, coverPath, sections, features);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -78,11 +81,12 @@ async function buildDocx(
     chapters: Chapter[],
     theme: Theme,
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, sections);
+    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, sections, features);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -93,10 +97,11 @@ async function buildMd(
     chapters: Chapter[],
     _theme: Theme,
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
-    const md = await renderBookMd(projectDir, config, chapters, contributors, backcover, sections);
+    const md = await renderBookMd(projectDir, config, chapters, contributors, backcover, sections, features);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
     const outPath = join(buildDir, buildFilename(config, "md"));
@@ -107,7 +112,7 @@ async function buildMd(
 
 const builders: Record<
     Format,
-    (dir: string, config: BookConfig, chapters: Chapter[], theme: Theme, sections?: Section[]) => Promise<void>
+    (dir: string, config: BookConfig, chapters: Chapter[], theme: Theme, sections?: Section[], features?: TypeFeatures) => Promise<void>
 > = {
     html: buildHtml,
     epub: buildEpub,
@@ -211,11 +216,13 @@ export const buildCommand = new Command("build")
 
         // Load type sections
         const typeName = config.type || "novel";
-        const typeSections = isValidType(typeName) ? (await loadType(typeName)).sections : undefined;
+        const typeDef = isValidType(typeName) ? await loadType(typeName) : undefined;
+        const typeSections = typeDef?.sections;
+        const typeFeatures = typeDef?.features;
 
         for (const fmt of formats) {
             console.log(`\n${icon.build} ${c.bold(`Building ${fmt}...`)}\n`);
-            await builders[fmt](projectDir, config, chapters, theme, typeSections);
+            await builders[fmt](projectDir, config, chapters, theme, typeSections, typeFeatures);
         }
 
         // Reports (generated after build so they reflect latest content)

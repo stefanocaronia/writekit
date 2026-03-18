@@ -1,6 +1,6 @@
 import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
-import type { Section } from "./project-type.js";
+import type { Section, TypeFeatures } from "./project-type.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
@@ -13,6 +13,7 @@ export async function renderBookMd(
     contributors: Contributor[] = [],
     backcover = "",
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<string> {
     const has = (s: Section) => !sections || sections.includes(s);
     const labels = getLabels(config.language);
@@ -24,7 +25,7 @@ export async function renderBookMd(
         partSuffix: labels.partSuffix,
         chapterSuffix: labels.chapterSuffix,
     };
-    const hasParts = config.type !== "paper" && chapters.some((c) => !!c.part);
+    const hasParts = features?.supports_parts !== false && chapters.some((c) => !!c.part);
 
     const lines: string[] = [];
 
@@ -82,7 +83,7 @@ export async function renderBookMd(
             tocChapterNum++;
             const formatted = formatChapterHeading(typo.chapterHeading, tocChapterNum, chapters[i].title, typoLabels, lang);
             const tocLabel = formatted.includes("\n") ? formatted.split("\n").join(" — ") : formatted;
-            const authorSuffix = config.type === "collection" && chapters[i].author ? ` — ${chapters[i].author}` : "";
+            const authorSuffix = features?.show_chapter_author === true && chapters[i].author ? ` — ${chapters[i].author}` : "";
             lines.push(`- ${tocLabel}${authorSuffix}`);
         }
         lines.push("");
@@ -145,7 +146,7 @@ export async function renderBookMd(
                 lines.push(`# ${headingLines[0]}`);
             }
         }
-        if (config.type === "collection" && chapter.author) {
+        if (features?.show_chapter_author === true && chapter.author) {
             lines.push(`*${chapter.author}*`);
         }
         lines.push("");

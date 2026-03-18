@@ -18,10 +18,21 @@ export interface FrontmatterSchema {
 
 export type Section = "cover" | "title_page" | "title_block" | "abstract" | "toc" | "content" | "backcover" | "about" | "colophon" | "bibliography";
 
+export interface TypeFeatures {
+    show_chapter_author: boolean;  // show per-chapter author in TOC and headings (collection)
+    supports_parts: boolean;       // allow manuscript/part-NN/ directories
+}
+
+const DEFAULT_FEATURES: TypeFeatures = {
+    show_chapter_author: false,
+    supports_parts: true,
+};
+
 export interface ProjectType {
     name: string;
     description: string;
     sections: Section[];
+    features: TypeFeatures;
     dirs: string[];
     files: string[];
     add_commands: string[];
@@ -51,7 +62,10 @@ export async function loadType(name: string): Promise<ProjectType> {
     }
 
     const raw = await readFile(join(TYPES_DIR, name, "type.yaml"), "utf-8");
-    return parseYaml(raw) as ProjectType;
+    const parsed = parseYaml(raw) as ProjectType;
+    // Merge features with defaults so type.yaml only needs to declare non-default values
+    parsed.features = { ...DEFAULT_FEATURES, ...(parsed.features ?? {}) };
+    return parsed;
 }
 
 // Commands that operate on YAML entries, not individual files — not removable

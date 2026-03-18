@@ -1,5 +1,7 @@
 name: Collection
 description: Anthology of short stories, poems, or essays — per-piece author in frontmatter
+features:
+    show_chapter_author: true
 sections:
     - cover
     - title_page

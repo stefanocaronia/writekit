@@ -7,7 +7,7 @@ import { join, extname } from "node:path";
 import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
-import type { Section } from "./project-type.js";
+import type { Section, TypeFeatures } from "./project-type.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import { collectImagePaths, rewriteImagePaths } from "./images.js";
@@ -160,9 +160,9 @@ ${spineItems.join("\n")}
 </package>`;
 }
 
-function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: TypoLabels, partFormat: string, chapterFormat: string, lang: string): string {
+function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: TypoLabels, partFormat: string, chapterFormat: string, lang: string, showChapterAuthor = false, supportsParts = true): string {
         const labels = getLabels(config.language);
-        const hasParts = config.type !== "paper" && chapters.some((c) => c.part);
+        const hasParts = supportsParts && chapters.some((c) => c.part);
         const partHasLabel = partFormat === "label_number_title" || partFormat === "label_number";
         let items = "";
         let currentPart: string | undefined;
@@ -186,7 +186,7 @@ function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: T
                         chapterNum++;
                         const formatted = formatChapterHeading(chapterFormat as any, chapterNum, chapters[i].title, typoLabels, lang);
                         const tocLabel = formatted.includes("\n") ? formatted.split("\n").join(" — ") : formatted;
-                        const authorSuffix = config.type === "collection" && chapters[i].author ? ` — ${escapeXml(chapters[i].author!)}` : "";
+                        const authorSuffix = showChapterAuthor && chapters[i].author ? ` — ${escapeXml(chapters[i].author!)}` : "";
                         items += `\n      <li class="toc-chapter"><a href="chapter-${i + 1}.xhtml">${escapeXml(tocLabel)}${authorSuffix}</a></li>`;
                 }
         }
@@ -270,6 +270,7 @@ export async function buildEpub(
         backcover = "",
         coverImagePath?: string | null,
         sections?: Section[],
+        features?: TypeFeatures,
 ): Promise<string> {
         const has = (s: Section) => !sections || sections.includes(s);
         const buildDir = join(projectDir, "build");
@@ -326,7 +327,7 @@ export async function buildEpub(
                 partSuffix: labels.partSuffix,
                 chapterSuffix: labels.chapterSuffix,
         };
-        const hasParts = config.type !== "paper" && chapters.some((c) => c.part);
+        const hasParts = features?.supports_parts !== false && chapters.some((c) => c.part);
         const chapterFormat = typo.chapterHeading;
         const partFormat = typo.partHeading;
 
@@ -373,7 +374,7 @@ export async function buildEpub(
 
         // Table of contents
         if (hasToc) {
-                zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters, typoLabels, partFormat, chapterFormat, lang)), "OEBPS/toc.xhtml");
+                zip.addBuffer(Buffer.from(generateTocXhtml(config, chapters, typoLabels, partFormat, chapterFormat, lang, features?.show_chapter_author === true, features?.supports_parts !== false)), "OEBPS/toc.xhtml");
         }
 
         // Parts and chapters
@@ -410,7 +411,7 @@ export async function buildEpub(
 
                 // Chapter heading
                 chapterBodyNum++;
-                const chAuthor = config.type === "collection" && chapters[i].author ? `<div class="chapter-author">${escapeXml(chapters[i].author!)}</div>\n` : "";
+                const chAuthor = features?.show_chapter_author === true && chapters[i].author ? `<div class="chapter-author">${escapeXml(chapters[i].author!)}</div>\n` : "";
                 let headingHtml: string;
                 if (chapterFormat === "title") {
                         headingHtml = `<h1>${escapeXml(chapters[i].title)}</h1>`;

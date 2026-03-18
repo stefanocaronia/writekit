@@ -1,5 +1,7 @@
 name: Paper
 description: Academic paper with bibliography
+features:
+    supports_parts: false
 sections:
     - title_block
     - abstract

@@ -26,7 +26,7 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { collectImagePaths } from "./images.js";
 import { getLabels } from "./i18n.js";
 import type { DocxStyle } from "./theme.js";
-import type { Section } from "./project-type.js";
+import type { Section, TypeFeatures } from "./project-type.js";
 import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
 import type { Labels as TypoLabels } from "./typography.js";
 // Template support removed — externalStyles doesn't work reliably. See PLAN.md.
@@ -481,6 +481,7 @@ export async function buildDocx(
     coverImagePath?: string | null,
     docxStyle?: DocxStyle,
     sections?: Section[],
+    features?: TypeFeatures,
 ): Promise<string> {
     const has = (s: Section) => !sections || sections.includes(s);
     // Load typography and set module-level vars
@@ -700,7 +701,7 @@ export async function buildDocx(
     }
 
     // Chapters (with part dividers and formatted headings)
-    const hasParts = config.type !== "paper" && chapters.some((c) => !!c.part);
+    const hasParts = features?.supports_parts !== false && chapters.some((c) => !!c.part);
     const typoLabels: TypoLabels = {
         part: labels.part,
         chapter_label: labels.chapter_label,
@@ -824,7 +825,7 @@ export async function buildDocx(
                 );
             }
         }
-        if (config.type === "collection" && chapter.author) {
+        if (features?.show_chapter_author === true && chapter.author) {
             children.push(new Paragraph({
                 children: [new TextRun({ text: chapter.author, font: FONT, size: 22, color: MUTED, italics: true })],
                 spacing: { after: 200 },
