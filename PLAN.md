@@ -138,11 +138,13 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.6.0 — Estensioni
 
-- [ ] **Traduzione agent-assisted** — il framework ha tutti i dati strutturati per una traduzione coerente:
-    - Glossario nomi: personaggi (name, aliases), locations, concetti → mapping originale→tradotto
-    - `wk translate --to en` duplica progetto, aggiorna config.language, genera glossario iniziale
-    - Agent instructions per la traduzione: leggere glossario, tradurre manuscript mantenendo frontmatter, tradurre config/synopsis/backcover, rispettare convenzioni editoriali della lingua target
-    - Glossario persistente in `translation-glossary.yaml` per coerenza cross-capitoli
+- [ ] **Traduzione agent-assisted** — tool CLI che l'AI chiama per prepararsi il terreno, poi traduce:
+    - `wk translate init --to en` — clona struttura progetto in cartella target, aggiorna config.language, genera `translation-glossary.yaml` con tutti i nomi estratti da characters/world/config/concepts (originale → tradotto vuoto)
+    - `wk translate glossary` — mostra glossario corrente, evidenzia voci non ancora tradotte
+    - `wk translate status` — quali capitoli sono tradotti e quali no (confronto sorgente → target)
+    - `wk translate verify` — verifica coerenza: nomi del glossario usati consistentemente nei capitoli tradotti, frontmatter intatto, nessun nome originale rimasto nel testo
+    - Workflow agent: legge AGENTS.md → chiama `translate init` → popola glossario → traduce capitolo per capitolo con glossario per coerenza → chiama `translate verify` → `wk build`
+    - L'agent è l'orchestratore (ha le sue API key), writekit è l'infrastruttura
 - [ ] **Plugin system** — hook pre/post build
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
