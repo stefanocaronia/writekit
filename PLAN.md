@@ -138,6 +138,11 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.6.0 — Estensioni
 
+- [ ] **Traduzione agent-assisted** — il framework ha tutti i dati strutturati per una traduzione coerente:
+    - Glossario nomi: personaggi (name, aliases), locations, concetti → mapping originale→tradotto
+    - `wk translate --to en` duplica progetto, aggiorna config.language, genera glossario iniziale
+    - Agent instructions per la traduzione: leggere glossario, tradurre manuscript mantenendo frontmatter, tradurre config/synopsis/backcover, rispettare convenzioni editoriali della lingua target
+    - Glossario persistente in `translation-glossary.yaml` per coerenza cross-capitoli
 - [ ] **Plugin system** — hook pre/post build
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
