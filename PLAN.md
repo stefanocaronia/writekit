@@ -1,8 +1,8 @@
 ---
 project: writekit
 version: 0.2.0
-last_updated: 2026-03-16
-status: v0.2 complete, npm publish pending
+last_updated: 2026-03-18
+status: v0.4 in progress, npm publish pending
 last_published_npm: 0.1.0
 types_planned: [novel, collection, essay, paper]
 ---
@@ -98,10 +98,22 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ---
 
-## v0.4.0 — Analisi e intelligenza
+## v0.4.0 — Struttura e tipografia
 
-- [X] **Convenzioni editoriali per tipo** — vedi sezione dedicata sotto
+- [x] **Convenzioni editoriali per tipo** — vedi sezione dedicata sotto
 - [x] **Sections per tipo** — paper layout accademico (title block + abstract + content + bibliography). sections[] nel type.yaml controlla cosa buildare.
+- [x] **Article rimosso** — nessun valore aggiunto rispetto a un editor di testo. 4 tipi: novel, collection, essay, paper.
+- [x] **Autore per capitolo (collection)** — nelle collection, `chapter.author` dal frontmatter mostrato nel TOC e sotto il titolo capitolo in tutti i formati.
+- [x] **About esclude non-autori** — la sezione About filtra traduttore, editor, illustratore (solo autori con bio).
+- [x] **Parti (directory-based)** — `manuscript/part-NN/` con `part.yaml` (title). `wk add part "Title"`, `wk add chapter --part N`, `wk remove part N` (sposta capitoli in root). Parser scansiona directory, check avvisa per capitoli sciolti.
+- [x] **Front/back matter** — sezioni speciali riconosciute per nome file in `manuscript/`:
+    - Front: `dedication.md`, `preface.md`, `foreword.md`, `prologue.md`
+    - Back: `epilogue.md`, `afterword.md`, `appendix.md`, `author-note.md`
+    - `wk add/remove` per ognuna, disponibilità per tipo (prologo/epilogo solo novel)
+    - Sync/remove skip renumbering per file sezione
+- [x] **Heading configurabili** — `part_heading` e `chapter_heading` in typography con 5 formati: `label_number_title`, `label_number`, `number_title`, `number`, `title`. Parti con numeri romani, CJK per zh/ja (一二三), arabi per ko/ar/hi.
+- [x] **i18n esteso** — `part`, `chapter_label`, `partSuffix`, `chapterSuffix`, 8 label sezioni (prologue, epilogue, preface, foreword, afterword, appendix, authorNote, dedication) in 17 lingue.
+- [x] **CSS parti e sezioni** — `.part-page`, `.chapter-number`, `.chapter-author`, `.toc-part`, `.toc-author` in tutti e 4 i temi CSS.
 - [ ] **Agent instructions complete** — completare le istruzioni embedded per un agent autonomo:
     - Workflow completo step-by-step (config → style → synopsis → outline → characters → write)
     - Come popolare i file iniziali dopo `wk init`
@@ -110,6 +122,12 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - Come scrivere backcover.md (pitch commerciale, blurb)
     - Abstract e keywords nel config.yaml per paper
     - Come usare `wk stats` per valutare il bilanciamento
+    - Parti e front/back matter: struttura directory, comandi, frontmatter
+
+---
+
+## v0.5.0 — Analisi e intelligenza
+
 - [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?
 - [ ] **Grafo relazioni** — report relazioni personaggi
 - [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
@@ -118,7 +136,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ---
 
-## v0.5.0 — Estensioni
+## v0.6.0 — Estensioni
 
 - [ ] **Plugin system** — hook pre/post build
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
@@ -318,22 +336,22 @@ Stesse classi CSS dell'HTML, iniettate nel body dei capitoli.
 
 For every new feature, command, or structural change, verify ALL of the following:
 
-- [ ] **Type definitions** — `src/types/*/type.yaml` updated (dirs, files, schemas, add_commands, reports, sample_files)
-- [ ] **Init** — `src/commands/init.ts` generates new files/dirs, README tree includes them
-- [ ] **Add** — `src/commands/add.ts` new subcommand if needed, registered in parent
-- [ ] **Remove** — `src/commands/remove.ts` updated if reversible
-- [ ] **Check** — `src/commands/check.ts` validates new files/fields/cross-references
-- [ ] **Sync** — `src/commands/sync.ts` handles any new derived fields
-- [ ] **Build** — `src/lib/html.ts`, `epub.ts`, `pdf.ts`, `docx.ts` render new content if applicable
-- [ ] **Watch** — `src/commands/watch.ts` picks up new file patterns if needed
-- [ ] **Schema** — `src/lib/schema.ts` updated for new config/style/timeline fields
-- [ ] **i18n** — `src/lib/i18n.ts` new labels added if there are new rendered strings
-- [ ] **Reports** — `src/lib/reports.ts` includes new data in relevant reports
-- [ ] **Agent instructions** — `src/agents/instructions.md` and `src/agents/types/*.md` updated
-- [ ] **CLI registration** — `src/cli.ts` imports and registers new commands
-- [ ] **README.md** — package README updated (commands table, project structure, features)
-- [ ] **Tests** — `test/smoke.test.ts` covers the new feature
-- [ ] **Build passes** — `npm run build` no errors
-- [ ] **Tests pass** — `npm test` all green
-- [ ] **PLAN.md** — feature marked as done, new ideas captured
-- [ ] **Pre-release checklist** — update this Pre-release checklist
+- [x] **Type definitions** — add_commands aggiornati per parti e front/back matter in tutti i tipi. `part` in frontmatter rimosso (ora directory-based). `part_heading`/`chapter_heading` in typography.
+- [ ] **Init** — `src/commands/init.ts` non genera parti/sezioni per default (corretto, l'utente le aggiunge)
+- [x] **Add** — `wk add part`, `wk add chapter --part N`, 8 comandi front/back matter (dedication, preface, foreword, prologue, epilogue, afterword, appendix, author-note)
+- [x] **Remove** — `wk remove part N` (sposta capitoli, elimina dir), 8 comandi remove per sezioni. Skip renumbering per file sezione.
+- [x] **Check** — avviso per capitoli sciolti in root quando esistono parti. Section files esclusi dal naming convention check.
+- [x] **Sync** — skip renumbering per file sezione
+- [x] **Build** — tutti i 5 formati (html, epub, pdf, docx, md) gestiscono front/back matter, parti, heading configurabili, autore per capitolo (collection)
+- [ ] **Watch** — non impattato (usa build)
+- [ ] **Schema** — `part_heading`/`chapter_heading` in typography, no nuovi config fields
+- [x] **i18n** — `part`, `chapter_label`, `partSuffix`, `chapterSuffix`, 8 label sezioni in 17 lingue
+- [ ] **Reports** — non impattato (parti non nei report)
+- [ ] **Agent instructions** — DA FARE: documentare parti, front/back matter, heading configurabili
+- [ ] **CLI registration** — non impattato (comandi registrati in add/remove)
+- [ ] **README.md** — DA FARE: documentare parti, front/back matter, heading, autore per capitolo
+- [x] **Tests** — 125 test verdi, 10 nuovi per novel-parts con front/back matter
+- [x] **Build passes** — `npm run build` no errors
+- [x] **Tests pass** — `npm test` all green
+- [x] **PLAN.md** — feature marcate, v0.5 spostato ad analisi
+- [ ] **Pre-release checklist** — agent instructions e README ancora da fare
