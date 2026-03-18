@@ -429,14 +429,15 @@ For every new feature, command, or structural change, verify ALL of the followin
 - [x] **Schema** — `part_heading`/`chapter_heading` in typography loader, `toc`/`show_title` nel parser
 - [x] **i18n** — `part`, `chapter_label`, `partSuffix`, `chapterSuffix`, 8 label sezioni, `abstract` — 17 lingue. Korean spacing fixato (CJK-style senza spazio).
 - [x] **Reports** — non impattato (parti non nei report per ora)
-- [ ] **Agent instructions** — DA FARE: documentare parti, front/back matter, heading configurabili, toc/show_title
+- [x] **Agent instructions** — concise, modulari per tipo. Regole generali in instructions.md, tipo-specifiche in types/*.md. Pronte per plugin architecture.
 - [x] **CLI registration** — comandi registrati in add/remove
 - [x] **README.md** — documentati parti, front/back matter, heading format, collection author, footnotes, immagini con width
-- [x] **Tests** — 175 test (3 file): 50 heading unit test (tutti i formati × 4 lingue + roman + CJK), 10 novel-parts integration, 115 smoke+integration
+- [x] **Tests** — 184 test (3 file): 50 heading unit test (tutti i formati × 4 lingue + roman + CJK), 10 novel-parts integration, 9 smoke nuovi comandi, 115 smoke+integration
 - [x] **Build passes** — `npm run build` no errors
-- [x] **Tests pass** — `npm test` 175 green
+- [x] **Tests pass** — `npm test` 184 green
 - [x] **PLAN.md** — v0.4 completo, v0.4.1 impaginazione professionale pianificata, v0.5 analisi, v0.6 estensioni + traduzione + API Node
-- [x] **Pre-release checklist** — solo agent instructions da completare
+- [x] **Pre-release checklist** — TUTTO VERDE. v0.4 completa.
 - [x] **CSS themes** — `.part-page`, `.chapter-number`, `.chapter-author`, `.toc-part`, `.toc-author`, `.toc-chapter` in tutti e 4 i temi. TOC `<ul>` senza numerazione browser.
 - [x] **Typography** — `HeadingFormat` type, `formatPartHeading`/`formatChapterHeading` con roman/CJK/arabic, `SECTION_LABEL_KEY` mapping. `toRoman`, `toCjk` helpers.
-- [ ] **Smoke test comandi nuovi** — `wk add part`, `wk remove part`, front/back matter add/remove nel smoke test (attualmente solo in integration)
+- [x] **Smoke test comandi nuovi** — `wk add part`, `wk remove part`, front/back matter add/remove, type-specific blocking
+- [x] **TypeFeatures refactoring** — `show_chapter_author`, `supports_parts` nel type.yaml. Zero `config.type` checks nei builder.
