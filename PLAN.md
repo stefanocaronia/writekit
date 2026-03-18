@@ -126,6 +126,32 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ---
 
+## v0.4.1 — Impaginazione professionale (PDF/DOCX)
+
+- [ ] **Header/footer** — numeri di pagina e intestazioni:
+    - Footer: numero pagina centrato, inizia dal primo capitolo (non da copertina/frontespizio)
+    - Header: standard editoriale recto/verso:
+        - Verso (sinistra): titolo libro (o nome autore)
+        - Recto (destra): titolo capitolo (o titolo parte)
+    - Nessun header/footer su copertina, frontespizio, pagine di parte
+    - Configurabile in typography: `page_numbers: true`, `running_header: true`
+- [ ] **Impaginazione editoriale** — ordine pagine standard per stampa:
+    - Copertina (recto) → pagina vuota (verso) → frontespizio (recto) → colophon (verso)
+    - Dedica (recto) → pagina vuota se serve
+    - Indice (recto)
+    - Ogni parte inizia su recto (pagina destra)
+    - Ogni capitolo inizia su recto
+    - Pagine vuote inserite automaticamente dove serve per mantenere recto/verso
+    - Front matter (prefazione, prologo) inizia su recto
+    - Back matter: epilogo su recto, appendice/postfazione possono essere verso
+    - Compatibile con print-on-demand (KDP, IngramSpark, Lulu)
+- [ ] **Margini interni recto/verso** — margine di rilegatura (gutter) più largo sul lato interno:
+    - Recto: margine sinistro più largo
+    - Verso: margine destro più largo
+    - Configurabile per preset di stampa
+
+---
+
 ## v0.5.0 — Analisi e intelligenza
 
 - [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?

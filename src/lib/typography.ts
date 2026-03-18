@@ -158,6 +158,7 @@ export function toCjk(n: number): string {
 }
 
 const CJK_LANGS = ["zh", "ja"];
+const CJK_STYLE_LANGS = ["zh", "ja", "ko"]; // no space between label, number, suffix
 const ARABIC_NUM_LANGS = ["ko", "ar", "hi"];
 
 function partNumber(n: number, lang: string): string {
@@ -191,15 +192,15 @@ export function formatPartHeading(
     const label = labels.part;
     const suffix = labels.partSuffix;
     const base = lang.split("-")[0];
-    const isCjk = CJK_LANGS.includes(base);
-    // CJK: 第一部 (no space between label, number, suffix)
+    const noSpace = CJK_STYLE_LANGS.includes(base);
+    // CJK-style: 第一部 / 제1부 (no space between label, number, suffix)
     // Western: Part I (space between label and number)
-    const labelNum = isCjk ? `${label}${num}${suffix}` : `${label} ${num}`;
+    const labelNum = noSpace ? `${label}${num}${suffix}` : `${label} ${num}`;
     switch (format) {
         case "label_number_title": return title ? `${labelNum}\n${title}` : labelNum;
         case "label_number": return labelNum;
-        case "number_title": return title ? `${isCjk ? `${num}${suffix}` : num}\n${title}` : (isCjk ? `${num}${suffix}` : num);
-        case "number": return isCjk ? `${num}${suffix}` : num;
+        case "number_title": return title ? `${noSpace ? `${num}${suffix}` : num}\n${title}` : (noSpace ? `${num}${suffix}` : num);
+        case "number": return noSpace ? `${num}${suffix}` : num;
         case "title": return title || labelNum;
     }
 }
@@ -215,13 +216,13 @@ export function formatChapterHeading(
     const label = labels.chapter_label;
     const suffix = labels.chapterSuffix;
     const base = lang.split("-")[0];
-    const isCjk = CJK_LANGS.includes(base);
-    const labelNum = isCjk ? `${label}${num}${suffix}` : `${label} ${num}`;
+    const noSpace = CJK_STYLE_LANGS.includes(base);
+    const labelNum = noSpace ? `${label}${num}${suffix}` : `${label} ${num}`;
     switch (format) {
         case "label_number_title": return title ? `${labelNum}\n${title}` : labelNum;
         case "label_number": return labelNum;
-        case "number_title": return title ? `${isCjk ? `${num}${suffix}` : num}\n${title}` : (isCjk ? `${num}${suffix}` : num);
-        case "number": return isCjk ? `${num}${suffix}` : num;
+        case "number_title": return title ? `${noSpace ? `${num}${suffix}` : num}\n${title}` : (noSpace ? `${num}${suffix}` : num);
+        case "number": return noSpace ? `${num}${suffix}` : num;
         case "title": return title;
     }
 }

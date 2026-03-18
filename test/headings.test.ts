@@ -139,20 +139,20 @@ describe("formatPartHeading (Chinese)", () => {
 describe("formatChapterHeading (Korean)", () => {
     const lang = "ko";
 
-    // Korean is not in CJK_LANGS, so it uses Western-style spacing (label + space + num, no suffix in labelNum)
+    // Korean uses CJK-style spacing (no space) with Arabic numerals and suffix
     it("label_number_title n=1", () => {
         expect(formatChapterHeading("label_number_title", 1, "The Arrival", koLabels, lang))
-            .toBe("제 1\nThe Arrival");
+            .toBe("제1장\nThe Arrival");
     });
 });
 
 describe("formatPartHeading (Korean)", () => {
     const lang = "ko";
 
-    // Korean part numbers use Arabic numerals (ARABIC_NUM_LANGS), Western-style layout
+    // Korean uses CJK-style spacing (no space) with Arabic numerals and suffix
     it("label_number_title n=2", () => {
         expect(formatPartHeading("label_number_title", 2, "The End", koLabels, lang))
-            .toBe("제 2\nThe End");
+            .toBe("제2부\nThe End");
     });
 });
 
