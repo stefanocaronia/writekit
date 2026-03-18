@@ -145,6 +145,13 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - `wk translate verify` — verifica coerenza: nomi del glossario usati consistentemente nei capitoli tradotti, frontmatter intatto, nessun nome originale rimasto nel testo
     - Workflow agent: legge AGENTS.md → chiama `translate init` → popola glossario → traduce capitolo per capitolo con glossario per coerenza → chiama `translate verify` → `wk build`
     - L'agent è l'orchestratore (ha le sue API key), writekit è l'infrastruttura
+- [ ] **API Node pubblica** — esportare le funzioni core da `writekit` come API programmatica:
+    - `loadConfig`, `loadChapters`, `loadContributors`, `loadParts`, `loadTypography`
+    - `buildHtml`, `buildEpub`, `buildDocx`, `buildPdf`, `renderBookMd`
+    - `check`, `sync`, `stats`
+    - Entry point: `writekit/api` o export diretti dal package
+    - Documentazione API per agent e integrazioni custom
+    - Predisposizione per MCP server wrapper
 - [ ] **Plugin system** — hook pre/post build
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
@@ -162,6 +169,12 @@ Writekit non è un tool AI e non integra LLM. È un **framework nativamente agen
 - **Struttura leggibile**: config.yaml, characters/*.md, outline/ — tutto in formati che un LLM legge nativamente
 - **Zero lock-in**: funziona con Claude Code, Cursor, Copilot, qualsiasi agent framework presente e futuro
 - **Predisposizione futura**: se servissero operazioni più complesse (analisi semantica, suggerimenti plot), esporre tool Node come MCP server o CLI estesi, senza cambiare l'architettura
+
+Due livelli di accesso:
+- **CLI pubblica** (`wk *`) — per umani e agent semplici, esecuzione come processo
+- **API Node** (`import from "writekit"`) — per agent avanzati, MCP server, integrazioni custom. Accesso diretto alle strutture dati in memoria (config, chapters, characters, glossary, typography). Più veloce, più potente, permette operazioni complesse (grafo personaggi, diff semantici tra draft, analisi timeline) impossibili via CLI
+
+L'API Node è già quasi pronta — le funzioni in `src/lib/` sono modulari. Serve esportarle pulite dal package entry point e documentarle. Un MCP server sarebbe un wrapper sottile sopra questa API.
 
 Il valore aggiunto non è "ha l'AI dentro" ma "qualsiasi AI ci lavora immediatamente".
 
