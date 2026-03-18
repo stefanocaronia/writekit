@@ -565,7 +565,7 @@ function makeSectionCommand(def: SectionDef): Command {
 
             await writeFile(
                 filePath,
-                frontmatter({ title: def.displayTitle }, `# ${def.displayTitle}\n\n`),
+                `---\n---\n\nWrite here...\n`,
             );
 
             console.log(`\n${icon.note} ${c.green(`Added ${def.displayTitle.toLowerCase()}`)}\n`);
