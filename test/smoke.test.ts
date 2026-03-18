@@ -95,6 +95,32 @@ describe("writekit smoke tests", () => {
         expect(timeline).toContain("Marco arrives");
     });
 
+    it("add part works", () => {
+        run(`${CLI} add part "Test Part"`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "part-01"))).toBe(true);
+        expect(existsSync(join(TEST_DIR, "manuscript", "part-01", "part.yaml"))).toBe(true);
+    });
+
+    it("add chapter --part works", () => {
+        run(`${CLI} add chapter "Part Chapter" --part 1`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "part-01", "01-part-chapter.md"))).toBe(true);
+    });
+
+    it("add prologue works", () => {
+        run(`${CLI} add prologue`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "prologue.md"))).toBe(true);
+    });
+
+    it("add epilogue works", () => {
+        run(`${CLI} add epilogue`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "epilogue.md"))).toBe(true);
+    });
+
+    it("add dedication works", () => {
+        run(`${CLI} add dedication`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "dedication.md"))).toBe(true);
+    });
+
     it("build html works", () => {
         run(`${CLI} build html`, TEST_DIR);
         const buildDir = join(TEST_DIR, "build");
@@ -156,6 +182,21 @@ describe("writekit smoke tests", () => {
         expect(existsSync(join(TEST_DIR, "manuscript", "01-capitolo-primo.md"))).toBe(false);
         // The former 02-la-tempesta.md should now be 01-la-tempesta.md
         expect(existsSync(join(TEST_DIR, "manuscript", "01-la-tempesta.md"))).toBe(true);
+    });
+
+    it("remove prologue works", () => {
+        expect(existsSync(join(TEST_DIR, "manuscript", "prologue.md"))).toBe(true);
+        run(`${CLI} remove prologue`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "prologue.md"))).toBe(false);
+    });
+
+    it("remove part moves chapters to manuscript root", () => {
+        // part-01 has 01-part-chapter.md; remove part 1 moves it to manuscript root
+        expect(existsSync(join(TEST_DIR, "manuscript", "part-01"))).toBe(true);
+        run(`${CLI} remove part 1`, TEST_DIR);
+        expect(existsSync(join(TEST_DIR, "manuscript", "part-01"))).toBe(false);
+        // The chapter should now be in manuscript root (renumbered after existing 01-la-tempesta.md)
+        expect(existsSync(join(TEST_DIR, "manuscript", "02-part-chapter.md"))).toBe(true);
     });
 
     it("theme list works", () => {
@@ -299,6 +340,48 @@ describe("project types", () => {
         it("add character works for novel type", () => {
             run(`${CLI} add character "Test Hero"`, NOVEL_DIR);
             expect(existsSync(join(NOVEL_DIR, "characters", "test-hero.md"))).toBe(true);
+        });
+    });
+
+    // Verify prologue/epilogue blocked for essay
+    describe("essay (prologue/epilogue blocked)", () => {
+        const ESSAY_DIR = join(ROOT, "sandbox", "test-essay-sections");
+
+        beforeAll(() => {
+            rmSync(ESSAY_DIR, { recursive: true, force: true });
+            mkdirSync(join(ROOT, "sandbox"), { recursive: true });
+            run(`${CLI} init test-essay-sections --yes --type essay`, join(ROOT, "sandbox"));
+        });
+
+        afterAll(() => {
+            rmSync(ESSAY_DIR, { recursive: true, force: true });
+        });
+
+        it("add prologue fails for essay type", () => {
+            expect(() => {
+                run(`${CLI} add prologue`, ESSAY_DIR);
+            }).toThrow();
+        });
+    });
+
+    // Verify part blocked for paper
+    describe("paper (part blocked)", () => {
+        const PAPER_DIR = join(ROOT, "sandbox", "test-paper-parts");
+
+        beforeAll(() => {
+            rmSync(PAPER_DIR, { recursive: true, force: true });
+            mkdirSync(join(ROOT, "sandbox"), { recursive: true });
+            run(`${CLI} init test-paper-parts --yes --type paper`, join(ROOT, "sandbox"));
+        });
+
+        afterAll(() => {
+            rmSync(PAPER_DIR, { recursive: true, force: true });
+        });
+
+        it("add part fails for paper type", () => {
+            expect(() => {
+                run(`${CLI} add part "Test"`, PAPER_DIR);
+            }).toThrow();
         });
     });
 });
