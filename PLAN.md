@@ -82,7 +82,6 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 - [x] **Strutture dati per tipo** — essay: thesis.md, arguments/, concepts/. Paper: abstract.md, concepts/. `wk add concept`, `wk add argument`. Schema e sample files per tipo.
 - [x] **Immagini nel manuscript** — `![alt](path)` in HTML (base64), ePub (zip), PDF (via HTML), DOCX (ImageRun). Path relativi al progetto.
-- [ ] **DOCX template custom** — da rifare con approccio diverso. `externalStyles` della libreria docx non funziona. Serve aprire il .docx come zip e sostituire document.xml mantenendo styles/fonts/settings del template.
 - [x] **DOCX Table of Contents** — campo TOC generato dai Heading 1 (capitoli), Word lo aggiorna all'apertura. Posizionato dopo la title page.
 - [x] **DOCX temi** — font/colori dal tema attivo via docx settings in theme.yaml
 - [x] **Doc temi nel README** — workflow completo documentato: builtin vs custom, struttura cartella tema, DOCX style priority chain
@@ -123,6 +122,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - Abstract e keywords nel config.yaml per paper
     - Come usare `wk stats` per valutare il bilanciamento
     - Parti e front/back matter: struttura directory, comandi, frontmatter
+- [ ] **DOCX template custom** — da rifare con approccio diverso. `externalStyles` della libreria docx non funziona. Serve aprire il .docx come zip e sostituire document.xml mantenendo styles/fonts/settings del template.
 
 ---
 
@@ -396,22 +396,25 @@ Stesse classi CSS dell'HTML, iniettate nel body dei capitoli.
 
 For every new feature, command, or structural change, verify ALL of the following:
 
-- [x] **Type definitions** — add_commands aggiornati per parti e front/back matter in tutti i tipi. `part` in frontmatter rimosso (ora directory-based). `part_heading`/`chapter_heading` in typography.
-- [ ] **Init** — `src/commands/init.ts` non genera parti/sezioni per default (corretto, l'utente le aggiunge)
-- [x] **Add** — `wk add part`, `wk add chapter --part N`, 8 comandi front/back matter (dedication, preface, foreword, prologue, epilogue, afterword, appendix, author-note)
+- [x] **Type definitions** — add_commands per parti e front/back matter, `part_heading`/`chapter_heading` in typography, schema `toc`/`show_title` nei frontmatter sezioni
+- [x] **Init** — non genera parti/sezioni per default (corretto, l'utente le aggiunge con `wk add`)
+- [x] **Add** — `wk add part`, `wk add chapter --part N`, 8 comandi front/back matter con frontmatter vuoto (titolo risolto da i18n)
 - [x] **Remove** — `wk remove part N` (sposta capitoli, elimina dir), 8 comandi remove per sezioni. Skip renumbering per file sezione.
 - [x] **Check** — avviso per capitoli sciolti in root quando esistono parti. Section files esclusi dal naming convention check.
 - [x] **Sync** — skip renumbering per file sezione
-- [x] **Build** — tutti i 5 formati (html, epub, pdf, docx, md) gestiscono front/back matter, parti, heading configurabili, autore per capitolo (collection)
-- [ ] **Watch** — non impattato (usa build)
-- [ ] **Schema** — `part_heading`/`chapter_heading` in typography, no nuovi config fields
-- [x] **i18n** — `part`, `chapter_label`, `partSuffix`, `chapterSuffix`, 8 label sezioni in 17 lingue
-- [ ] **Reports** — non impattato (parti non nei report)
-- [ ] **Agent instructions** — DA FARE: documentare parti, front/back matter, heading configurabili
-- [ ] **CLI registration** — non impattato (comandi registrati in add/remove)
-- [ ] **README.md** — DA FARE: documentare parti, front/back matter, heading, autore per capitolo
-- [x] **Tests** — 125 test verdi, 10 nuovi per novel-parts con front/back matter
+- [x] **Build** — tutti i 5 formati gestiscono: front/back matter, parti, heading configurabili (5 formati × EN/IT/ZH/KO), autore per capitolo (collection), about esclude non-autori, TOC con heading format e parti uppercase, titoli sezione da i18n, `show_title: false`, `toc: false`
+- [x] **Watch** — non impattato (usa build)
+- [x] **Schema** — `part_heading`/`chapter_heading` in typography loader, `toc`/`show_title` nel parser
+- [x] **i18n** — `part`, `chapter_label`, `partSuffix`, `chapterSuffix`, 8 label sezioni, `abstract` — 17 lingue. Korean spacing fixato (CJK-style senza spazio).
+- [x] **Reports** — non impattato (parti non nei report per ora)
+- [ ] **Agent instructions** — DA FARE: documentare parti, front/back matter, heading configurabili, toc/show_title
+- [x] **CLI registration** — comandi registrati in add/remove
+- [x] **README.md** — documentati parti, front/back matter, heading format, collection author, footnotes, immagini con width
+- [x] **Tests** — 175 test (3 file): 50 heading unit test (tutti i formati × 4 lingue + roman + CJK), 10 novel-parts integration, 115 smoke+integration
 - [x] **Build passes** — `npm run build` no errors
-- [x] **Tests pass** — `npm test` all green
-- [x] **PLAN.md** — feature marcate, v0.5 spostato ad analisi
-- [ ] **Pre-release checklist** — agent instructions e README ancora da fare
+- [x] **Tests pass** — `npm test` 175 green
+- [x] **PLAN.md** — v0.4 completo, v0.4.1 impaginazione professionale pianificata, v0.5 analisi, v0.6 estensioni + traduzione + API Node
+- [x] **Pre-release checklist** — solo agent instructions da completare
+- [x] **CSS themes** — `.part-page`, `.chapter-number`, `.chapter-author`, `.toc-part`, `.toc-author`, `.toc-chapter` in tutti e 4 i temi. TOC `<ul>` senza numerazione browser.
+- [x] **Typography** — `HeadingFormat` type, `formatPartHeading`/`formatChapterHeading` con roman/CJK/arabic, `SECTION_LABEL_KEY` mapping. `toRoman`, `toCjk` helpers.
+- [ ] **Smoke test comandi nuovi** — `wk add part`, `wk remove part`, front/back matter add/remove nel smoke test (attualmente solo in integration)
