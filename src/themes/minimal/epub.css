@@ -4,6 +4,7 @@ body {
   line-height: 1.7;
   margin: 1em;
 }
+a { color: inherit; }
 
 h1 {
   font-size: 1.8em;
@@ -191,7 +192,8 @@ sup a {
 /* TOC list */
 nav[epub\:type="toc"] ul {
   list-style: none;
-  padding-left: 0;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
 }
 .toc-chapter {
   list-style: none;

@@ -8,11 +8,11 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 
 ### HTML — open `sandbox/int-*/build/*.html` in browser
 - [x] Cover image looks good (proper size, centered)
-- [ ] Typography looks like a book (serif, justified, proper spacing)
-- [ ] Chapter navigation works (click prev/next/TOC)
-- [ ] Footnote superscripts are clickable and scroll to notes
-- [ ] Tables have proper column spacing
-- [ ] Theme "minimal" looks different from "default" (sans-serif, blue, left-aligned)
+- [x] Typography looks like a book (serif, justified, proper spacing)
+- [x] Chapter navigation works (click prev/next/TOC)
+- [x] Footnote superscripts are clickable and scroll to notes
+- [x] Tables have proper column spacing
+- [x] Theme "minimal" looks different from "default" (sans-serif, blue, left-aligned)
 
 #### Novel with parts (`sandbox/int-novel-parts/build/*.html`)
 - [x] TOC: "Dedica", "Prologo", parts uppercase ("PARTE I — ..."), chapters, "Epilogo"
@@ -23,18 +23,18 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 
 ### ePub — open `sandbox/int-*/build/*.epub` in Thorium/Calibre
 - [x] Title page: large title, centered, author below
-- [ ] Table of contents navigable via reader
-- [ ] Chapters render correctly, no XHTML errors
-- [ ] Footnotes work (tap/click on superscript)
-- [ ] Images display in chapter
+- [x] Table of contents navigable via reader
+- [x] Chapters render correctly, no XHTML errors
+- [x] Footnotes work (tap/click on superscript)
+- [x] Images display in chapter
 
 ### DOCX — open `sandbox/int-*/build/*.docx` in Word
 - [x] Cover image fills first page
-- [ ] Table of Contents present and updates
-- [ ] Chapter headings look correct
-- [ ] Tables fit within margins
-- [ ] Footnotes as native Word footnotes
-- [ ] With minimal theme: different font/colors than default
+- [x] Table of Contents present and updates
+- [x] Chapter headings look correct
+- [x] Tables fit within margins
+- [x] Footnotes as native Word footnotes
+- [x] With minimal theme: different font/colors than default
 
 #### DOCX pagination (novel, default preset)
 - [x] Running header recto: chapter title left, page number right

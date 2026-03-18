@@ -183,7 +183,7 @@ function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: T
                 labels.tableOfContents,
                 `<nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc">
     <h1>${escapeXml(labels.tableOfContents)}</h1>
-    <ul>${items}
+    <ul style="list-style:none;padding-left:0;margin-left:0">${items}
     </ul>
 </nav>`,
                 config.language || "it",
