@@ -178,7 +178,20 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - Entry point: `writekit/api` o export diretti dal package
     - Documentazione API per agent e integrazioni custom
     - Predisposizione per MCP server wrapper
-- [ ] **Plugin system** — hook pre/post build
+- [ ] **Type modulari e plugin system** — ogni type diventa un modulo indipendente, preparazione per type custom:
+    - **Fase 1 (refactoring interno)** — separare la logica type-specific dal core:
+        - Ogni type in `src/types/{type}/` ha già `type.yaml`. Aggiungere `index.ts` opzionale per logica custom
+        - Interfaccia `TypePlugin`: `{ onInit?, onBuild?, onCheck?, renderSection?, buildSections? }`
+        - Spostare logica hardcoded (paper abstract, collection per-chapter author, novel timeline) nei rispettivi type module
+        - Il core diventa generico: legge type.yaml + chiama hook dal TypePlugin
+        - Il builder chiama `type.renderSection("abstract", ...)` invece di `if (config.type === "paper")`
+    - **Fase 2 (type esterni)** — permettere type da npm package:
+        - Naming convention: `writekit-type-{name}` (es. `writekit-type-screenplay`)
+        - Type loader cerca in: builtin `src/types/` → `node_modules/writekit-type-*`
+        - Il package esporta `type.yaml` + `TypePlugin`
+        - `wk init my-script --type screenplay` funziona se il package è installato
+    - **Fase 2b (type locali)** — type nel progetto: `types/{name}/` con type.yaml + index.ts
+    - **Impatto sullo sviluppo attuale**: da subito, quando si aggiunge logica type-specific, isolarla in modo che sia spostabile in un modulo. Evitare `if (config.type === "X")` nel core — preferire dati nel type.yaml o hook pattern.
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
 - [ ] **Font embedding** — woff2/ttf in HTML e ePub
