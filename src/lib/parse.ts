@@ -34,6 +34,18 @@ export type SectionKind = "dedication" | "preface" | "foreword" | "prologue" | "
 export const FRONT_SECTIONS: SectionKind[] = ["dedication", "preface", "foreword", "prologue"];
 export const BACK_SECTIONS: SectionKind[] = ["epilogue", "afterword", "appendix", "author_note"];
 
+// Maps SectionKind to the i18n Labels key
+export const SECTION_LABEL_KEY: Record<SectionKind, string> = {
+    dedication: "dedication",
+    preface: "preface",
+    foreword: "foreword",
+    prologue: "prologue",
+    epilogue: "epilogue",
+    afterword: "afterword",
+    appendix: "appendix",
+    author_note: "authorNote",
+};
+
 export const SECTION_FILE_MAP: Record<string, SectionKind> = {
     "dedication.md": "dedication",
     "preface.md": "preface",
@@ -59,6 +71,8 @@ export interface Chapter {
     part?: string;
     partNumber?: number;
     sectionKind?: SectionKind;
+    toc?: boolean;
+    showTitle?: boolean;
     body: string;
     filename: string;
 }
@@ -142,15 +156,20 @@ export async function loadConfig(projectDir: string): Promise<BookConfig> {
     return parseYaml(raw) as BookConfig;
 }
 
-function parseMdFile(content: string, file: string, chapterNum: number): Chapter {
+function parseMdFile(content: string, file: string, chapterNum: number, isSection = false): Chapter {
     const { data, body } = parseFrontmatter(content);
     const cleanBody = body.replace(/^#\s+.+\n+/, "");
+    // For sections: title empty if not explicitly set (builder resolves from i18n)
+    // For chapters: fallback to filename
+    const title = (data.title as string) ?? (isSection ? "" : file.replace(/\.md$/, ""));
     return {
         number: (data.chapter as number) ?? chapterNum,
-        title: (data.title as string) ?? file.replace(/\.md$/, ""),
+        title,
         pov: data.pov as string | undefined,
         draft: data.draft as number | undefined,
         author: data.author as string | undefined,
+        toc: data.toc === false ? false : undefined,
+        showTitle: data.show_title === false ? false : undefined,
         body: cleanBody,
         filename: file,
     };
@@ -207,7 +226,7 @@ export async function loadChapters(projectDir: string): Promise<Chapter[]> {
     // Front matter
     for (const file of frontFiles) {
         const content = await readFile(join(manuscriptDir, file), "utf-8");
-        const ch = parseMdFile(content, file, 0);
+        const ch = parseMdFile(content, file, 0, true);
         ch.sectionKind = SECTION_FILE_MAP[file];
         ch.number = 0;
         result.push(ch);
@@ -253,7 +272,7 @@ export async function loadChapters(projectDir: string): Promise<Chapter[]> {
     // Back matter
     for (const file of backFiles) {
         const content = await readFile(join(manuscriptDir, file), "utf-8");
-        const ch = parseMdFile(content, file, 0);
+        const ch = parseMdFile(content, file, 0, true);
         ch.sectionKind = SECTION_FILE_MAP[file];
         ch.number = 0;
         result.push(ch);

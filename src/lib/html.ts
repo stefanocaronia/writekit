@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { marked } from "./markdown.js";
 import { embedImagesAsBase64 } from "./images.js";
+import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
@@ -159,8 +160,11 @@ export async function renderBook(
                 if (partHasLabel) partDisplay = partDisplay.toUpperCase();
                 tocItems += `\n                <li class="toc-part">${escapeHtml(partDisplay)}</li>`;
             }
-            if (ch.sectionKind) {
-                tocItems += `\n                <li class="toc-chapter"><a href="#${chapterId(i)}">${escapeHtml(ch.title)}</a></li>`;
+            if (ch.toc === false) {
+                // Explicitly excluded from TOC
+            } else if (ch.sectionKind) {
+                const sLabel = ch.title || (labels as any)[SECTION_LABEL_KEY[ch.sectionKind]] || ch.sectionKind;
+                tocItems += `\n                <li class="toc-chapter"><a href="#${chapterId(i)}">${escapeHtml(sLabel)}</a></li>`;
             } else {
                 chapterNum++;
                 const formatted = formatChapterHeading(chapterFormat, chapterNum, ch.title, typoLabels, lang);
@@ -198,8 +202,9 @@ export async function renderBook(
 
             // Front/back matter sections: simple rendering, no numbering/part/author
             if (chapters[i].sectionKind) {
-                return `\n        <section class="chapter section-${chapters[i].sectionKind}" id="${chapterId(i)}">
-            <h1>${escapeHtml(chapters[i].title)}</h1>
+                const resolvedTitle = chapters[i].title || (labels as any)[SECTION_LABEL_KEY[chapters[i].sectionKind!]] || "";
+                const sectionHeading = chapters[i].showTitle !== false && resolvedTitle ? `\n            <h1>${escapeHtml(resolvedTitle)}</h1>` : "";
+                return `\n        <section class="chapter section-${chapters[i].sectionKind}" id="${chapterId(i)}">${sectionHeading}
             ${html}${nav}
         </section>`;
             }

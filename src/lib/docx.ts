@@ -20,6 +20,7 @@ import {
 } from "docx";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { collectImagePaths } from "./images.js";
@@ -716,14 +717,16 @@ export async function buildDocx(
 
         // Front/back matter section: simple title + body, no numbering/part/author
         if (chapter.sectionKind) {
-            const sectionChildren: (Paragraph | Table)[] = [
-                new Paragraph({
+            const resolvedTitle = chapter.title || (labels as any)[SECTION_LABEL_KEY[chapter.sectionKind]] || "";
+            const sectionChildren: (Paragraph | Table)[] = [];
+            if (chapter.showTitle !== false && resolvedTitle) {
+                sectionChildren.push(new Paragraph({
                     heading: HeadingLevel.HEADING_1,
-                    children: [new TextRun({ text: chapter.title, font: FONT, size: 36, color: ACCENT })],
+                    children: [new TextRun({ text: resolvedTitle, font: FONT, size: 36, color: ACCENT })],
                     spacing: { before: 600, after: 400 },
-                }),
-                ...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap),
-            ];
+                }));
+            }
+            sectionChildren.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
             docSections.push({
                 properties: { page: { size: PAGE_A5 } },
                 children: sectionChildren,

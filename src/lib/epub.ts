@@ -4,6 +4,7 @@ import yazl from "yazl";
 import { createWriteStream } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
+import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import type { Section } from "./project-type.js";
@@ -176,8 +177,11 @@ function generateTocXhtml(config: BookConfig, chapters: Chapter[], typoLabels: T
                         if (partHasLabel) partDisplay = partDisplay.toUpperCase();
                         items += `\n      <li class="toc-part">${escapeXml(partDisplay)}</li>`;
                 }
-                if (chapters[i].sectionKind) {
-                        items += `\n      <li class="toc-chapter"><a href="chapter-${i + 1}.xhtml">${escapeXml(chapters[i].title)}</a></li>`;
+                if (chapters[i].toc === false) {
+                        // Explicitly excluded from TOC
+                } else if (chapters[i].sectionKind) {
+                        const sLabel = chapters[i].title || (labels as any)[SECTION_LABEL_KEY[chapters[i].sectionKind!]] || chapters[i].sectionKind;
+                        items += `\n      <li class="toc-chapter"><a href="chapter-${i + 1}.xhtml">${escapeXml(sLabel)}</a></li>`;
                 } else {
                         chapterNum++;
                         const formatted = formatChapterHeading(chapterFormat as any, chapterNum, chapters[i].title, typoLabels, lang);
@@ -381,8 +385,10 @@ export async function buildEpub(
 
                 // Front/back matter sections: simple rendering, no numbering/part/author
                 if (chapters[i].sectionKind) {
-                        const sectionHtml = `<h1>${escapeXml(chapters[i].title)}</h1>\n` + await marked(chBody);
-                        const xhtml = wrapXhtml(chapters[i].title, sectionHtml, lang, `${typoClass} section-${chapters[i].sectionKind}`);
+                        const resolvedTitle = chapters[i].title || (labels as any)[SECTION_LABEL_KEY[chapters[i].sectionKind!]] || "";
+                        const sectionHeading = chapters[i].showTitle !== false && resolvedTitle ? `<h1>${escapeXml(resolvedTitle)}</h1>\n` : "";
+                        const sectionHtml = sectionHeading + await marked(chBody);
+                        const xhtml = wrapXhtml(resolvedTitle || chapters[i].sectionKind || "", sectionHtml, lang, `${typoClass} section-${chapters[i].sectionKind}`);
                         zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
                         continue;
                 }

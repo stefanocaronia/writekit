@@ -1,3 +1,4 @@
+import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Section } from "./project-type.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
@@ -63,7 +64,10 @@ export async function renderBookMd(
         let tocChapterNum = 0;
         for (let i = 0; i < chapters.length; i++) {
             if (chapters[i].sectionKind) {
-                lines.push(chapters[i].title);
+                if (chapters[i].toc !== false) {
+                    const sLabel = chapters[i].title || (labels as any)[SECTION_LABEL_KEY[chapters[i].sectionKind!]] || "";
+                    if (sLabel) lines.push(sLabel);
+                }
                 continue;
             }
             if (hasParts && chapters[i].part && chapters[i].part !== currentTocPart) {
@@ -97,8 +101,11 @@ export async function renderBookMd(
 
         // Front/back matter section: simple title, no numbering/part/author
         if (chapter.sectionKind) {
-            lines.push(`# ${chapter.title}`);
-            lines.push("");
+            const resolvedTitle = chapter.title || (labels as any)[SECTION_LABEL_KEY[chapter.sectionKind]] || "";
+            if (chapter.showTitle !== false && resolvedTitle) {
+                lines.push(`# ${resolvedTitle}`);
+                lines.push("");
+            }
             lines.push(chapter.body.trim());
             lines.push("");
             lines.push("---");
