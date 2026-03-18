@@ -33,6 +33,7 @@ export interface ProjectType {
     description: string;
     sections: Section[];
     features: TypeFeatures;
+    default_preset?: string;
     dirs: string[];
     files: string[];
     add_commands: string[];

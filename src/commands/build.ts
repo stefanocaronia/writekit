@@ -13,6 +13,7 @@ import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
 import { loadTypography } from "../lib/typography.js";
 import { loadType, isValidType, type Section, type TypeFeatures } from "../lib/project-type.js";
+import { getPreset, DEFAULT_PRESET } from "../lib/print-presets.js";
 
 const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
 type Format = (typeof SUPPORTED_FORMATS)[number];
@@ -66,11 +67,12 @@ async function buildPdf(
     theme: Theme,
     sections?: Section[],
     features?: TypeFeatures,
+    typeDefaultPreset?: string,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"), contributors, backcover, coverPath, sections, features);
+    const outPath = await buildPdfFile(projectDir, config, chapters, theme, buildFilename(config,"pdf"), contributors, backcover, coverPath, sections, features, typeDefaultPreset);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -82,11 +84,15 @@ async function buildDocx(
     theme: Theme,
     sections?: Section[],
     features?: TypeFeatures,
+    typeDefaultPreset?: string,
 ): Promise<void> {
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, sections, features);
+    const presetName = config.print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
+    const preset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
+    const layoutFlags = { pageNumbers: preset.pageNumbers, runningHeader: preset.runningHeader, mirrorMargins: preset.mirrorMargins };
+    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, sections, features, layoutFlags);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }
@@ -112,7 +118,7 @@ async function buildMd(
 
 const builders: Record<
     Format,
-    (dir: string, config: BookConfig, chapters: Chapter[], theme: Theme, sections?: Section[], features?: TypeFeatures) => Promise<void>
+    (dir: string, config: BookConfig, chapters: Chapter[], theme: Theme, sections?: Section[], features?: TypeFeatures, typeDefaultPreset?: string) => Promise<void>
 > = {
     html: buildHtml,
     epub: buildEpub,
@@ -220,9 +226,11 @@ export const buildCommand = new Command("build")
         const typeSections = typeDef?.sections;
         const typeFeatures = typeDef?.features;
 
+        const typeDefaultPreset = typeDef?.default_preset;
+
         for (const fmt of formats) {
             console.log(`\n${icon.build} ${c.bold(`Building ${fmt}...`)}\n`);
-            await builders[fmt](projectDir, config, chapters, theme, typeSections, typeFeatures);
+            await builders[fmt](projectDir, config, chapters, theme, typeSections, typeFeatures, typeDefaultPreset);
         }
 
         // Reports (generated after build so they reflect latest content)

@@ -488,6 +488,7 @@ export async function buildDocx(
     docxStyle?: DocxStyle,
     sections?: Section[],
     features?: TypeFeatures,
+    layoutFlags?: { pageNumbers: boolean; runningHeader: boolean; mirrorMargins: boolean },
 ): Promise<string> {
     const has = (s: Section) => !sections || sections.includes(s);
     // Load typography and set module-level vars
@@ -872,7 +873,7 @@ export async function buildDocx(
 
         docSections.push({
             properties: { page: { size: PAGE_A5 } },
-            ...((typo.pageNumbers || typo.runningHeader) && {
+            ...((layoutFlags?.pageNumbers || layoutFlags?.runningHeader) && {
                 headers: {
                     default: rectoHeader(chapter.title),  // odd/recto: chapter title + page#
                     even: versoHeader(),                    // even/verso: page# + book title
@@ -946,7 +947,7 @@ export async function buildDocx(
     const authorStr = formatAuthors(config.author);
 
     const doc = new Document({
-        evenAndOddHeaderAndFooters: typo.runningHeader,
+        evenAndOddHeaderAndFooters: layoutFlags?.runningHeader ?? false,
         title: config.title,
         subject: config.subtitle || undefined,
         creator: authorStr || undefined,

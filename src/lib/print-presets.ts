@@ -15,9 +15,27 @@ export interface PrintPreset {
         outer: number;
     };
     bleed: number;      // mm (0 for non-print presets)
+    mirrorMargins: boolean;   // swap inner/outer on recto/verso
+    pageNumbers: boolean;     // show page numbers
+    runningHeader: boolean;   // show running header (title/chapter)
+    rectoStart: boolean;      // chapters start on right page
 }
 
+// Layout flags for screen/draft presets (no print features)
+const SCREEN_LAYOUT = { mirrorMargins: false, pageNumbers: false, runningHeader: false, rectoStart: false };
+// Layout flags for print presets (full book layout)
+const PRINT_LAYOUT = { mirrorMargins: true, pageNumbers: true, runningHeader: true, rectoStart: true };
+
 const presets: Record<string, PrintPreset> = {
+    screen: {
+        name: "Screen",
+        description: "Screen reading — no print features",
+        width: 210,
+        height: 297,
+        margin: { top: 20, bottom: 20, inner: 20, outer: 20 },
+        bleed: 0,
+        ...SCREEN_LAYOUT,
+    },
     a4: {
         name: "A4",
         description: "A4 — draft / home printing",
@@ -25,6 +43,8 @@ const presets: Record<string, PrintPreset> = {
         height: 297,
         margin: { top: 20, bottom: 20, inner: 25, outer: 20 },
         bleed: 0,
+        ...SCREEN_LAYOUT,
+        pageNumbers: true,
     },
     a5: {
         name: "A5",
@@ -33,6 +53,7 @@ const presets: Record<string, PrintPreset> = {
         height: 210,
         margin: { top: 15, bottom: 15, inner: 20, outer: 15 },
         bleed: 0,
+        ...PRINT_LAYOUT,
     },
     pocket: {
         name: "Pocket",
@@ -41,6 +62,7 @@ const presets: Record<string, PrintPreset> = {
         height: 178,
         margin: { top: 13, bottom: 13, inner: 16, outer: 13 },
         bleed: 0,
+        ...PRINT_LAYOUT,
     },
     digest: {
         name: "Digest",
@@ -49,6 +71,7 @@ const presets: Record<string, PrintPreset> = {
         height: 216,
         margin: { top: 15, bottom: 15, inner: 19, outer: 15 },
         bleed: 0,
+        ...PRINT_LAYOUT,
     },
     trade: {
         name: "US Trade",
@@ -57,6 +80,7 @@ const presets: Record<string, PrintPreset> = {
         height: 229,
         margin: { top: 18, bottom: 18, inner: 22, outer: 18 },
         bleed: 0,
+        ...PRINT_LAYOUT,
     },
     royal: {
         name: "Royal",
@@ -65,6 +89,7 @@ const presets: Record<string, PrintPreset> = {
         height: 234,
         margin: { top: 18, bottom: 18, inner: 22, outer: 18 },
         bleed: 0,
+        ...PRINT_LAYOUT,
     },
     kdp: {
         name: "KDP",
@@ -72,7 +97,8 @@ const presets: Record<string, PrintPreset> = {
         width: 152,
         height: 229,
         margin: { top: 19, bottom: 19, inner: 25, outer: 19 },
-        bleed: 3.2,     // 0.125in = 3.175mm
+        bleed: 3.2,
+        ...PRINT_LAYOUT,
     },
     ingramspark: {
         name: "IngramSpark",
@@ -80,7 +106,8 @@ const presets: Record<string, PrintPreset> = {
         width: 152,
         height: 229,
         margin: { top: 19, bottom: 19, inner: 25, outer: 19 },
-        bleed: 3.2,     // 0.125in
+        bleed: 3.2,
+        ...PRINT_LAYOUT,
     },
     lulu: {
         name: "Lulu",
@@ -89,10 +116,11 @@ const presets: Record<string, PrintPreset> = {
         height: 229,
         margin: { top: 19, bottom: 19, inner: 22, outer: 16 },
         bleed: 3.2,
+        ...PRINT_LAYOUT,
     },
 };
 
-export const DEFAULT_PRESET = "a5";
+export const DEFAULT_PRESET = "screen";
 
 export function getPreset(name: string): PrintPreset | null {
     return presets[name.toLowerCase()] ?? null;
