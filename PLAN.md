@@ -153,6 +153,20 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ---
 
+## Visione: framework agentico
+
+Writekit non è un tool AI e non integra LLM. È un **framework nativamente agentico**: la sua struttura dati (frontmatter, YAML, directory convenzionali, CLI deterministici) è pensata perché qualsiasi agent AI possa orchestrare il workflow di scrittura senza adattatori.
+
+- **AGENTS.md** generato nel progetto: istruzioni complete per l'agent, aggiornate ad ogni build
+- **CLI come tool**: l'agent chiama `wk add`, `wk check`, `wk build`, `wk translate` come farebbe un umano
+- **Struttura leggibile**: config.yaml, characters/*.md, outline/ — tutto in formati che un LLM legge nativamente
+- **Zero lock-in**: funziona con Claude Code, Cursor, Copilot, qualsiasi agent framework presente e futuro
+- **Predisposizione futura**: se servissero operazioni più complesse (analisi semantica, suggerimenti plot), esporre tool Node come MCP server o CLI estesi, senza cambiare l'architettura
+
+Il valore aggiunto non è "ha l'AI dentro" ma "qualsiasi AI ci lavora immediatamente".
+
+---
+
 ## Architettura
 
 ### File critici
