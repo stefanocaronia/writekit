@@ -19,6 +19,9 @@ export interface Typography {
     orphansWidows: number;
     partHeading: HeadingFormat;
     chapterHeading: HeadingFormat;
+    pageNumbers: boolean;
+    runningHeader: boolean;
+    mirrorMargins: boolean;
 }
 
 const FALLBACK: Typography = {
@@ -35,6 +38,9 @@ const FALLBACK: Typography = {
     orphansWidows: 2,
     partHeading: "label_number_title",
     chapterHeading: "title",
+    pageNumbers: true,
+    runningHeader: true,
+    mirrorMargins: true,
 };
 
 function yamlToTypography(raw: Record<string, unknown>): Partial<Typography> {
@@ -52,6 +58,9 @@ function yamlToTypography(raw: Record<string, unknown>): Partial<Typography> {
     if (raw.orphans_widows !== undefined) t.orphansWidows = Number(raw.orphans_widows);
     if (raw.part_heading !== undefined) t.partHeading = String(raw.part_heading) as HeadingFormat;
     if (raw.chapter_heading !== undefined) t.chapterHeading = String(raw.chapter_heading) as HeadingFormat;
+    if (raw.page_numbers !== undefined) t.pageNumbers = !!raw.page_numbers;
+    if (raw.running_header !== undefined) t.runningHeader = !!raw.running_header;
+    if (raw.mirror_margins !== undefined) t.mirrorMargins = !!raw.mirror_margins;
     return t;
 }
 

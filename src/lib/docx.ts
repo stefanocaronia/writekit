@@ -17,7 +17,12 @@ import {
     TableLayoutType,
     LevelFormat,
     convertInchesToTwip,
+    Header,
+    Footer,
+    PageNumber,
+    SectionType,
 } from "docx";
+import type { ISectionOptions } from "docx";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SECTION_LABEL_KEY } from "./parse.js";
@@ -500,20 +505,104 @@ export async function buildDocx(
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 
-    const docSections: {
-        properties: { page: { size: typeof PAGE_A5; margin?: { top: number; bottom: number; left: number; right: number } } };
-        children: (Paragraph | Table)[];
-    }[] = [];
+    const docSections: ISectionOptions[] = [];
+
+    // ── Pagination helpers ──────────────────────────────────────────────────
+    // Mirror margins: use gutter to add binding-side space on alternating pages
+    const gutterTwips = typo.mirrorMargins ? convertInchesToTwip(0.3) : 0;
+
+    const defaultPageProps = {
+        page: {
+            size: PAGE_A5,
+            margin: {
+                top: PAGE_MARGIN,
+                bottom: PAGE_MARGIN,
+                left: PAGE_MARGIN,
+                right: PAGE_MARGIN,
+                gutter: gutterTwips,
+            },
+        },
+    };
+
+    // Empty header/footer — suppresses inherited headers/footers on front matter
+    const emptyHeader = new Header({ children: [] });
+    const emptyFooter = new Footer({ children: [] });
+
+    // Page number footer: centered, 9pt, muted
+    const pageNumberFooter = typo.pageNumbers
+        ? new Footer({
+              children: [
+                  new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                          new TextRun({
+                              children: [PageNumber.CURRENT],
+                              font: FONT,
+                              size: 18,
+                              color: MUTED,
+                          }),
+                      ],
+                  }),
+              ],
+          })
+        : undefined;
+
+    // Running header factories — 9pt, italic, muted
+    function makeRunningHeader(text: string): Header {
+        return new Header({
+            children: [
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new TextRun({
+                            text,
+                            font: FONT,
+                            size: 18,
+                            color: MUTED,
+                            italics: true,
+                        }),
+                    ],
+                }),
+            ],
+        });
+    }
+
+    // Book title header for verso (even) pages
+    const bookTitleHeader = typo.runningHeader
+        ? makeRunningHeader(config.title || "")
+        : undefined;
+
+    /** Build headers/footers for a "silent" section (no page number, no header). */
+    function silentHeadersFooters() {
+        return {
+            headers: { default: emptyHeader, first: emptyHeader, even: emptyHeader },
+            footers: { default: emptyFooter, first: emptyFooter, even: emptyFooter },
+        };
+    }
+
+    /** Build headers/footers for a chapter section with running header + page numbers. */
+    function chapterHeadersFooters(chapterTitle: string) {
+        return {
+            headers: typo.runningHeader
+                ? {
+                      default: makeRunningHeader(chapterTitle), // odd (recto) pages: chapter title
+                      even: bookTitleHeader,                     // even (verso) pages: book title
+                  }
+                : undefined,
+            footers: pageNumberFooter
+                ? {
+                      default: pageNumberFooter,
+                      even: pageNumberFooter,
+                  }
+                : undefined,
+        };
+    }
 
     // Cover image page — full bleed, no margins
     if (has("cover") && coverImagePath) {
         try {
             const imgData = await readFile(coverImagePath);
-            // A5 in EMU: 1 inch = 914400 EMU, A5 = 5.83 x 8.27 inches
-            // Page size in twips: PAGE_A5 = { width: 8391, height: 11906 }
-            // Convert twips to points for image: 1 twip = 1/20 pt, image uses pt-like units
-            // Width in px-like units for docx: A5 ≈ 420 x 595 points
-            const coverWidth = Math.round(PAGE_A5.width / 20 * 1.33); // twips to approx pixels
+            const coverWidth = Math.round(PAGE_A5.width / 20 * 1.33);
             const coverHeight = Math.round(PAGE_A5.height / 20 * 1.33);
             docSections.push({
                 properties: {
@@ -522,6 +611,7 @@ export async function buildDocx(
                         margin: { top: 0, bottom: 0, left: 0, right: 0 },
                     },
                 },
+                ...silentHeadersFooters(),
                 children: [
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
@@ -575,7 +665,8 @@ export async function buildDocx(
         }
 
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: defaultPageProps,
+            ...silentHeadersFooters(),
             children: titleChildren,
         });
     } else if (has("title_block") && (config.title || config.author)) {
@@ -600,7 +691,8 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: defaultPageProps,
+            ...silentHeadersFooters(),
             children: blockChildren,
         });
     } else if (!has("title_page") && !has("title_block") && (config.title || config.author)) {
@@ -623,16 +715,24 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: defaultPageProps,
+            ...silentHeadersFooters(),
             children: headerChildren,
         });
     }
 
-    // Table of Contents
+    // Table of Contents — page numbers but no running header
     const labels = getLabels(config.language);
     if (has("toc")) {
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: {
+                ...defaultPageProps,
+                type: SectionType.ODD_PAGE,
+            },
+            headers: { default: emptyHeader, even: emptyHeader },
+            footers: pageNumberFooter
+                ? { default: pageNumberFooter, even: pageNumberFooter }
+                : { default: emptyFooter, even: emptyFooter },
             children: [
                 new Paragraph({
                     heading: HeadingLevel.HEADING_2,
@@ -728,10 +828,26 @@ export async function buildDocx(
                 }));
             }
             sectionChildren.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
-            docSections.push({
-                properties: { page: { size: PAGE_A5 } },
-                children: sectionChildren,
-            });
+
+            // Dedication: silent (no page numbers, no header)
+            // Prologue/preface/foreword: start on recto, with page numbers + running header
+            const isDedication = chapter.sectionKind === "dedication";
+            if (isDedication) {
+                docSections.push({
+                    properties: defaultPageProps,
+                    ...silentHeadersFooters(),
+                    children: sectionChildren,
+                });
+            } else {
+                docSections.push({
+                    properties: {
+                        ...defaultPageProps,
+                        type: SectionType.ODD_PAGE,
+                    },
+                    ...chapterHeadersFooters(resolvedTitle),
+                    children: sectionChildren,
+                });
+            }
             continue;
         }
 
@@ -772,7 +888,11 @@ export async function buildDocx(
                 );
             }
             docSections.push({
-                properties: { page: { size: PAGE_A5 } },
+                properties: {
+                    ...defaultPageProps,
+                    type: SectionType.ODD_PAGE,
+                },
+                ...silentHeadersFooters(),
                 children: partChildren,
             });
         }
@@ -834,20 +954,25 @@ export async function buildDocx(
         children.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
 
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: {
+                ...defaultPageProps,
+                type: SectionType.ODD_PAGE,
+            },
+            ...chapterHeadersFooters(chapter.title || ""),
             children,
         });
     }
 
-    // Back cover
+    // Back cover — no page numbers, no header
     if (has("backcover") && backcover) {
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: defaultPageProps,
+            ...silentHeadersFooters(),
             children: parseMarkdownToDocxBlocks(backcover),
         });
     }
 
-    // About the author(s)
+    // About the author(s) — no page numbers, no header
     const NON_AUTHOR_ROLES = ["translator", "editor", "illustrator"];
     const contribsWithBio = contributors.filter((c) => c.bio && !c.roles.every((r) => NON_AUTHOR_ROLES.includes(r)));
     if (has("about") && contribsWithBio.length > 0) {
@@ -871,12 +996,13 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: defaultPageProps,
+            ...silentHeadersFooters(),
             children: aboutChildren,
         });
     }
 
-    // Colophon
+    // Colophon — no page numbers, no header
     const colophonLines = buildColophonLines(config);
     if (has("colophon") && colophonLines.length > 0) {
         const colophonChildren: Paragraph[] = [
@@ -895,7 +1021,8 @@ export async function buildDocx(
         }
 
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: defaultPageProps,
+            ...silentHeadersFooters(),
             children: colophonChildren,
         });
     }
@@ -908,6 +1035,7 @@ export async function buildDocx(
         creator: authorStr || undefined,
         description: config.genre ? `Genre: ${config.genre}` : undefined,
         keywords: config.genre || undefined,
+        evenAndOddHeaderAndFooters: typo.runningHeader || typo.pageNumbers,
         numbering: {
             config: [
                 {

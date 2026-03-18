@@ -90,11 +90,27 @@ export async function buildPdf(
             waitUntil: "networkidle0",
         });
 
-        // Inject styles: margins via CSS padding (not PDF margins) so cover can be full-bleed
-        const mt = preset.margin.top;
-        const mb = preset.margin.bottom;
+        // Header/footer configuration from typography settings
+        const showPageNumbers = typography.pageNumbers;
+        const showRunningHeader = typography.runningHeader;
+        const useHeaderFooter = showPageNumbers || showRunningHeader;
+
+        // Use theme's DOCX font (body font) for header/footer, fallback to Georgia
+        const headerFont = theme.docx?.font || "Georgia";
+
+        // PDF margins: when displayHeaderFooter is true, Puppeteer needs margin
+        // space for the header and footer areas. Content uses CSS padding for
+        // left/right margins so the cover can remain full-bleed.
+        const pdfMarginTop = showRunningHeader ? "15mm" : "0";
+        const pdfMarginBottom = showPageNumbers ? "12mm" : "0";
+
+        // Compensate CSS top/bottom padding when PDF margins provide that space
+        const mt = showRunningHeader ? Math.max(0, preset.margin.top - 15) : preset.margin.top;
+        const mb = showPageNumbers ? Math.max(0, preset.margin.bottom - 12) : preset.margin.bottom;
         const ml = preset.margin.inner;
         const mr = preset.margin.outer;
+
+        // Inject styles: margins via CSS padding (not PDF margins) so cover can be full-bleed
         await page.addStyleTag({
             content: `
             /* Content margins via padding instead of PDF margins */
@@ -118,8 +134,27 @@ export async function buildPdf(
                 max-height: none !important;
                 object-fit: fill;
                 display: block;
-            }`,
+            }
+
+            /* Chapters start on recto (right-hand page); inserts blank if needed */
+            .chapter, .part-page { break-before: right; page-break-before: right; }
+
+            /* Mirror margins: Puppeteer has limited @page :left/:right support.
+               Uniform left/right CSS padding is used for now. True recto/verso
+               margin mirroring requires post-processing or a dedicated PDF engine. */`,
         });
+
+        // Build header template (running header with book title)
+        const headerTemplate = showRunningHeader
+            ? `<div style="font-size:8px;text-align:center;width:100%;color:#555;font-family:'${headerFont}',Georgia,serif;font-style:italic;padding:0 15mm;">` +
+              `<span class="title"></span></div>`
+            : `<div></div>`;
+
+        // Build footer template (centered page number)
+        const footerTemplate = showPageNumbers
+            ? `<div style="font-size:9px;text-align:center;width:100%;color:#555;font-family:'${headerFont}',Georgia,serif;">` +
+              `<span class="pageNumber"></span></div>`
+            : `<div></div>`;
 
         const outPath = join(buildDir, filename);
         await page.pdf({
@@ -127,13 +162,14 @@ export async function buildPdf(
             width: `${preset.width}mm`,
             height: `${preset.height}mm`,
             margin: {
-                top: "0",
-                bottom: "0",
+                top: pdfMarginTop,
+                bottom: pdfMarginBottom,
                 left: "0",
                 right: "0",
             },
             printBackground: true,
-            displayHeaderFooter: false,
+            displayHeaderFooter: useHeaderFooter,
+            ...(useHeaderFooter && { headerTemplate, footerTemplate }),
         });
 
         return outPath;

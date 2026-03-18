@@ -20,6 +20,8 @@ typography:
     hyphenation: true
     orphans_widows: 3
     chapter_heading: title
+    running_header: false
+    mirror_margins: false
 dirs:
     - outline
     - manuscript
