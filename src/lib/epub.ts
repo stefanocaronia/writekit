@@ -59,7 +59,7 @@ function generateContainerXml(): string {
 </container>`;
 }
 
-function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = [], hasColophon = true, hasTitlePage = true, hasToc = true, partFiles: number[] = []): string {
+function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = [], hasColophon = true, hasTitlePage = true, hasToc = true): string {
         const uuid = `urn:uuid:${simpleUuid()}`;
 
         const metadataLines = [
@@ -100,20 +100,8 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcove
                 spineItems.unshift(`    <itemref idref="cover" />`);
         }
 
-        // Part divider pages
-        for (const pn of partFiles) {
-                manifestItems.push(`    <item id="part-${pn}" href="part-${pn}.xhtml" media-type="application/xhtml+xml" />`);
-        }
-
-        // Chapters (with part refs interleaved in spine)
-        let currentPartChapter: string | undefined;
-        let partCounter = 0;
+        // Chapters (part headers are inline, no separate part files in ePub)
         for (let i = 0; i < chapters.length; i++) {
-                if (partFiles.length > 0 && !chapters[i].sectionKind && chapters[i].part && chapters[i].part !== currentPartChapter) {
-                        currentPartChapter = chapters[i].part;
-                        partCounter++;
-                        spineItems.push(`    <itemref idref="part-${partCounter}" />`);
-                }
                 const id = `chapter-${i + 1}`;
                 manifestItems.push(`    <item id="${id}" href="${id}.xhtml" media-type="application/xhtml+xml" />`);
                 spineItems.push(`    <itemref idref="${id}" />`);
@@ -331,21 +319,9 @@ export async function buildEpub(
         const chapterFormat = typo.chapterHeading;
         const partFormat = typo.partHeading;
 
-        // Collect part info for manifest/spine (skip front/back matter sections)
-        const partFiles: number[] = []; // part indices that have files
-        if (hasParts) {
-                let currentPart: string | undefined;
-                let partNum = 0;
-                for (const ch of chapters) {
-                        if (!ch.sectionKind && ch.part && ch.part !== currentPart) {
-                                currentPart = ch.part;
-                                partNum++;
-                                partFiles.push(partNum);
-                        }
-                }
-        }
+        // ePub: no separate part pages (reflowable format). Part headers are inline.
 
-        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc, partFiles)), "OEBPS/content.opf");
+        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc)), "OEBPS/content.opf");
         // Prepend typography CSS variables to theme CSS
         const epubCss = `:root { ${typoVars} }\n${theme.epubCss}`;
         zip.addBuffer(Buffer.from(epubCss), "OEBPS/style.css");
@@ -394,19 +370,18 @@ export async function buildEpub(
                         continue;
                 }
 
-                // Part divider page
+                // Part header (inline before first chapter of each part, no separate page)
+                let partHeader = "";
                 if (hasParts && chapters[i].part && chapters[i].part !== currentPartEpub) {
                         currentPartEpub = chapters[i].part;
                         partIdx++;
                         const partText = formatPartHeading(partFormat, partIdx, currentPartEpub!, typoLabels, lang);
                         const partLines = partText.split("\n");
-                        let partBody: string;
                         if (partLines.length > 1) {
-                                partBody = `<div class="part-page"><div class="part-number">${escapeXml(partLines[0])}</div><h1>${escapeXml(partLines[1])}</h1></div>`;
+                                partHeader = `<div class="part-page"><div class="part-number">${escapeXml(partLines[0])}</div><h1>${escapeXml(partLines[1])}</h1></div>\n`;
                         } else {
-                                partBody = `<div class="part-page"><h1>${escapeXml(partLines[0])}</h1></div>`;
+                                partHeader = `<div class="part-page"><h1>${escapeXml(partLines[0])}</h1></div>\n`;
                         }
-                        zip.addBuffer(Buffer.from(wrapXhtml(`Part ${partIdx}`, partBody, lang, typoClass)), `OEBPS/part-${partIdx}.xhtml`);
                 }
 
                 // Chapter heading
@@ -424,7 +399,7 @@ export async function buildEpub(
                                 headingHtml = `<h1>${escapeXml(formatted)}</h1>`;
                         }
                 }
-                const htmlBody = `${headingHtml}\n${chAuthor}` + await marked(chBody);
+                const htmlBody = `${partHeader}${headingHtml}\n${chAuthor}` + await marked(chBody);
                 const xhtml = wrapXhtml(chapters[i].title, htmlBody, lang, typoClass);
                 zip.addBuffer(Buffer.from(xhtml), `OEBPS/chapter-${i + 1}.xhtml`);
         }
