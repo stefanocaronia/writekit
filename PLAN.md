@@ -192,6 +192,15 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
         - `wk init my-script --type screenplay` funziona se il package è installato
     - **Fase 2b (type locali)** — type nel progetto: `types/{name}/` con type.yaml + index.ts
     - **Impatto sullo sviluppo attuale**: da subito, quando si aggiunge logica type-specific, isolarla in modo che sia spostabile in un modulo. Evitare `if (config.type === "X")` nel core — preferire dati nel type.yaml o hook pattern.
+    - **Già fatto**: `TypeFeatures` (show_chapter_author, supports_parts) nel type.yaml, builder ricevono features invece di controllare config.type.
+- [ ] **Format plugin system** — builder di output estensibili dalla community:
+    - Il core registra i builder builtin (html, epub, pdf, docx, md) in un registry
+    - Interfaccia `FormatPlugin`: `{ name, extension, build(projectDir, config, chapters, theme, features) }`
+    - Plugin via npm: `writekit-format-{name}` (es. `writekit-format-latex`, `writekit-format-asciidoc`)
+    - Format loader cerca in: builtin → `node_modules/writekit-format-*`
+    - `wk build latex` funziona se il plugin è installato
+    - `config.yaml build_formats: [html, epub, latex]` include format custom
+    - Il TypePlugin può dichiarare format aggiuntivi specifici per il tipo (es. screenplay → fountain)
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
 - [ ] **Font embedding** — woff2/ttf in HTML e ePub
