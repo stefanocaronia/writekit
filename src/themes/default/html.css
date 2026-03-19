@@ -25,6 +25,9 @@ body {
   padding: 6rem 2rem;
   border-bottom: 1px solid var(--border);
 }
+.blank-verso {
+  display: none;
+}
 .cover-page {
   text-align: center;
   break-after: page;
@@ -129,10 +132,10 @@ body {
 .typo-no-first-indent .chapter h1 + p,
 .typo-no-first-indent .chapter h2 + p,
 .typo-no-first-indent .chapter h3 + p { text-indent: 0 !important; }
-/* Chapter opening */
-.typo-opening-large .chapter { padding-top: 35vh; }
-.typo-opening-medium .chapter { padding-top: 20vh; }
-.typo-opening-small .chapter { padding-top: 2rem; }
+/* Chapter opening — padding on h1 so title sits at ~1/3 and text follows */
+.typo-opening-large .chapter > h1:first-child { margin-top: 25vh; }
+.typo-opening-medium .chapter > h1:first-child { margin-top: 15vh; }
+.typo-opening-small .chapter > h1:first-child { margin-top: 2rem; }
 /* Scene breaks */
 .chapter hr { border: none; text-align: center; margin: 2rem 0; }
 .typo-scene-stars .chapter hr::after { content: "* * *"; color: var(--muted); letter-spacing: 0.5em; }
@@ -331,15 +334,15 @@ sup a:hover {
 
 /* --- Print / PDF --- */
 .cover {
-  break-after: page;
+  break-after: right;
   page-break-after: always;
 }
 #toc {
-  break-after: page;
-  page-break-after: always;
+  break-before: right;
+  page-break-before: always;
 }
-.chapter {
-  break-before: page;
+.chapter, .part-page {
+  break-before: right;
   page-break-before: always;
   border-top: none;
 }

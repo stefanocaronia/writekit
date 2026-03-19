@@ -75,7 +75,21 @@ export async function buildPdf(
 
     // Generate HTML first
     const typography = await loadTypography(projectDir);
-    const html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath, projectDir, typography, sections, features);
+    let html = await renderBook(config, chapters, theme, contributors, backcover, coverImagePath, projectDir, typography, sections, features);
+
+    if (preset.rectoStart) {
+        // Inject blank-verso after cover-page only (Puppeteer ignores break-before:right)
+        const blanko = `<div class="blank-verso">&nbsp;</div>\n`;
+        html = html.replace(/(<\/section>\s*)(<header class="cover">)/g, `$1${blanko}$2`);
+        // Inject CSS
+        html = html.replace("</head>", `<style>
+.blank-verso { display: block; page: silent; break-after: page; page-break-after: always; height: 1px; visibility: hidden; }
+</style>\n</head>`);
+    } else {
+        // Remove blank-verso pages entirely for screen preset
+        html = html.replace(/<div class="blank-verso"[^>]*>[^<]*<\/div>/g, "");
+    }
+
     const htmlPath = join(buildDir, "_temp.html");
     await writeFile(htmlPath, html, "utf-8");
 
