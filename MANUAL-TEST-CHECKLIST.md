@@ -60,7 +60,7 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [x] Author in italic (not bold) under title
 
 ## Interactive commands (require terminal)
-- [ ] `wk init my-test` — prompts for type, title, author, language
+- [x] `wk init my-test` — prompts for type, title, author, language
 - [ ] `wk watch` — save a file, verify live rebuild output
 - [ ] `wk watch` — save in notes/, verify "Build skipped" message
 - [x] `wk stats` — title/author/type header, aligned overview, colored bars, word frequency

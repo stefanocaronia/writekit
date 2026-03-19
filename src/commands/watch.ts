@@ -138,9 +138,14 @@ export const watchCommand = new Command("watch")
         // Debounce timer
         let timer: ReturnType<typeof setTimeout> | null = null;
 
+        const IGNORE_FILES = new Set(["AGENTS.md"]);
+        const IGNORE_DIRS = new Set(["build", "node_modules", ".git"]);
+
         const onChange = (dir: string, filename: string | null) => {
             if (!filename) return;
             if (filename.startsWith(".")) return;
+            if (IGNORE_FILES.has(filename)) return;
+            if (dir === "." && IGNORE_DIRS.has(filename)) return;
 
             const rel = dir === "." ? filename : `${dir}/${filename}`;
 
