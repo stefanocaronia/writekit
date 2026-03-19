@@ -1,8 +1,8 @@
 ---
 project: writekit
 version: 0.2.0
-last_updated: 2026-03-18
-status: v0.4 in progress, npm publish pending
+last_updated: 2026-03-19
+status: v0.4 complete, v0.4.1 impaginazione mostly done, npm publish pending
 last_published_npm: 0.1.0
 types_planned: [novel, collection, essay, paper]
 ---
@@ -128,27 +128,38 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.4.1 — Impaginazione professionale (PDF/DOCX)
 
-- [ ] **Header/footer** — numeri di pagina e intestazioni:
-    - Footer: numero pagina centrato, inizia dal primo capitolo (non da copertina/frontespizio)
-    - Header: standard editoriale recto/verso:
-        - Verso (sinistra): titolo libro (o nome autore)
-        - Recto (destra): titolo capitolo (o titolo parte)
-    - Nessun header/footer su copertina, frontespizio, pagine di parte
-    - Configurabile in typography: `page_numbers: true`, `running_header: true`
-- [ ] **Impaginazione editoriale** — ordine pagine standard per stampa:
-    - Copertina (recto) → pagina vuota (verso) → frontespizio (recto) → colophon (verso)
-    - Dedica (recto) → pagina vuota se serve
-    - Indice (recto)
-    - Ogni parte inizia su recto (pagina destra)
-    - Ogni capitolo inizia su recto
-    - Pagine vuote inserite automaticamente dove serve per mantenere recto/verso
-    - Front matter (prefazione, prologo) inizia su recto
-    - Back matter: epilogo su recto, appendice/postfazione possono essere verso
-    - Compatibile con print-on-demand (KDP, IngramSpark, Lulu)
-- [ ] **Margini interni recto/verso** — margine di rilegatura (gutter) più largo sul lato interno:
-    - Recto: margine sinistro più largo
-    - Verso: margine destro più largo
-    - Configurabile per preset di stampa
+### DOCX (implementato ✓)
+- [x] **Header recto/verso** — standard editoriale:
+    - Verso (sinistra): numero pagina a sinistra, titolo libro a destra
+    - Recto (destra): titolo capitolo a sinistra, numero pagina a destra
+    - Tab stops per allineamento left+right in singolo paragrafo
+    - Headers solo sui capitoli, soppressi su cover/title/toc/colophon/about/part pages
+    - `evenAndOddHeaderAndFooters` per differenziare pagine pari/dispari
+- [x] **Recto start** — capitoli e parti iniziano su pagina destra (`SectionType.ODD_PAGE`)
+- [x] **Mirror margins** — gutter per rilegatura, lato interno più largo
+- [x] **Layout flags dal preset** — `pageNumbers`, `runningHeader`, `mirrorMargins` letti dal print preset
+
+### PDF (implementato ✓)
+- [x] **Header/footer via CSS @page margin boxes** — supportato nativamente da Chrome/Puppeteer:
+    - `@page { @bottom-center { content: counter(page); } }` per numeri pagina
+    - `@page { @top-center { content: "Book Title"; } }` per running header
+- [x] **Named pages** — `@page silent {}` sopprime header/footer su cover/title/toc/dedica/about/colophon/part
+- [x] **Cover full-bleed** — `@page cover { margin: 0; }` per copertina senza margini
+- [x] **Recto start** — CSS `break-before: right` per capitoli/parti su pagina destra
+- [x] **Mirror margins** — `@page :left` / `@page :right` con margini asimmetrici (inner/outer dal preset)
+- [x] **Layout flags dal preset** — pageNumbers, runningHeader, mirrorMargins
+
+### Da verificare manualmente
+- [ ] Copertina fullpage PDF con tutti i preset (a5, trade, kdp, ecc.)
+- [ ] Header/footer soppressi su tutte le pagine non-content
+- [ ] Mirror margins visivamente corretti
+- [ ] DOCX headers leggibili su diversi reader (Word, LibreOffice)
+- [ ] Recto start funzionante (pagine vuote inserite)
+
+### Refactoring preset (da fare)
+- [ ] **Preset come unica fonte** — `mirror_margins`, `page_numbers`, `running_header` escono dalla typography → diventano proprietà del preset. L'utente sceglie il preset, tutto è automatico.
+- [ ] **default_preset per tipo** — `type.yaml` ha `default_preset: screen` (novel) o `default_preset: a4` (paper). L'utente override con `print_preset: kdp` nel config.
+- [ ] **screen preset** come default — niente print features, margini larghi per leggibilità
 
 ---
 
