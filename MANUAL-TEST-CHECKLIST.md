@@ -55,7 +55,9 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [ ] Try presets: `screen` (no print features), `a5`, `trade`, `kdp`
 
 ### Markdown — open `sandbox/int-*/build/*.md`
-- [ ] Readable structure with clear separators
+- [x] Readable structure, minimal separators (only before colophon)
+- [x] Images copied to `build/assets/` with rewritten paths
+- [x] Author in italic (not bold) under title
 
 ## Interactive commands (require terminal)
 - [ ] `wk init my-test` — prompts for type, title, author, language

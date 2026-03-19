@@ -1,3 +1,5 @@
+import { copyFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Section, TypeFeatures } from "./project-type.js";
@@ -5,6 +7,7 @@ import { buildColophonLines, formatAuthors } from "./metadata.js";
 import { getLabels } from "./i18n.js";
 import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
 import type { Labels as TypoLabels } from "./typography.js";
+import { collectImagePaths } from "./images.js";
 
 export async function renderBookMd(
     projectDir: string,
@@ -36,22 +39,16 @@ export async function renderBookMd(
         if (config.series) {
             lines.push(`\n${config.series}${config.volume ? ` — Vol. ${config.volume}` : ""}`);
         }
-        if (config.author) lines.push(`\n**${formatAuthors(config.author)}**`);
-        lines.push("");
-        lines.push("---");
+        if (config.author) lines.push(`\n*${formatAuthors(config.author)}*`);
         lines.push("");
     } else if (has("title_block")) {
         lines.push(`# ${config.title}`);
         if (config.author) lines.push(`\n*${formatAuthors(config.author)}*`);
         lines.push("");
-        lines.push("---");
-        lines.push("");
     } else {
-        // Article-like types: always output at least title + author
         lines.push(`# ${config.title}`);
         if (config.author) lines.push(`\n*${formatAuthors(config.author)}*`);
         lines.push("");
-        lines.push("---");
         lines.push("");
     }
 
@@ -87,8 +84,6 @@ export async function renderBookMd(
             lines.push(`- ${tocLabel}${authorSuffix}`);
         }
         lines.push("");
-        lines.push("---");
-        lines.push("");
     }
 
     // Chapters (with part dividers and formatted headings)
@@ -109,8 +104,6 @@ export async function renderBookMd(
             }
             lines.push(chapter.body.trim());
             lines.push("");
-            lines.push("---");
-            lines.push("");
             continue;
         }
 
@@ -119,7 +112,6 @@ export async function renderBookMd(
             currentPart = chapter.part;
             partIndex++;
             const partText = formatPartHeading(typo.partHeading, partIndex, currentPart, typoLabels, lang);
-            lines.push("---");
             lines.push("");
             const partLines = partText.split("\n");
             if (partLines.length > 1) {
@@ -152,15 +144,11 @@ export async function renderBookMd(
         lines.push("");
         lines.push(chapter.body.trim());
         lines.push("");
-        lines.push("---");
-        lines.push("");
     }
 
     // Back cover
     if (has("backcover") && backcover) {
         lines.push(backcover.trim());
-        lines.push("");
-        lines.push("---");
         lines.push("");
     }
 
@@ -174,8 +162,6 @@ export async function renderBookMd(
             lines.push(`**${c.name}** ${c.bio}`);
             lines.push("");
         }
-        lines.push("---");
-        lines.push("");
     }
 
     // Colophon
@@ -189,5 +175,21 @@ export async function renderBookMd(
         lines.push("");
     }
 
-    return lines.join("\n");
+    // Copy images to build/assets/ and rewrite paths
+    let result = lines.join("\n");
+    const allBodies = chapters.map((c) => c.body).join("\n");
+    const images = collectImagePaths(allBodies, projectDir);
+    if (images.length > 0) {
+        const buildAssetsDir = join(projectDir, "build", "assets");
+        await mkdir(buildAssetsDir, { recursive: true });
+        for (const img of images) {
+            const dest = join(buildAssetsDir, img.filename);
+            try {
+                await copyFile(img.absPath, dest);
+            } catch { /* skip missing images */ }
+            result = result.replaceAll(img.src, `assets/${img.filename}`);
+        }
+    }
+
+    return result;
 }
