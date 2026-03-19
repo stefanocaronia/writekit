@@ -191,7 +191,7 @@ Add them with `wk add prologue`, `wk add epilogue`, etc. Remove with `wk remove 
 | Command | What it does |
 |---|---|
 | `wk check` | Validate your project — checks for missing files, broken YAML, and formatting issues |
-| `wk watch` | Watch your files and automatically rebuild when you save. Also runs validation on every change |
+| `wk watch` | Watch for changes and rebuild all formats from `build_formats` in config. Reloads config on every change. |
 | `wk sync` | Synchronize derived fields — contributor roles, AGENTS.md, reports |
 | `wk stats` | Show detailed statistics — word count, reading time, chapter balance, word frequency |
 
@@ -315,7 +315,9 @@ Writekit uses this metadata for validation, reports, and building your book. You
 
 | Field | Required | Description |
 |---|---|---|
-| `title` | yes | Section title (defaults to section name) |
+| `title` | no | Custom title (defaults to i18n label, e.g. "Prologo" in Italian) |
+| `show_title` | no | Set to `false` to hide the heading (useful for dedication) |
+| `toc` | no | Set to `false` to exclude from table of contents |
 
 **Part definition** (part.yaml inside `manuscript/part-NN/`):
 
@@ -385,25 +387,46 @@ If you place a `cover.jpg` or `cover.png` in the `assets/` folder, it will autom
 
 ### Print presets
 
-The `print_preset` field in config.yaml controls the PDF page size and margins:
+The `print_preset` field in config.yaml controls page size, margins, and print layout features:
 
 ```yaml
 print_preset: trade    # 6×9in, US trade paperback
 ```
 
-| Preset | Size | Use |
-|---|---|---|
-| `a4` | 210×297mm | Draft, home printing |
-| `a5` | 148×210mm | Standard EU book (default) |
-| `pocket` | 4.25×7in | Pocket book |
-| `digest` | 5.5×8.5in | Digest / mass market |
-| `trade` | 6×9in | US trade paperback |
-| `royal` | 6.14×9.21in | Royal format |
-| `kdp` | 6×9in | Amazon KDP ready (with bleed) |
-| `ingramspark` | 6×9in | IngramSpark ready (with bleed) |
-| `lulu` | 6×9in | Lulu ready (with bleed) |
+| Preset | Size | Page numbers | Running header | Mirror margins | Recto start |
+|---|---|---|---|---|---|
+| `screen` (default) | A4 | no | no | no | no |
+| `a4` | 210×297mm | yes | no | no | no |
+| `a5` | 148×210mm | yes | yes | yes | yes |
+| `pocket` | 4.25×7in | yes | yes | yes | yes |
+| `digest` | 5.5×8.5in | yes | yes | yes | yes |
+| `trade` | 6×9in | yes | yes | yes | yes |
+| `royal` | 6.14×9.21in | yes | yes | yes | yes |
+| `kdp` | 6×9in + bleed | yes | yes | yes | yes |
+| `ingramspark` | 6×9in + bleed | yes | yes | yes | yes |
+| `lulu` | 6×9in + bleed | yes | yes | yes | yes |
 
-The `language` field also controls the editorial labels in your book — "Table of Contents", "Colophon", etc. are automatically translated. Supported: English, Italian, French, German, Spanish, Portuguese, Russian, Arabic, Hindi, Chinese, Korean, Japanese, Dutch, Polish, Turkish, Swedish, Greek.
+- **Page numbers** — centered in footer (PDF) or in header corners (DOCX)
+- **Running header** — DOCX: book title on verso (left), chapter title on recto (right). PDF: book title centered.
+- **Mirror margins** — inner margin (gutter) is larger for binding, alternates sides on odd/even pages
+- **Recto start** — chapters and parts start on right-hand pages (blank page inserted if needed)
+
+The `screen` preset is for preview — no print features. Switch to a book preset when ready for print.
+
+### Supported languages
+
+The `language` field controls editorial labels ("Table of Contents", "Colophon", etc.) and section titles (prologue, epilogue, etc.).
+
+| Code | Language | Code | Language | Code | Language |
+|---|---|---|---|---|---|
+| `en` | English | `ru` | Russian | `nl` | Dutch |
+| `it` | Italian | `ar` | Arabic | `pl` | Polish |
+| `fr` | French | `hi` | Hindi | `tr` | Turkish |
+| `de` | German | `zh` | Chinese | `sv` | Swedish |
+| `es` | Spanish | `ko` | Korean | `el` | Greek |
+| `pt` | Portuguese | `ja` | Japanese | | |
+
+Chinese and Japanese use native numerals for parts and chapters (第一部, 第一章). Korean uses 제1부, 제1장.
 
 ### style.yaml
 
