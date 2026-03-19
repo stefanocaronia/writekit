@@ -89,7 +89,6 @@ async function buildFormat(
 
 async function runCycle(
     projectDir: string,
-    formats: string[],
     changedFile?: string,
 ): Promise<void> {
     if (changedFile) {
@@ -112,9 +111,10 @@ async function runCycle(
     }
     console.log(`${timestamp()} Finished ${c.yellow("check")} ${c.green("✓")} ${c.dim(elapsed(checkStart))}`);
 
-    // Build
+    // Build — reload config every cycle to pick up changes
     if (needsBuild) {
         const config = await loadConfig(projectDir);
+        const formats = config.build_formats ?? ["html"];
         const chapters = await loadChapters(projectDir);
         if (chapters.length === 0) {
             console.log(`${timestamp()} ${c.dim("No chapters — skipping build")}`);
@@ -159,7 +159,7 @@ export const watchCommand = new Command("watch")
         console.log(`${c.dim("  Press Ctrl+C to stop.")}\n`);
 
         // Initial run
-        await runCycle(projectDir, formats);
+        await runCycle(projectDir);
 
         // Build lock: finish current build, then re-run if changes arrived
         let building = false;
@@ -173,12 +173,12 @@ export const watchCommand = new Command("watch")
             }
             building = true;
             try {
-                await runCycle(projectDir, formats, rel);
+                await runCycle(projectDir, rel);
                 // If changes arrived during build, run again
                 while (pendingChange) {
                     const next = pendingChange;
                     pendingChange = null;
-                    await runCycle(projectDir, formats, next);
+                    await runCycle(projectDir, next);
                 }
             } finally {
                 building = false;
