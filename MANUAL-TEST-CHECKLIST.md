@@ -61,7 +61,7 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 
 ## Interactive commands (require terminal)
 - [x] `wk init my-test` — prompts for type, title, author, language
-- [ ] `wk watch` — save a file, verify live rebuild output
+- [x] `wk watch` — save a file, verify live rebuild output (single format, default html)
 - [ ] `wk watch` — save in notes/, verify "Build skipped" message
 - [x] `wk stats` — title/author/type header, aligned overview, colored bars, word frequency
 

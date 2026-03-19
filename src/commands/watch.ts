@@ -3,11 +3,17 @@ import { watch, type FSWatcher } from "node:fs";
 import { join } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { checkProject, printCheckResults } from "./check.js";
-import { loadConfig, loadChapters } from "../lib/parse.js";
+import { loadConfig, loadChapters, loadContributors, loadBackcover, resolveCover } from "../lib/parse.js";
 import { renderBook } from "../lib/html.js";
-import { buildEpub } from "../lib/epub.js";
+import { buildEpub as buildEpubFile } from "../lib/epub.js";
+import { buildPdf as buildPdfFile } from "../lib/pdf.js";
+import { buildDocx as buildDocxFile } from "../lib/docx.js";
+import { renderBookMd } from "../lib/md.js";
 import { syncProject } from "./sync.js";
 import { loadTheme } from "../lib/theme.js";
+import { loadTypography } from "../lib/typography.js";
+import { loadType, isValidType } from "../lib/project-type.js";
+import { getPreset, DEFAULT_PRESET } from "../lib/print-presets.js";
 import { assertProject, bookFilename, dirExists } from "../lib/fs-utils.js";
 import { c, icon } from "../lib/ui.js";
 
@@ -25,7 +31,6 @@ const WATCH_DIRS = [
     "assets",
 ];
 
-// Dirs/files that trigger a full rebuild (affect output content)
 const BUILD_TRIGGERS = new Set([
     "manuscript", "config.yaml", "style.yaml", "synopsis.md",
     "backcover.md", "assets", "contributors", "timeline.yaml",
@@ -37,10 +42,9 @@ function shouldRebuild(changedPath: string): boolean {
     return BUILD_TRIGGERS.has(dir) || BUILD_TRIGGERS.has(changedPath);
 }
 
-const WATCHABLE_FORMATS = ["html", "epub"] as const;
-type WatchFormat = (typeof WATCHABLE_FORMATS)[number];
-
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 500;
+const IGNORE_FILES = new Set(["AGENTS.md"]);
+const IGNORE_DIRS = new Set(["build", "node_modules", ".git"]);
 
 function timestamp(): string {
     return c.dim(`[${new Date().toLocaleTimeString()}]`);
@@ -51,12 +55,43 @@ function elapsed(start: number): string {
     return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
 }
 
+async function buildFormat(
+    fmt: string, projectDir: string, config: ReturnType<typeof Object>,
+    chapters: Awaited<ReturnType<typeof loadChapters>>,
+    theme: Awaited<ReturnType<typeof loadTheme>>,
+    typeSections: any, typeFeatures: any, typeDefaultPreset: string | undefined,
+): Promise<void> {
+    const contributors = await loadContributors(projectDir);
+    const backcover = await loadBackcover(projectDir);
+    const coverPath = await resolveCover(projectDir, config as any);
+    const fname = bookFilename((config as any).title, (config as any).author, fmt);
+    const buildDir = join(projectDir, "build");
+    await mkdir(buildDir, { recursive: true });
+
+    if (fmt === "html") {
+        const typography = await loadTypography(projectDir);
+        const html = await renderBook(config as any, chapters, theme, contributors, backcover, coverPath, projectDir, typography, typeSections, typeFeatures);
+        await writeFile(join(buildDir, fname), html, "utf-8");
+    } else if (fmt === "epub") {
+        await buildEpubFile(projectDir, config as any, chapters, theme, fname, contributors, backcover, coverPath, typeSections, typeFeatures);
+    } else if (fmt === "pdf") {
+        await buildPdfFile(projectDir, config as any, chapters, theme, fname, contributors, backcover, coverPath, typeSections, typeFeatures, typeDefaultPreset);
+    } else if (fmt === "docx") {
+        const presetName = (config as any).print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
+        const preset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
+        const layoutFlags = { pageNumbers: preset.pageNumbers, runningHeader: preset.runningHeader, mirrorMargins: preset.mirrorMargins };
+        await buildDocxFile(projectDir, config as any, chapters, fname, contributors, backcover, coverPath, theme.docx, typeSections, typeFeatures, layoutFlags);
+    } else if (fmt === "md") {
+        const md = await renderBookMd(projectDir, config as any, chapters, contributors, backcover, typeSections, typeFeatures);
+        await writeFile(join(buildDir, fname), md, "utf-8");
+    }
+}
+
 async function runCycle(
     projectDir: string,
-    format: WatchFormat,
+    formats: string[],
     changedFile?: string,
 ): Promise<void> {
-    // Show what changed
     if (changedFile) {
         console.log(`${timestamp()} ${c.magenta("changed")} ${c.cyan(changedFile)}`);
     }
@@ -77,32 +112,33 @@ async function runCycle(
     }
     console.log(`${timestamp()} Finished ${c.yellow("check")} ${c.green("✓")} ${c.dim(elapsed(checkStart))}`);
 
-    // Build (skip if change was in a non-content dir like notes/, characters/)
-    const config = await loadConfig(projectDir);
-    const chapters = await loadChapters(projectDir);
+    // Build
+    if (needsBuild) {
+        const config = await loadConfig(projectDir);
+        const chapters = await loadChapters(projectDir);
+        if (chapters.length === 0) {
+            console.log(`${timestamp()} ${c.dim("No chapters — skipping build")}`);
+        } else {
+            const theme = await loadTheme(config.theme, projectDir);
+            const typeName = config.type || "novel";
+            const typeDef = isValidType(typeName) ? await loadType(typeName) : undefined;
 
-    if (needsBuild && chapters.length > 0) {
-        const theme = await loadTheme(config.theme, projectDir);
-        const buildStart = Date.now();
-        console.log(`${timestamp()} Starting ${c.yellow(`build ${format}`)}...`);
-
-        if (format === "html") {
-            const html = await renderBook(config, chapters, theme);
-            const buildDir = join(projectDir, "build");
-            await mkdir(buildDir, { recursive: true });
-            const fname = bookFilename(config.title, config.author, "html");
-            await writeFile(join(buildDir, fname), html, "utf-8");
-            console.log(`${timestamp()} Finished ${c.yellow(`build ${format}`)} ${c.green("✓")} ${c.dim(elapsed(buildStart))} ${c.dim(`→ ${fname}`)}`);
-        } else if (format === "epub") {
-            const fname = bookFilename(config.title, config.author, "epub");
-            await buildEpub(projectDir, config, chapters, theme, fname);
-            console.log(`${timestamp()} Finished ${c.yellow(`build ${format}`)} ${c.green("✓")} ${c.dim(elapsed(buildStart))} ${c.dim(`→ ${fname}`)}`);
+            for (const fmt of formats) {
+                const buildStart = Date.now();
+                console.log(`${timestamp()} Starting ${c.yellow(`build ${fmt}`)}...`);
+                try {
+                    await buildFormat(fmt, projectDir, config, chapters, theme, typeDef?.sections, typeDef?.features, typeDef?.default_preset);
+                    console.log(`${timestamp()} Finished ${c.yellow(`build ${fmt}`)} ${c.green("✓")} ${c.dim(elapsed(buildStart))}`);
+                } catch (e) {
+                    console.log(`${timestamp()} ${c.red(`build ${fmt} failed`)} ${c.dim(elapsed(buildStart))} ${c.dim(String(e))}`);
+                }
+            }
         }
-    } else if (!needsBuild && changedFile) {
+    } else if (changedFile) {
         console.log(`${timestamp()} ${c.dim("Build skipped (non-content change)")}`);
     }
 
-    // Sync (reports, agents, contributor roles)
+    // Sync
     const syncStart = Date.now();
     await syncProject(projectDir);
     console.log(`${timestamp()} Finished ${c.yellow("sync")} ${c.green("✓")} ${c.dim(elapsed(syncStart))}`);
@@ -111,35 +147,43 @@ async function runCycle(
 }
 
 export const watchCommand = new Command("watch")
-    .description("Watch for changes, run check and rebuild")
-    .argument(
-        "[format]",
-        `Output format to rebuild (${WATCHABLE_FORMATS.join(", ")})`,
-        "html",
-    )
-    .action(async (format: string) => {
-        if (!WATCHABLE_FORMATS.includes(format as WatchFormat)) {
-            console.error(
-                `\n${icon.error} ${c.red(`Format "${format}" is not supported for watch.`)} Use: ${WATCHABLE_FORMATS.join(", ")}`,
-            );
-            console.error(`${c.dim("For PDF and DOCX, use: wk build pdf")}\n`);
-            process.exit(1);
-        }
-
+    .description("Watch for changes, run check and rebuild all configured formats")
+    .action(async () => {
         const projectDir = process.cwd();
         await assertProject(projectDir);
 
-        console.log(`\n${icon.watch} ${c.bold("Watching for changes...")} ${c.dim(`(build: ${format})`)}`);
+        const config = await loadConfig(projectDir);
+        const formats = config.build_formats ?? ["html"];
+
+        console.log(`\n${icon.watch} ${c.bold("Watching for changes...")} ${c.dim(`(build: ${formats.join(", ")})`)}`);
         console.log(`${c.dim("  Press Ctrl+C to stop.")}\n`);
 
         // Initial run
-        await runCycle(projectDir, format as WatchFormat);
+        await runCycle(projectDir, formats);
 
-        // Debounce timer
+        // Build lock: finish current build, then re-run if changes arrived
+        let building = false;
+        let pendingChange: string | null = null;
         let timer: ReturnType<typeof setTimeout> | null = null;
 
-        const IGNORE_FILES = new Set(["AGENTS.md"]);
-        const IGNORE_DIRS = new Set(["build", "node_modules", ".git"]);
+        async function scheduleBuild(rel: string) {
+            if (building) {
+                pendingChange = rel; // will re-run after current build
+                return;
+            }
+            building = true;
+            try {
+                await runCycle(projectDir, formats, rel);
+                // If changes arrived during build, run again
+                while (pendingChange) {
+                    const next = pendingChange;
+                    pendingChange = null;
+                    await runCycle(projectDir, formats, next);
+                }
+            } finally {
+                building = false;
+            }
+        }
 
         const onChange = (dir: string, filename: string | null) => {
             if (!filename) return;
@@ -150,12 +194,9 @@ export const watchCommand = new Command("watch")
             const rel = dir === "." ? filename : `${dir}/${filename}`;
 
             if (timer) clearTimeout(timer);
-            timer = setTimeout(async () => {
-                await runCycle(projectDir, format as WatchFormat, rel);
-            }, DEBOUNCE_MS);
+            timer = setTimeout(() => scheduleBuild(rel), DEBOUNCE_MS);
         };
 
-        // Set up watchers on each directory
         const watchers: FSWatcher[] = [];
         for (const dir of WATCH_DIRS) {
             const fullPath = join(projectDir, dir);
