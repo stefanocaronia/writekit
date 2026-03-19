@@ -20,6 +20,7 @@ export const icon = {
     quill: "✒️",
     chapter: "📄",
     character: "🎭",
+    contributor: "✍️",
     location: "🏛️",
     note: "📝",
     event: "⏳",
@@ -33,4 +34,6 @@ export const icon = {
     folder: "📁",
     git: "🌿",
     report: "📊",
+    words: "📝",
+    time: "⏱️",
 };

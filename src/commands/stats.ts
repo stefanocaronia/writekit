@@ -3,6 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { assertProject } from "../lib/fs-utils.js";
 import { loadConfig, loadChapters, loadContributors, parseFrontmatter } from "../lib/parse.js";
+import { formatAuthors } from "../lib/metadata.js";
 import { c, icon } from "../lib/ui.js";
 
 function countWords(text: string): number {
@@ -94,27 +95,24 @@ export const statsCommand = new Command("stats")
         const drafts = chapters.map((ch) => ch.draft ?? 1);
         const avgDraft = drafts.length > 0 ? (drafts.reduce((a, b) => a + b, 0) / drafts.length).toFixed(1) : "—";
 
-        console.log(`\n${icon.book} ${c.bold(config.title)}\n`);
+        console.log(`\n${icon.book} ${c.bold(config.title)}`);
+        const subtitle = [config.type || "novel", config.language || ""].filter(Boolean).join(" · ");
+        if (config.author) console.log(`  ${c.dim(formatAuthors(config.author))}`);
+        if (subtitle) console.log(`  ${c.dim(subtitle)}`);
+        console.log();
 
         // Overview
         console.log(`  ${c.bold("Overview")}`);
         console.log(`  ${c.dim("─".repeat(40))}`);
-        console.log(`  ${icon.chapter} Chapters        ${c.bold(String(chapters.length))}`);
-        console.log(`  ${icon.quill} Total words     ${c.bold(totalWords.toLocaleString())}`);
-        console.log(`  ${icon.build} Reading time    ${c.bold(readingTime(totalWords))}`);
-        console.log(`  ${icon.note} Avg draft       ${c.bold(String(avgDraft))}`);
-        if (contributors.length > 0) {
-            console.log(`  ${icon.character} Contributors    ${c.bold(String(contributors.length))}`);
-        }
-        if (characterCount > 0) {
-            console.log(`  ${icon.character} Characters      ${c.bold(String(characterCount))}`);
-        }
-        if (worldCount > 0) {
-            console.log(`  ${icon.location} Locations       ${c.bold(String(worldCount))}`);
-        }
-        if (noteCount > 0) {
-            console.log(`  ${icon.note} Notes           ${c.bold(String(noteCount))}`);
-        }
+        const ov = (lbl: string, val: string) => console.log(`  ${lbl.padEnd(18)} ${c.bold(val)}`);
+        ov("Chapters", String(chapters.length));
+        ov("Total words", totalWords.toLocaleString());
+        ov("Reading time", readingTime(totalWords));
+        ov("Avg draft", String(avgDraft));
+        if (contributors.length > 0) ov("Contributors", String(contributors.length));
+        if (characterCount > 0) ov("Characters", String(characterCount));
+        if (worldCount > 0) ov("Locations", String(worldCount));
+        if (noteCount > 0) ov("Notes", String(noteCount));
 
         // Chapter breakdown
         if (chapters.length > 0) {

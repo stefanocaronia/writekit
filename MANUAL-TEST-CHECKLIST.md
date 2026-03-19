@@ -63,7 +63,7 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [ ] `wk init my-test` — prompts for type, title, author, language
 - [ ] `wk watch` — save a file, verify live rebuild output
 - [ ] `wk watch` — save in notes/, verify "Build skipped" message
-- [ ] `wk stats` — colored bars and word frequency display
+- [x] `wk stats` — title/author/type header, aligned overview, colored bars, word frequency
 
 ## i18n (require visual check of rendered labels)
 - [x] `language: it` → "Indice" in HTML TOC (verified in novel-parts)
