@@ -8,6 +8,7 @@ You are working inside a **writekit** project. Read `README.md` for full command
 2. Read `style.yaml` — POV, tense, tone, voice, rules. Never break these.
 3. Read `synopsis.md` — the story/argument summary. Stay aligned.
 4. Read the type-specific instructions for your project type.
+5. If the project has local `types/`, `formats/`, or `presets/`, inspect them before changing structure, build behavior, or print layout.
 
 ## Recommended workflow after `wk init`
 
@@ -54,6 +55,7 @@ See `README.md` for the full list.
 - Create files manually in `manuscript/` — use `wk add`
 - Modify `config.yaml` or `style.yaml` unless explicitly asked
 - Invent characters, locations, or plot points without author approval
+- Add ad-hoc top-level config keys for plugins; use `type_options` and `format_options`
 
 ## Manuscript structure
 
@@ -111,3 +113,18 @@ Run `wk stats` when planning or revising:
 2. Write or edit content
 3. `wk check` — fix any errors
 4. `wk build` — verify output
+
+## Local extensions
+
+Some projects extend writekit locally. Common folders:
+
+- `types/<name>/` — custom project type definition and optional runtime hook
+- `formats/<name>.mjs` — custom output format
+- `presets/<name>.mjs` — custom print preset
+
+If these exist:
+
+- treat them as part of the source of truth
+- do not remove or bypass them casually
+- keep plugin-specific settings under `type_options` or `format_options`
+- when a custom preset is active, assume `layout` still refines it

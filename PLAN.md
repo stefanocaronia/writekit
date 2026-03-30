@@ -1,8 +1,8 @@
 ---
 project: writekit
 version: 0.2.0
-last_updated: 2026-03-22
-status: v0.4 complete, v0.4.1 largely implemented with a few manual DOCX/PDF checks still pending, npm publish pending
+last_updated: 2026-03-31
+status: v0.4 complete, v0.4.1 technically complete with a few manual DOCX/PDF checks still pending; plugin system for types, formats, and presets implemented; npm publish pending
 last_published_npm: 0.1.0
 types_planned: [novel, collection, essay, paper]
 ---
@@ -177,7 +177,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **Ultimo run** — 2026-03-22, 6/6 casi verdi
 
 ### Refactoring preset (da fare)
-- [ ] **Preset come unica fonte** — `mirror_margins`, `page_numbers`, `running_header` escono dalla typography → diventano proprietà del preset. L'utente sceglie il preset, tutto è automatico.
+- [x] **Preset come unica fonte** — `mirror_margins`, `page_numbers`, `running_header` escono dalla typography → diventano proprietà del preset. L'utente sceglie il preset, tutto è automatico.
 - [x] **default_preset per tipo** — `novel`, `collection`, `essay` usano `a5`, `paper` usa `a4`. `wk init` non scrive più `print_preset` nel `config.yaml`: il default arriva dal tipo, con override esplicito possibile nel progetto.
 - [ ] **screen preset** come default — niente print features, margini larghi per leggibilità
 
@@ -202,6 +202,43 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - `wk translate verify` — verifica coerenza: nomi del glossario usati consistentemente nei capitoli tradotti, frontmatter intatto, nessun nome originale rimasto nel testo
     - Workflow agent: legge AGENTS.md → chiama `translate init` → popola glossario → traduce capitolo per capitolo con glossario per coerenza → chiama `translate verify` → `wk build`
     - L'agent è l'orchestratore (ha le sue API key), writekit è l'infrastruttura
+    - **Modello di progetto** — la traduzione vive di default dentro il progetto sorgente, non nello stesso manuscript:
+        - Source: `my-book/`
+        - Target default: `my-book/translations/en/`
+        - Override possibile con `wk translate init --to en --output ../my-book-en`
+        - Ogni target è un progetto writekit autonomo, buildabile e verificabile da solo
+    - **Quando si usa** — la traduzione parte a struttura sorgente sostanzialmente stabile:
+        - dopo prima stesura o revisione avanzata
+        - non durante la scrittura normale del libro
+        - il source resta la fonte di verità; il target tiene traccia del drift
+    - **Metadati di collegamento** — il target mantiene riferimento esplicito al source:
+        - file `translation.yaml` nel target con `source_project`, `source_language`, `target_language`, `translation_of`
+        - ogni file tradotto conserva `source_path`, `source_hash`, `translation_status`
+        - il target può rilevare quando il file sorgente è cambiato dopo la traduzione
+    - **Scaffold del target** — `translate init` non “traduce”, prepara:
+        - copia struttura rilevante (config, manuscript, front/back matter, outline opzionale, concepts/characters/world se utili al contesto)
+        - aggiorna `config.yaml` per lingua target
+        - genera `translation-glossary.yaml`
+        - genera `AGENTS.md` orientato alla traduzione
+        - mantiene naming e struttura allineati al source
+    - **Glossario** — fonte di verità per nomi propri e termini ricorrenti:
+        - personaggi, luoghi, concetti, termini editoriali, serie, contributor names
+        - mapping `source -> target`
+        - possibilità futura di campi extra: note, non tradurre, transliteration
+    - **Verifiche minime**:
+        - file source/target mancanti o disallineati
+        - `source_hash` non più coerente
+        - voci glossario non risolte
+        - termini sorgente rimasti nel target dove non dovrebbero
+        - frontmatter modificato in modo non ammesso
+    - **Comandi possibili aggiuntivi**:
+        - `wk translate sync` — riallinea struttura target se nel source compaiono nuovi capitoli/sezioni
+        - `wk translate diff` — mostra quali file target sono indietro rispetto al source
+    - **Ruolo dell'agent**:
+        - writekit prepara struttura, mapping, glossario e verifiche
+        - l'agent traduce capitolo per capitolo
+        - l'agent non inventa il workflow: usa `translate init/status/verify/sync`
+        - il target va trattato come progetto derivato ma editoriale, non come dump automatico
 - [ ] **API Node pubblica** — esportare le funzioni core da `writekit` come API programmatica:
     - `loadConfig`, `loadChapters`, `loadContributors`, `loadParts`, `loadTypography`
     - `buildHtml`, `buildEpub`, `buildDocx`, `buildPdf`, `renderBookMd`
@@ -211,8 +248,8 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - Predisposizione per MCP server wrapper
 - [ ] **Type modulari e plugin system** — ogni type diventa un modulo indipendente, preparazione per type custom:
     - **Fase 1 (refactoring interno)** — separare la logica type-specific dal core:
-        - Ogni type in `src/types/{type}/` ha già `type.yaml`. Aggiungere `index.ts` opzionale per logica custom
-        - Interfaccia `TypePlugin`: `{ onInit?, onBuild?, onCheck?, renderSection?, buildSections? }`
+        - [x] Ogni type in `src/types/{type}/` ha già `type.yaml`. Aggiungere `index.ts` opzionale per logica custom
+        - [x] Interfaccia `TypePlugin` runtime minima: `{ onInit?, onBuild?, onCheck?, onSync?, configSchema? }`
         - Spostare logica hardcoded (paper abstract, collection per-chapter author, novel timeline) nei rispettivi type module
         - Il core diventa generico: legge type.yaml + chiama hook dal TypePlugin
         - Il builder chiama `type.renderSection("abstract", ...)` invece di `if (config.type === "paper")`
@@ -221,19 +258,20 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
         - [x] Type loader cerca in: locale `types/` → builtin `src/types/` → `node_modules/writekit-type-*`
         - [x] `wk init my-script --type screenplay` funziona se il package è installato
         - [x] Supporto data-driven: il package fornisce `type.yaml` (o `package.json -> writekit.type.definition`)
-        - [ ] Hook runtime `TypePlugin` per logica custom non ancora implementati
-    - **Fase 2b (type locali)** — type nel progetto: `types/{name}/` con type.yaml + index.ts
+        - [x] Hook runtime `TypePlugin` per logica custom
+    - [x] **Fase 2b (type locali)** — type nel progetto: `types/{name}/` con type.yaml + index.ts
     - **Impatto sullo sviluppo attuale**: da subito, quando si aggiunge logica type-specific, isolarla in modo che sia spostabile in un modulo. Evitare `if (config.type === "X")` nel core — preferire dati nel type.yaml o hook pattern.
     - **Già fatto**: `TypeFeatures` (show_chapter_author, supports_parts) nel type.yaml, builder ricevono features invece di controllare config.type.
-- [ ] **Format plugin system** — builder di output estensibili dalla community:
+- [x] **Format plugin system** — builder di output estensibili dalla community:
     - [x] Fase locale: il core registra i builder builtin (html, epub, pdf, docx, md) in un registry e supporta format locali in `formats/{name}.mjs|js|cjs`
     - [x] Fase package: plugin via npm e discovery esterno in `node_modules/writekit-format-*`
-    - Interfaccia `FormatPlugin`: `{ name, extension, build(projectDir, config, chapters, theme, features) }`
+    - [x] Interfaccia `FormatPlugin` runtime con `build(ctx)`, `configSchema` e `format_options`
     - Plugin via npm: `writekit-format-{name}` (es. `writekit-format-latex`, `writekit-format-asciidoc`)
     - [x] Format loader cerca in: locale → builtin → `node_modules/writekit-format-*`
     - `wk build latex` funziona se il plugin è installato
     - `config.yaml build_formats: [html, epub, latex]` include format custom
     - Il TypePlugin può dichiarare format aggiuntivi specifici per il tipo (es. screenplay → fountain)
+- [x] **Preset plugin system** — preset locali in `presets/` e package esterni `writekit-preset-*`, con `layout` come layer di override finale
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
 - [ ] **Font embedding** — woff2/ttf in HTML e ePub

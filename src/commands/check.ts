@@ -262,10 +262,10 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
             const presetName = data.print_preset as string;
             if (presetName) {
                 const { getPreset, presetNames } = await import("../formats/print-presets.js");
-                if (!getPreset(presetName)) {
+                if (!(await getPreset(presetName, projectDir))) {
                     issues.push({
                         level: "error",
-                        message: `config.yaml: print_preset "${presetName}" not found — available: ${presetNames().join(", ")}`,
+                        message: `config.yaml: print_preset "${presetName}" not found — available: ${(await presetNames(projectDir)).join(", ")}`,
                     });
                 }
             }

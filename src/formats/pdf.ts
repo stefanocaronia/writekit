@@ -64,7 +64,7 @@ export async function buildPdf(
         );
     }
 
-    const preset = resolvePrintPreset(config, typeDefaultPreset);
+    const preset = await resolvePrintPreset(config, typeDefaultPreset, projectDir);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 

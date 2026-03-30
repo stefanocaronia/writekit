@@ -4,6 +4,8 @@ A writing toolkit that turns Markdown into books. Write a novel, essay, or paper
 
 It's similar to what programmers use for building apps, but for structured text: chapters, parts, characters, outlines, front/back matter — assembled into a finished book.
 
+For plugin authors, see [PLUGINS.md](./PLUGINS.md).
+
 ## Getting started
 
 ### 1. Install
@@ -53,6 +55,8 @@ wk init my-script --type screenplay
 ```
 
 External type packages are discovered from `node_modules` in the current folder or any parent folder. By default they should include a `type.yaml` file at package root. If needed, the package can point somewhere else with `package.json -> writekit.type.definition`.
+
+If the type also needs custom logic, it can export a runtime plugin with hooks such as `onInit`, `onCheck`, `onBuild`, and `onSync`. See [PLUGINS.md](./PLUGINS.md).
 
 ### 4. Build your book
 
@@ -228,6 +232,8 @@ wk build latex
 ```
 
 The package should export a default plugin object with a `build(ctx)` function. By default, writekit loads the package entrypoint; if needed, the package can override it with `package.json -> writekit.format.entry`.
+
+Format plugins can also expose `configSchema`, and then read their validated options from `format_options.<format>` in `config.yaml`.
 
 ### Validating and watching
 
@@ -482,6 +488,41 @@ Supported layout overrides are intentionally limited:
 - `recto_start`
 - `margin.inner`
 - `margin.outer`
+
+#### Custom print presets
+
+You can extend presets locally or via npm packages:
+
+- local: `presets/<name>.mjs|js|cjs`
+- package: `writekit-preset-<name>`
+
+Example local preset:
+
+```js
+// presets/roomy.mjs
+export default {
+  preset: {
+    name: "Roomy",
+    description: "Large trim with generous inner margin",
+    width: 160,
+    height: 240,
+    margin: { top: 20, bottom: 20, inner: 26, outer: 18 },
+    bleed: 3,
+    mirrorMargins: true,
+    pageNumbers: true,
+    runningHeader: true,
+    rectoStart: true
+  }
+};
+```
+
+Then in `config.yaml`:
+
+```yaml
+print_preset: roomy
+```
+
+For the full plugin API, including type hooks and format options, see [PLUGINS.md](./PLUGINS.md).
 
 ### Supported languages
 

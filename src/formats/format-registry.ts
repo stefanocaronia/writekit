@@ -178,7 +178,7 @@ const builtinPlugins: Record<string, FormatPlugin> = {
         extension: "docx",
         description: "Build as a Word document",
         async build(ctx) {
-            const preset = resolvePrintPreset(ctx.config, ctx.typeDefaultPreset);
+            const preset = await resolvePrintPreset(ctx.config, ctx.typeDefaultPreset, ctx.projectDir);
             const path = await buildDocxFile(
                 ctx.projectDir,
                 ctx.config,

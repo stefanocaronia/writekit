@@ -2,7 +2,18 @@
  * Print presets for PDF generation.
  * Dimensions in millimeters, margins in millimeters.
  */
+import { readdir } from "node:fs/promises";
+import { basename, extname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { LayoutOverrides } from "../project/parse.js";
+import { dirExists, fileExists } from "../support/fs-utils.js";
+import {
+    findInstalledPluginPackage,
+    listInstalledPluginPackages,
+    packageWritekitConfig,
+    resolvePluginPackageEntry,
+    resolvePluginPackageFile,
+} from "../support/plugin-packages.js";
 
 export interface PrintPreset {
     name: string;
@@ -22,12 +33,19 @@ export interface PrintPreset {
     rectoStart: boolean;      // chapters start on right page
 }
 
+export interface PresetPlugin {
+    name?: string;
+    preset: PrintPreset;
+}
+
 // Layout flags for screen/draft presets (no print features)
 const SCREEN_LAYOUT = { mirrorMargins: false, pageNumbers: false, runningHeader: false, rectoStart: false };
 // Layout flags for print presets (full book layout)
 const PRINT_LAYOUT = { mirrorMargins: true, pageNumbers: true, runningHeader: true, rectoStart: true };
 
-const presets: Record<string, PrintPreset> = {
+const LOCAL_PLUGIN_EXTS = new Set([".mjs", ".js", ".cjs"]);
+
+const builtinPresets: Record<string, PrintPreset> = {
     screen: {
         name: "Screen",
         description: "Screen reading — no print features",
@@ -123,8 +141,88 @@ const presets: Record<string, PrintPreset> = {
 
 export const DEFAULT_PRESET = "screen";
 
-export function getPreset(name: string): PrintPreset | null {
-    return presets[name.toLowerCase()] ?? null;
+function normalizePreset(name: string, preset: PrintPreset): PrintPreset {
+    return {
+        ...preset,
+        name: preset.name || name,
+    };
+}
+
+function normalizePresetPlugin(name: string, value: Partial<PresetPlugin> | Partial<PrintPreset>): PrintPreset {
+    if (!value || typeof value !== "object") {
+        throw new Error(`Invalid print preset "${name}": expected an object export`);
+    }
+
+    const preset = "preset" in value && value.preset ? value.preset : value as Partial<PrintPreset>;
+    if (!preset || typeof preset !== "object") {
+        throw new Error(`Invalid print preset "${name}": expected an object export`);
+    }
+
+    const requiredKeys = [
+        "description",
+        "width",
+        "height",
+        "margin",
+        "bleed",
+        "mirrorMargins",
+        "pageNumbers",
+        "runningHeader",
+        "rectoStart",
+    ] as const;
+    for (const key of requiredKeys) {
+        if (!(key in preset)) {
+            throw new Error(`Invalid print preset "${name}": missing ${key}`);
+        }
+    }
+
+    return normalizePreset(name, preset as PrintPreset);
+}
+
+function localPresetsDir(projectDir: string): string {
+    return join(projectDir, "presets");
+}
+
+async function resolveLocalPresetFile(projectDir: string, name: string): Promise<string | null> {
+    const dir = localPresetsDir(projectDir);
+    for (const ext of LOCAL_PLUGIN_EXTS) {
+        const file = join(dir, `${name}${ext}`);
+        if (await fileExists(file)) return file;
+    }
+    return null;
+}
+
+async function loadPresetFromModule(file: string, name: string): Promise<PrintPreset> {
+    const mod = await import(pathToFileURL(file).href);
+    return normalizePresetPlugin(name, (mod.default ?? mod.plugin ?? mod) as Partial<PresetPlugin> | Partial<PrintPreset>);
+}
+
+async function loadLocalPreset(projectDir: string, name: string): Promise<PrintPreset | null> {
+    const file = await resolveLocalPresetFile(projectDir, name);
+    if (!file) return null;
+    return loadPresetFromModule(file, name);
+}
+
+async function loadExternalPreset(projectDir: string, name: string): Promise<PrintPreset | null> {
+    const pluginPackage = await findInstalledPluginPackage("preset", name, projectDir);
+    if (!pluginPackage) return null;
+
+    const presetConfig = packageWritekitConfig(pluginPackage)?.preset;
+    const entry = presetConfig?.entry
+        ? resolvePluginPackageFile(pluginPackage, presetConfig.entry)
+        : resolvePluginPackageEntry(pluginPackage, projectDir);
+
+    return loadPresetFromModule(entry, pluginPackage.pluginName);
+}
+
+export async function getPreset(name: string, projectDir?: string): Promise<PrintPreset | null> {
+    const builtin = builtinPresets[name.toLowerCase()];
+    if (builtin) return builtin;
+    if (!projectDir) return null;
+
+    const localPreset = await loadLocalPreset(projectDir, name);
+    if (localPreset) return localPreset;
+
+    return loadExternalPreset(projectDir, name);
 }
 
 function applyLayoutOverrides(
@@ -146,19 +244,43 @@ function applyLayoutOverrides(
     };
 }
 
-export function resolvePrintPreset(
+export async function resolvePrintPreset(
     config: { print_preset?: string; layout?: LayoutOverrides },
     typeDefaultPreset?: string,
-): PrintPreset {
+    projectDir?: string,
+): Promise<PrintPreset> {
     const presetName = config.print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
-    const basePreset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
+    const basePreset = await getPreset(presetName, projectDir) ?? builtinPresets[DEFAULT_PRESET];
     return applyLayoutOverrides(basePreset, config.layout);
 }
 
-export function listPresets(): { key: string; preset: PrintPreset }[] {
-    return Object.entries(presets).map(([key, preset]) => ({ key, preset }));
+export async function listPresets(projectDir?: string): Promise<{ key: string; preset: PrintPreset }[]> {
+    const entries = new Map<string, PrintPreset>(Object.entries(builtinPresets));
+
+    if (projectDir && await dirExists(localPresetsDir(projectDir))) {
+        const localEntries = await readdir(localPresetsDir(projectDir));
+        for (const entry of localEntries) {
+            const ext = extname(entry);
+            if (!LOCAL_PLUGIN_EXTS.has(ext)) continue;
+            const key = basename(entry, ext);
+            const preset = await loadLocalPreset(projectDir, key);
+            if (preset) entries.set(key, preset);
+        }
+    }
+
+    if (projectDir) {
+        for (const pluginPackage of await listInstalledPluginPackages("preset", projectDir)) {
+            const preset = await loadExternalPreset(projectDir, pluginPackage.pluginName);
+            if (preset) entries.set(pluginPackage.pluginName, preset);
+        }
+    }
+
+    return [...entries.entries()]
+        .map(([key, preset]) => ({ key, preset }))
+        .sort((a, b) => a.key.localeCompare(b.key));
 }
 
-export function presetNames(): string[] {
-    return Object.keys(presets);
+export async function presetNames(projectDir?: string): Promise<string[]> {
+    const presets = await listPresets(projectDir);
+    return presets.map(({ key }) => key);
 }

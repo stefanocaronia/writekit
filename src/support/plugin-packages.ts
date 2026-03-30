@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url);
 const PLUGIN_PREFIXES = {
     type: "writekit-type-",
     format: "writekit-format-",
+    preset: "writekit-preset-",
 } as const;
 
 export type PluginKind = keyof typeof PLUGIN_PREFIXES;
@@ -19,6 +20,7 @@ interface WritekitKindConfig {
 interface WritekitPackageConfig {
     type?: WritekitKindConfig & { definition?: string; entry?: string };
     format?: WritekitKindConfig & { entry?: string };
+    preset?: WritekitKindConfig & { entry?: string };
 }
 
 export interface InstalledPluginPackage {

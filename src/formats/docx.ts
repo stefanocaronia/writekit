@@ -532,7 +532,7 @@ export async function buildDocx(
     TYPO_INDENT = typo.paragraphIndent === "0" ? 0 : convertInchesToTwip(0.3);
     TYPO_SPACING = spacingToTwips(typo.paragraphSpacing);
     TYPO_ALIGN = typo.textAlign === "left" ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
-    const resolvedPreset = preset ?? resolvePrintPreset(config);
+    const resolvedPreset = preset ?? await resolvePrintPreset(config, undefined, projectDir);
     const pageMargin = {
         top: mmToTwips(resolvedPreset.margin.top),
         bottom: mmToTwips(resolvedPreset.margin.bottom),
