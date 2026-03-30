@@ -2,11 +2,12 @@ import { Command } from "commander";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { fileExists, dirExists } from "../support/fs-utils.js";
-import { SECTION_FILE_MAP, parseFrontmatter } from "../project/parse.js";
+import { SECTION_FILE_MAP, parseFrontmatter, type BookConfig } from "../project/parse.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
 import { listThemes } from "../support/theme.js";
 import { supportedLanguages } from "../support/i18n.js";
 import { loadType, hasType, allTypeNames, type FrontmatterSchema } from "../project/project-type.js";
+import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
 import {
     validateData,
     configSchema,
@@ -14,6 +15,7 @@ import {
     timelineSchema,
     type ValidationIssue,
 } from "../project/schema.js";
+import { resolveFormatPlugin } from "../formats/format-registry.js";
 
 interface CheckResult {
     warnings: string[];
@@ -158,6 +160,36 @@ function validateLayoutOverrides(data: unknown): ValidationIssue[] {
     return issues;
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function validateTypeOptions(data: unknown): ValidationIssue[] {
+    if (data === undefined) return [];
+    if (!isPlainObject(data)) {
+        return [{ level: "error", message: "config.yaml: type_options should be an object" }];
+    }
+    return [];
+}
+
+function validateFormatOptions(data: unknown): ValidationIssue[] {
+    if (data === undefined) return [];
+    if (!isPlainObject(data)) {
+        return [{ level: "error", message: "config.yaml: format_options should be an object" }];
+    }
+
+    const issues: ValidationIssue[] = [];
+    for (const [formatName, options] of Object.entries(data)) {
+        if (!isPlainObject(options)) {
+            issues.push({
+                level: "error",
+                message: `config.yaml: format_options.${formatName} should be an object`,
+            });
+        }
+    }
+    return issues;
+}
+
 export async function checkProject(projectDir: string): Promise<CheckResult> {
     const issues: ValidationIssue[] = [];
 
@@ -182,6 +214,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
     }
 
     const typeDef = await loadType(projectTypeName, projectDir);
+    const typePlugin = await loadTypePlugin(projectTypeName, projectDir);
 
     // Check required files (config.yaml always + type-specific files)
     // Some files are optional (created by build or user choice)
@@ -238,6 +271,12 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
             }
 
             issues.push(...validateLayoutOverrides(data.layout));
+            issues.push(...validateTypeOptions(data.type_options));
+            issues.push(...validateFormatOptions(data.format_options));
+
+            if (typePlugin?.configSchema && isPlainObject(data.type_options)) {
+                issues.push(...validateData(data.type_options, typePlugin.configSchema, "config.yaml:type_options"));
+            }
 
             // Validate theme exists
             const themeName = (data.theme as string) || "default";
@@ -262,6 +301,37 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
                             message: `config.yaml: build format "${entry}" not found — available: ${validFormats.join(", ")}`,
                         });
                     }
+                }
+            }
+
+            if (isPlainObject(data.format_options)) {
+                for (const [formatName, formatOptions] of Object.entries(data.format_options)) {
+                    const plugin = await resolveFormatPlugin(formatName, projectDir);
+                    if (!plugin) {
+                        issues.push({
+                            level: "error",
+                            message: `config.yaml: format_options.${formatName} refers to an unknown format`,
+                        });
+                        continue;
+                    }
+
+                    if (plugin.configSchema && isPlainObject(formatOptions)) {
+                        issues.push(...validateData(formatOptions, plugin.configSchema, `config.yaml:format_options.${formatName}`));
+                    }
+                }
+            }
+
+            if (typePlugin?.onCheck) {
+                const config = data as unknown as BookConfig;
+                const pluginIssues = await typePlugin.onCheck({
+                    projectDir,
+                    typeName: projectTypeName,
+                    typeDef,
+                    config,
+                    typeOptions: resolveTypeOptions(config),
+                });
+                if (pluginIssues) {
+                    issues.push(...pluginIssues);
                 }
             }
         }

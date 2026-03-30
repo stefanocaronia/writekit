@@ -1,11 +1,13 @@
 import { Command } from "commander";
-import { mkdir, writeFile, copyFile } from "node:fs/promises";
-import { join } from "node:path";
+import { cp, mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { execSync } from "node:child_process";
 import { stringify } from "yaml";
 import { input, select } from "@inquirer/prompts";
 import { frontmatter } from "../support/fs-utils.js";
+import { loadConfig } from "../project/parse.js";
 import { loadType, allTypeNames, resolveTypeFile, type ProjectType } from "../project/project-type.js";
+import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
 import { languageChoices } from "../support/i18n.js";
 import { ensureAgentsMd } from "../project/agents.js";
 
@@ -328,7 +330,19 @@ export const initCommand = new Command("init")
         if (typeSource?.source === "local") {
             const targetDir = join(projectDir, "types", options.type);
             await mkdir(targetDir, { recursive: true });
-            await copyFile(typeSource.path, join(targetDir, "type.yaml"));
+            await cp(dirname(typeSource.path), targetDir, { recursive: true, force: true });
+        }
+
+        const typePlugin = await loadTypePlugin(options.type, process.cwd());
+        if (typePlugin?.onInit) {
+            const config = await loadConfig(projectDir);
+            await typePlugin.onInit({
+                projectDir,
+                typeName: options.type,
+                typeDef,
+                config,
+                typeOptions: resolveTypeOptions(config),
+            });
         }
 
         // git init

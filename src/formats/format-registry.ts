@@ -19,6 +19,7 @@ import {
 import { loadContributors, loadBackcover, resolveCover, type BookConfig, type Chapter } from "../project/parse.js";
 import type { Theme } from "../support/theme.js";
 import type { Section, TypeFeatures } from "../project/project-type.js";
+import type { Schema } from "../project/schema.js";
 
 const BUILTIN_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
 const LOCAL_PLUGIN_EXTS = new Set([".mjs", ".js", ".cjs"]);
@@ -35,6 +36,7 @@ export interface FormatBuildContext {
     sections?: Section[];
     features?: TypeFeatures;
     typeDefaultPreset?: string;
+    options: Record<string, unknown>;
     filenameFor: (ext: string) => string;
     writeOutput: (ext: string, content: string | Buffer) => Promise<string>;
 }
@@ -49,6 +51,7 @@ export interface FormatPlugin {
     name: string;
     extension?: string;
     description?: string;
+    configSchema?: Schema;
     build: (context: FormatBuildContext) => Promise<void | string | Buffer | FormatBuildResult>;
 }
 
@@ -65,6 +68,7 @@ function buildFilename(config: BookConfig, ext: string): string {
 }
 
 async function createContext(
+    formatName: string,
     projectDir: string,
     config: BookConfig,
     chapters: Chapter[],
@@ -91,6 +95,7 @@ async function createContext(
         sections,
         features,
         typeDefaultPreset,
+        options: resolveFormatOptions(config, formatName),
         filenameFor: (ext: string) => buildFilename(config, ext),
         writeOutput: async (ext: string, content: string | Buffer) => {
             const outPath = join(buildDir, buildFilename(config, ext));
@@ -98,6 +103,11 @@ async function createContext(
             return outPath;
         },
     };
+}
+
+function resolveFormatOptions(config: BookConfig, formatName: string): Record<string, unknown> {
+    const options = config.format_options?.[formatName];
+    return options && typeof options === "object" && !Array.isArray(options) ? options : {};
 }
 
 const builtinPlugins: Record<string, FormatPlugin> = {
@@ -232,6 +242,7 @@ async function loadLocalPlugin(projectDir: string, name: string): Promise<Format
         name,
         extension: plugin.extension,
         description: plugin.description,
+        configSchema: plugin.configSchema,
         build: plugin.build,
     };
 }
@@ -256,6 +267,7 @@ async function loadExternalPlugin(projectDir: string, name: string): Promise<For
         name: pluginPackage.pluginName,
         extension: plugin.extension,
         description: plugin.description,
+        configSchema: plugin.configSchema,
         build: plugin.build,
     };
 }
@@ -326,7 +338,7 @@ export async function buildFormat(
         throw new Error(`Unknown format: "${name}". Supported: ${available.join(", ")}`);
     }
 
-    const context = await createContext(projectDir, config, chapters, theme, sections, features, typeDefaultPreset);
+    const context = await createContext(name, projectDir, config, chapters, theme, sections, features, typeDefaultPreset);
     const result = await plugin.build(context);
 
     if (result === undefined) return;

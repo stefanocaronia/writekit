@@ -17,7 +17,7 @@ interface WritekitKindConfig {
 }
 
 interface WritekitPackageConfig {
-    type?: WritekitKindConfig & { definition?: string };
+    type?: WritekitKindConfig & { definition?: string; entry?: string };
     format?: WritekitKindConfig & { entry?: string };
 }
 

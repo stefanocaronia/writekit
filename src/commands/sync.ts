@@ -3,10 +3,12 @@ import { readdir, readFile, writeFile, rename } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml, stringify } from "yaml";
 import { assertProject } from "../support/fs-utils.js";
-import { SECTION_FILE_MAP } from "../project/parse.js";
+import { SECTION_FILE_MAP, loadConfig } from "../project/parse.js";
 import { padNumber } from "../support/slug.js";
 import { ensureAgentsMd } from "../project/agents.js";
 import { generateReports } from "../project/reports.js";
+import { hasType, loadType } from "../project/project-type.js";
+import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
 import { c, icon } from "../support/ui.js";
 
 const CONTRIBUTOR_ROLES = ["author", "translator", "editor", "illustrator"] as const;
@@ -120,6 +122,21 @@ async function syncChapterNumbering(projectDir: string): Promise<number> {
 export async function syncProject(projectDir: string): Promise<{ roles: number; chapters: number; agents: boolean; reports: string[] }> {
     const roles = await syncContributorRoles(projectDir);
     const chapters = await syncChapterNumbering(projectDir);
+    const config = await loadConfig(projectDir);
+    const typeName = config.type || "novel";
+    const typeDef = await hasType(typeName, projectDir) ? await loadType(typeName, projectDir) : undefined;
+    const typePlugin = typeDef ? await loadTypePlugin(typeName, projectDir) : null;
+
+    if (typeDef && typePlugin?.onSync) {
+        await typePlugin.onSync({
+            projectDir,
+            typeName,
+            typeDef,
+            config,
+            typeOptions: resolveTypeOptions(config),
+        });
+    }
+
     await ensureAgentsMd(projectDir);
     const reports = await generateReports(projectDir);
 

@@ -7,6 +7,7 @@ import { assertProject } from "../support/fs-utils.js";
 import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
 import { loadType, hasType } from "../project/project-type.js";
+import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
 import { allFormatNames, hasFormat, resolveConfiguredFormats, buildFormat as runFormatBuild } from "../formats/format-registry.js";
 
 async function cleanBuild(projectDir: string): Promise<void> {
@@ -92,6 +93,20 @@ export const buildCommand = new Command("build")
 
         const typeName = config.type || "novel";
         const typeDef = await hasType(typeName, projectDir) ? await loadType(typeName, projectDir) : undefined;
+        const typePlugin = typeDef ? await loadTypePlugin(typeName, projectDir) : null;
+
+        if (typeDef && typePlugin?.onBuild) {
+            await typePlugin.onBuild({
+                projectDir,
+                typeName,
+                typeDef,
+                config,
+                chapters,
+                theme,
+                formats,
+                typeOptions: resolveTypeOptions(config),
+            });
+        }
 
         for (const fmt of formats) {
             console.log(`\n${icon.build} ${c.bold(`Building ${fmt}...`)}\n`);

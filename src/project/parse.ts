@@ -36,6 +36,8 @@ export interface BookConfig {
     cover?: string;
     print_preset?: string;
     layout?: LayoutOverrides;
+    type_options?: Record<string, unknown>;
+    format_options?: Record<string, Record<string, unknown>>;
     abstract?: string;
     keywords?: string[];
 }

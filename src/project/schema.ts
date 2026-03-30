@@ -1,4 +1,4 @@
-export type FieldType = "string" | "number" | "array" | "boolean";
+export type FieldType = "string" | "number" | "array" | "boolean" | "object";
 
 export interface FieldDef {
     type: FieldType;
@@ -29,6 +29,13 @@ export const configSchema: Schema = {
     date: { type: "string" },
     build_formats: { type: "array" },
     theme: { type: "string" },
+    cover: { type: "string" },
+    print_preset: { type: "string" },
+    layout: { type: "object" },
+    type_options: { type: "object" },
+    format_options: { type: "object" },
+    abstract: { type: "string" },
+    keywords: { type: "array" },
     license: { type: "string" },
     license_url: { type: "string" },
     copyright: { type: "string" },
@@ -108,6 +115,8 @@ function checkType(value: unknown, expectedType: FieldType): boolean {
             return typeof value === "boolean";
         case "array":
             return Array.isArray(value);
+        case "object":
+            return value !== null && typeof value === "object" && !Array.isArray(value);
     }
 }
 

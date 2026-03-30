@@ -459,6 +459,14 @@ sample_files:
     notes/ideas.md:
         body: "# Ideas\\n\\nNotes...\\n"
 `, "utf-8");
+            writeFileSync(join(WORKSPACE_DIR, "types", "microbook", "index.mjs"), `export default {
+  async onInit(ctx) {
+    const { writeFile } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    await writeFile(join(ctx.projectDir, "notes", "plugin-created.md"), "# Plugin\\n\\nLocal type hook.\\n");
+  }
+};
+`, "utf-8");
             run(`${CLI} init microbook --yes --type microbook`, WORKSPACE_DIR);
         });
 
@@ -468,6 +476,8 @@ sample_files:
 
         it("copies the local type into the project", () => {
             expect(existsSync(join(CUSTOM_DIR, "types", "microbook", "type.yaml"))).toBe(true);
+            expect(existsSync(join(CUSTOM_DIR, "types", "microbook", "index.mjs"))).toBe(true);
+            expect(existsSync(join(CUSTOM_DIR, "notes", "plugin-created.md"))).toBe(true);
             const config = readFileSync(join(CUSTOM_DIR, "config.yaml"), "utf-8");
             expect(config).toContain("type: microbook");
         });
@@ -494,14 +504,34 @@ sample_files:
                     name: "writekit-type-atlas",
                     version: "1.0.0",
                     type: "module",
-                    exports: "./index.js",
+                    exports: "./src/plugin.js",
                     writekit: {
                         type: {
                             definition: "./defs/type.yaml",
+                            entry: "./src/plugin.js",
                         },
                     },
                 }, null, 2),
-                "index.js": "export default {};\n",
+                "src/plugin.js": `export default {
+  configSchema: {
+    atlas_mode: {
+      type: "string",
+      values: ["strict", "loose"]
+    }
+  },
+  async onInit(ctx) {
+    const { writeFile } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    await writeFile(join(ctx.projectDir, "notes", "atlas-plugin.md"), "# Atlas\\n\\nExternal type hook.\\n");
+  },
+  async onBuild(ctx) {
+    const { mkdir, writeFile } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    await mkdir(join(ctx.projectDir, "build"), { recursive: true });
+    await writeFile(join(ctx.projectDir, "build", "atlas-hook.txt"), "formats=" + ctx.formats.join(","));
+  }
+};
+`,
                 "defs/type.yaml": `name: Atlas
 description: External package type
 default_preset: screen
@@ -545,8 +575,14 @@ sample_files:
                 }, null, 2),
                 "src/plugin.js": `export default {
   extension: "ts.txt",
+  configSchema: {
+    header: {
+      type: "string"
+    }
+  },
   async build(ctx) {
-    return "TITLE=" + ctx.config.title + "\\nCHAPTERS=" + ctx.chapters.length;
+    const header = typeof ctx.options.header === "string" ? ctx.options.header : "TITLE";
+    return header + "=" + ctx.config.title + "\\nCHAPTERS=" + ctx.chapters.length;
   }
 };
 `,
@@ -561,21 +597,29 @@ sample_files:
 
         it("init resolves an external package type", () => {
             expect(existsSync(join(EXTERNAL_TYPE_DIR, "config.yaml"))).toBe(true);
+            expect(existsSync(join(EXTERNAL_TYPE_DIR, "notes", "atlas-plugin.md"))).toBe(true);
             const config = readFileSync(join(EXTERNAL_TYPE_DIR, "config.yaml"), "utf-8");
             expect(config).toContain("type: atlas");
         });
 
         it("check and build work for an external package type", () => {
+            const configPath = join(EXTERNAL_TYPE_DIR, "config.yaml");
+            const config = readFileSync(configPath, "utf-8");
+            writeFileSync(configPath, `${config}\ntype_options:\n    atlas_mode: strict\n`, "utf-8");
+
             const checkOut = run(`${CLI} check`, EXTERNAL_TYPE_DIR);
             expect(checkOut).toContain("All good");
             run(`${CLI} build html`, EXTERNAL_TYPE_DIR);
             const htmlFiles = readdirSync(join(EXTERNAL_TYPE_DIR, "build")).filter((f) => f.endsWith(".html"));
             expect(htmlFiles.length).toBeGreaterThan(0);
+            expect(existsSync(join(EXTERNAL_TYPE_DIR, "build", "atlas-hook.txt"))).toBe(true);
         });
 
         it("build resolves an external package format plugin", () => {
             const configPath = join(EXTERNAL_TYPE_DIR, "config.yaml");
-            const config = readFileSync(configPath, "utf-8").replace("- html", "- typescript");
+            const config = readFileSync(configPath, "utf-8")
+                .replace("- html", "- typescript")
+                .concat("\nformat_options:\n    typescript:\n        header: BOOK\n");
             writeFileSync(configPath, config, "utf-8");
 
             const checkOut = run(`${CLI} check`, EXTERNAL_TYPE_DIR);
@@ -584,6 +628,8 @@ sample_files:
             run(`${CLI} build`, EXTERNAL_TYPE_DIR);
             const builtFiles = readdirSync(join(EXTERNAL_TYPE_DIR, "build")).filter((f) => f.endsWith(".ts.txt"));
             expect(builtFiles.length).toBeGreaterThan(0);
+            const built = readFileSync(join(EXTERNAL_TYPE_DIR, "build", builtFiles[0]), "utf-8");
+            expect(built).toContain("BOOK=");
         });
     });
 });

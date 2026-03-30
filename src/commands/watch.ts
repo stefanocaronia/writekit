@@ -6,6 +6,7 @@ import { loadConfig, loadChapters } from "../project/parse.js";
 import { syncProject } from "./sync.js";
 import { loadTheme } from "../support/theme.js";
 import { loadType, hasType } from "../project/project-type.js";
+import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
 import { assertProject, dirExists } from "../support/fs-utils.js";
 import { resolveConfiguredFormats, buildFormat as runFormatBuild } from "../formats/format-registry.js";
 import { c, icon } from "../support/ui.js";
@@ -83,6 +84,20 @@ async function runCycle(
             const theme = await loadTheme(config.theme, projectDir);
             const typeName = config.type || "novel";
             const typeDef = await hasType(typeName, projectDir) ? await loadType(typeName, projectDir) : undefined;
+            const typePlugin = typeDef ? await loadTypePlugin(typeName, projectDir) : null;
+
+            if (typeDef && typePlugin?.onBuild) {
+                await typePlugin.onBuild({
+                    projectDir,
+                    typeName,
+                    typeDef,
+                    config,
+                    chapters,
+                    theme,
+                    formats,
+                    typeOptions: resolveTypeOptions(config),
+                });
+            }
 
             for (const fmt of formats) {
                 const buildStart = Date.now();
