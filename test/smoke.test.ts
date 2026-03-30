@@ -161,6 +161,23 @@ describe("writekit smoke tests", () => {
         expect(docxFiles.length).toBeGreaterThan(0);
     });
 
+    it("build supports a local custom format plugin", () => {
+        mkdirSync(join(TEST_DIR, "formats"), { recursive: true });
+        writeFileSync(join(TEST_DIR, "formats", "plaintext.mjs"), `export default {
+  name: "plaintext",
+  extension: "txt",
+  async build(ctx) {
+    return "# " + ctx.config.title + "\\n" + ctx.chapters.map((ch) => ch.title).join("\\n");
+  }
+};
+`, "utf-8");
+
+        run(`${CLI} build plaintext`, TEST_DIR);
+        const txtFiles = readdirSync(join(TEST_DIR, "build"))
+            .filter((f: string) => f.endsWith(".txt"));
+        expect(txtFiles.length).toBeGreaterThan(0);
+    });
+
     it("add author works and creates contributor sheet", () => {
         run(`${CLI} add author "Lucia Bianchi"`, TEST_DIR);
         const config = readFileSync(join(TEST_DIR, "config.yaml"), "utf-8");

@@ -186,6 +186,29 @@ Add them with `wk add prologue`, `wk add epilogue`, etc. Remove with `wk remove 
 | `wk build` | Build using your preferred formats from config.yaml |
 | `wk build clean` | Delete all generated files |
 
+#### Local custom formats
+
+If the built-in formats are not enough, you can add a local format plugin in `formats/` inside your project:
+
+```js
+// formats/plaintext.mjs
+export default {
+  name: "plaintext",
+  extension: "txt",
+  async build(ctx) {
+    return "# " + ctx.config.title + "\n" + ctx.chapters.map((ch) => ch.title).join("\n");
+  },
+};
+```
+
+Then build it with:
+
+```bash
+wk build plaintext
+```
+
+Local formats can also be listed in `build_formats` in `config.yaml`.
+
 ### Validating and watching
 
 | Command | What it does |

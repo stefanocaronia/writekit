@@ -225,7 +225,8 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - **Impatto sullo sviluppo attuale**: da subito, quando si aggiunge logica type-specific, isolarla in modo che sia spostabile in un modulo. Evitare `if (config.type === "X")` nel core — preferire dati nel type.yaml o hook pattern.
     - **Già fatto**: `TypeFeatures` (show_chapter_author, supports_parts) nel type.yaml, builder ricevono features invece di controllare config.type.
 - [ ] **Format plugin system** — builder di output estensibili dalla community:
-    - Il core registra i builder builtin (html, epub, pdf, docx, md) in un registry
+    - [x] Fase locale: il core registra i builder builtin (html, epub, pdf, docx, md) in un registry e supporta format locali in `formats/{name}.mjs|js|cjs`
+    - [ ] Fase package: plugin via npm e discovery esterno
     - Interfaccia `FormatPlugin`: `{ name, extension, build(projectDir, config, chapters, theme, features) }`
     - Plugin via npm: `writekit-format-{name}` (es. `writekit-format-latex`, `writekit-format-asciidoc`)
     - Format loader cerca in: builtin → `node_modules/writekit-format-*`

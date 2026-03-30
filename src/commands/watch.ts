@@ -1,20 +1,13 @@
 import { Command } from "commander";
 import { watch, type FSWatcher } from "node:fs";
 import { join } from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
 import { checkProject, printCheckResults } from "./check.js";
-import { loadConfig, loadChapters, loadContributors, loadBackcover, resolveCover } from "../lib/parse.js";
-import { renderBook } from "../lib/html.js";
-import { buildEpub as buildEpubFile } from "../lib/epub.js";
-import { buildPdf as buildPdfFile } from "../lib/pdf.js";
-import { buildDocx as buildDocxFile } from "../lib/docx.js";
-import { renderBookMd } from "../lib/md.js";
+import { loadConfig, loadChapters } from "../lib/parse.js";
 import { syncProject } from "./sync.js";
 import { loadTheme } from "../lib/theme.js";
-import { loadTypography } from "../lib/typography.js";
 import { loadType, hasType } from "../lib/project-type.js";
-import { resolvePrintPreset } from "../lib/print-presets.js";
-import { assertProject, bookFilename, dirExists } from "../lib/fs-utils.js";
+import { assertProject, dirExists } from "../lib/fs-utils.js";
+import { buildFormat as runFormatBuild } from "../lib/format-registry.js";
 import { c, icon } from "../lib/ui.js";
 
 const WATCH_DIRS = [
@@ -53,36 +46,6 @@ function timestamp(): string {
 function elapsed(start: number): string {
     const ms = Date.now() - start;
     return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
-}
-
-async function buildFormat(
-    fmt: string, projectDir: string, config: ReturnType<typeof Object>,
-    chapters: Awaited<ReturnType<typeof loadChapters>>,
-    theme: Awaited<ReturnType<typeof loadTheme>>,
-    typeSections: any, typeFeatures: any, typeDefaultPreset: string | undefined,
-): Promise<void> {
-    const contributors = await loadContributors(projectDir);
-    const backcover = await loadBackcover(projectDir);
-    const coverPath = await resolveCover(projectDir, config as any);
-    const fname = bookFilename((config as any).title, (config as any).author, fmt);
-    const buildDir = join(projectDir, "build");
-    await mkdir(buildDir, { recursive: true });
-
-    if (fmt === "html") {
-        const typography = await loadTypography(projectDir);
-        const html = await renderBook(config as any, chapters, theme, contributors, backcover, coverPath, projectDir, typography, typeSections, typeFeatures);
-        await writeFile(join(buildDir, fname), html, "utf-8");
-    } else if (fmt === "epub") {
-        await buildEpubFile(projectDir, config as any, chapters, theme, fname, contributors, backcover, coverPath, typeSections, typeFeatures);
-    } else if (fmt === "pdf") {
-        await buildPdfFile(projectDir, config as any, chapters, theme, fname, contributors, backcover, coverPath, typeSections, typeFeatures, typeDefaultPreset);
-    } else if (fmt === "docx") {
-        const preset = resolvePrintPreset(config as any, typeDefaultPreset);
-        await buildDocxFile(projectDir, config as any, chapters, fname, contributors, backcover, coverPath, theme.docx, typeSections, typeFeatures, preset);
-    } else if (fmt === "md") {
-        const md = await renderBookMd(projectDir, config as any, chapters, contributors, backcover, typeSections, typeFeatures);
-        await writeFile(join(buildDir, fname), md, "utf-8");
-    }
 }
 
 async function runCycle(
@@ -125,7 +88,7 @@ async function runCycle(
                 const buildStart = Date.now();
                 console.log(`${timestamp()} Starting ${c.yellow(`build ${fmt}`)}...`);
                 try {
-                    await buildFormat(fmt, projectDir, config, chapters, theme, typeDef?.sections, typeDef?.features, typeDef?.default_preset);
+                    await runFormatBuild(fmt, projectDir, config, chapters, theme, typeDef?.sections, typeDef?.features, typeDef?.default_preset);
                     console.log(`${timestamp()} Finished ${c.yellow(`build ${fmt}`)} ${c.green("✓")} ${c.dim(elapsed(buildStart))}`);
                 } catch (e) {
                     console.log(`${timestamp()} ${c.red(`build ${fmt} failed`)} ${c.dim(elapsed(buildStart))} ${c.dim(String(e))}`);
@@ -199,7 +162,7 @@ export const watchCommand = new Command("watch")
         for (const dir of WATCH_DIRS) {
             const fullPath = join(projectDir, dir);
             if (await dirExists(fullPath)) {
-                const w = watch(fullPath, (_, filename) => onChange(dir, filename));
+                const w = watch(fullPath, (_eventType: string, filename: string | null) => onChange(dir, filename));
                 watchers.push(w);
             }
         }

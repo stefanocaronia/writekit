@@ -249,6 +249,21 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
                     message: `config.yaml: theme "${themeName}" not found — available: ${themes.map((t) => t.name).join(", ")}`,
                 });
             }
+
+            // Validate build formats
+            if (Array.isArray(data.build_formats)) {
+                const { allFormatNames, hasFormat } = await import("../lib/format-registry.js");
+                const validFormats = await allFormatNames(projectDir);
+                for (const entry of data.build_formats) {
+                    if (typeof entry !== "string") continue;
+                    if (!(await hasFormat(entry, projectDir))) {
+                        issues.push({
+                            level: "error",
+                            message: `config.yaml: build format "${entry}" not found — available: ${validFormats.join(", ")}`,
+                        });
+                    }
+                }
+            }
         }
     }
 
