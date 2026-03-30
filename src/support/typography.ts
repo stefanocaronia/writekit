@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { loadType, hasType } from "./project-type.js";
+import { loadType, hasType } from "../project/project-type.js";
 
 export type HeadingFormat = "label_number_title" | "label_number" | "number_title" | "number" | "title";
 

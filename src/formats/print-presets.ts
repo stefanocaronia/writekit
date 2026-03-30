@@ -2,7 +2,7 @@
  * Print presets for PDF generation.
  * Dimensions in millimeters, margins in millimeters.
  */
-import type { LayoutOverrides } from "./parse.js";
+import type { LayoutOverrides } from "../project/parse.js";
 
 export interface PrintPreset {
     name: string;

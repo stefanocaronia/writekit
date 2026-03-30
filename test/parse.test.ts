@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseFrontmatter } from "../src/lib/parse";
+import { parseFrontmatter } from "../src/project/parse";
 
 describe("parseFrontmatter", () => {
     it("parses empty frontmatter with LF line endings", () => {

@@ -1,19 +1,19 @@
 import { Command } from "commander";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, extname } from "node:path";
-import { fileExists, dirExists } from "../lib/fs-utils.js";
-import { SECTION_FILE_MAP, parseFrontmatter } from "../lib/parse.js";
+import { fileExists, dirExists } from "../support/fs-utils.js";
+import { SECTION_FILE_MAP, parseFrontmatter } from "../project/parse.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
-import { listThemes } from "../lib/theme.js";
-import { supportedLanguages } from "../lib/i18n.js";
-import { loadType, hasType, allTypeNames, type FrontmatterSchema } from "../lib/project-type.js";
+import { listThemes } from "../support/theme.js";
+import { supportedLanguages } from "../support/i18n.js";
+import { loadType, hasType, allTypeNames, type FrontmatterSchema } from "../project/project-type.js";
 import {
     validateData,
     configSchema,
     styleSchema,
     timelineSchema,
     type ValidationIssue,
-} from "../lib/schema.js";
+} from "../project/schema.js";
 
 interface CheckResult {
     warnings: string[];
@@ -228,7 +228,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
             // Validate print preset
             const presetName = data.print_preset as string;
             if (presetName) {
-                const { getPreset, presetNames } = await import("../lib/print-presets.js");
+                const { getPreset, presetNames } = await import("../formats/print-presets.js");
                 if (!getPreset(presetName)) {
                     issues.push({
                         level: "error",
@@ -252,7 +252,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
 
             // Validate build formats
             if (Array.isArray(data.build_formats)) {
-                const { allFormatNames, hasFormat } = await import("../lib/format-registry.js");
+                const { allFormatNames, hasFormat } = await import("../formats/format-registry.js");
                 const validFormats = await allFormatNames(projectDir);
                 for (const entry of data.build_formats) {
                     if (typeof entry !== "string") continue;
@@ -463,7 +463,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
 }
 
 export async function printCheckResults({ warnings, errors }: CheckResult): Promise<void> {
-    const { c, icon } = await import("../lib/ui.js");
+    const { c, icon } = await import("../support/ui.js");
 
     for (const error of errors) {
         console.log(`  ${icon.error} ${c.red(error)}`);
@@ -484,7 +484,7 @@ export async function printCheckResults({ warnings, errors }: CheckResult): Prom
 export const checkCommand = new Command("check")
     .description("Validate project structure and frontmatter")
     .action(async () => {
-        const { c, icon } = await import("../lib/ui.js");
+        const { c, icon } = await import("../support/ui.js");
         const projectDir = process.cwd();
 
         if (!(await fileExists(join(projectDir, "config.yaml")))) {

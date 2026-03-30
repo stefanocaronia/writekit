@@ -2,12 +2,12 @@ import puppeteer from "puppeteer-core";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
-import type { BookConfig, Chapter, Contributor } from "./parse.js";
-import type { Theme } from "./theme.js";
-import type { Section, TypeFeatures } from "./project-type.js";
+import type { BookConfig, Chapter, Contributor } from "../project/parse.js";
+import type { Theme } from "../support/theme.js";
+import type { Section, TypeFeatures } from "../project/project-type.js";
 import { renderBook } from "./html.js";
 import { resolvePrintPreset } from "./print-presets.js";
-import { loadTypography } from "./typography.js";
+import { loadTypography } from "../support/typography.js";
 
 const CHROME_PATHS_WIN = [
     process.env.PROGRAMFILES + "\\Google\\Chrome\\Application\\chrome.exe",

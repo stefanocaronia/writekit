@@ -1,4 +1,4 @@
-import type { BookConfig } from "./parse.js";
+import type { BookConfig } from "../project/parse.js";
 import { getLabels } from "./i18n.js";
 
 export function formatAuthors(author: string | string[]): string {

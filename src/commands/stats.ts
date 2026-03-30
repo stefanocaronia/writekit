@@ -1,10 +1,10 @@
 import { Command } from "commander";
 import { readFile, readdir } from "node:fs/promises";
 import { join, extname } from "node:path";
-import { assertProject } from "../lib/fs-utils.js";
-import { loadConfig, loadChapters, loadContributors, parseFrontmatter } from "../lib/parse.js";
-import { formatAuthors } from "../lib/metadata.js";
-import { c, icon } from "../lib/ui.js";
+import { assertProject } from "../support/fs-utils.js";
+import { loadConfig, loadChapters, loadContributors, parseFrontmatter } from "../project/parse.js";
+import { formatAuthors } from "../support/metadata.js";
+import { c, icon } from "../support/ui.js";
 
 function countWords(text: string): number {
     return text.split(/\s+/).filter((w) => w.length > 0).length;

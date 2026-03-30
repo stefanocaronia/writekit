@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import JSZip from "jszip";
-import { fileExists } from "./fs-utils.js";
+import { fileExists } from "../support/fs-utils.js";
 
 /**
  * Resolve the DOCX template path.

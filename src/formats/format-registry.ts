@@ -6,12 +6,12 @@ import { buildEpub as buildEpubFile } from "./epub.js";
 import { buildPdf as buildPdfFile } from "./pdf.js";
 import { buildDocx as buildDocxFile } from "./docx.js";
 import { renderBookMd } from "./md.js";
-import { loadTypography } from "./typography.js";
+import { loadTypography } from "../support/typography.js";
 import { resolvePrintPreset } from "./print-presets.js";
-import { bookFilename, dirExists, fileExists } from "./fs-utils.js";
-import { loadContributors, loadBackcover, resolveCover, type BookConfig, type Chapter } from "./parse.js";
-import type { Theme } from "./theme.js";
-import type { Section, TypeFeatures } from "./project-type.js";
+import { bookFilename, dirExists, fileExists } from "../support/fs-utils.js";
+import { loadContributors, loadBackcover, resolveCover, type BookConfig, type Chapter } from "../project/parse.js";
+import type { Theme } from "../support/theme.js";
+import type { Section, TypeFeatures } from "../project/project-type.js";
 
 const BUILTIN_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
 const LOCAL_PLUGIN_EXTS = new Set([".mjs", ".js", ".cjs"]);
@@ -244,6 +244,19 @@ export async function allFormatNames(projectDir?: string): Promise<string[]> {
         }
     }
     return [...names].sort();
+}
+
+export async function resolveConfiguredFormats(projectDir: string, configured: unknown): Promise<string[]> {
+    if (!Array.isArray(configured)) return ["html"];
+
+    const validConfigured: string[] = [];
+    for (const entry of configured) {
+        if (typeof entry === "string" && await hasFormat(entry, projectDir)) {
+            validConfigured.push(entry);
+        }
+    }
+
+    return validConfigured.length > 0 ? validConfigured : ["html"];
 }
 
 export async function hasFormat(name: string, projectDir?: string): Promise<boolean> {

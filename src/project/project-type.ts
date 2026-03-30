@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
-import { dirExists, fileExists } from "./fs-utils.js";
+import { dirExists, fileExists } from "../support/fs-utils.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TYPES_DIR = join(__dirname, "..", "types");

@@ -2,10 +2,10 @@ import { Command } from "commander";
 import { readFile, writeFile, readdir, rename as renameFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml, stringify } from "yaml";
-import { assertProject, fileExists } from "../lib/fs-utils.js";
-import { slugify } from "../lib/slug.js";
-import { loadType, hasType } from "../lib/project-type.js";
-import { c, icon } from "../lib/ui.js";
+import { assertProject, fileExists } from "../support/fs-utils.js";
+import { slugify } from "../support/slug.js";
+import { loadType, hasType } from "../project/project-type.js";
+import { c, icon } from "../support/ui.js";
 
 async function replaceInMdFiles(dir: string, oldName: string, newName: string): Promise<number> {
     let count = 0;

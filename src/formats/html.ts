@@ -1,15 +1,15 @@
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
-import { marked } from "./markdown.js";
-import { embedImagesAsBase64 } from "./images.js";
-import { SECTION_LABEL_KEY } from "./parse.js";
-import type { BookConfig, Chapter, Contributor } from "./parse.js";
-import type { Theme } from "./theme.js";
-import { buildColophonLines, formatAuthors } from "./metadata.js";
-import { getLabels } from "./i18n.js";
-import type { Typography, Labels as TypoLabels } from "./typography.js";
-import { typographyClasses, typographyCssVars, formatPartHeading, formatChapterHeading } from "./typography.js";
-import type { Section, TypeFeatures } from "./project-type.js";
+import { marked } from "../support/markdown.js";
+import { embedImagesAsBase64 } from "../support/images.js";
+import { SECTION_LABEL_KEY } from "../project/parse.js";
+import type { BookConfig, Chapter, Contributor } from "../project/parse.js";
+import type { Theme } from "../support/theme.js";
+import { buildColophonLines, formatAuthors } from "../support/metadata.js";
+import { getLabels } from "../support/i18n.js";
+import type { Typography, Labels as TypoLabels } from "../support/typography.js";
+import { typographyClasses, typographyCssVars, formatPartHeading, formatChapterHeading } from "../support/typography.js";
+import type { Section, TypeFeatures } from "../project/project-type.js";
 
 const JS = `
     // Smooth scroll for TOC links

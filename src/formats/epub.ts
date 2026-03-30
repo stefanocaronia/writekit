@@ -1,19 +1,19 @@
-import { marked } from "./markdown.js";
+import { marked } from "../support/markdown.js";
 import crypto from "node:crypto";
 import yazl from "yazl";
 import { createWriteStream } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
-import { SECTION_LABEL_KEY } from "./parse.js";
-import type { BookConfig, Chapter, Contributor } from "./parse.js";
-import type { Theme } from "./theme.js";
-import type { Section, TypeFeatures } from "./project-type.js";
-import { buildColophonLines, formatAuthors } from "./metadata.js";
-import { getLabels } from "./i18n.js";
-import { collectImagePaths, rewriteImagePaths } from "./images.js";
-import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
-import { typographyClasses, typographyCssVars } from "./typography.js";
-import type { Labels as TypoLabels } from "./typography.js";
+import { SECTION_LABEL_KEY } from "../project/parse.js";
+import type { BookConfig, Chapter, Contributor } from "../project/parse.js";
+import type { Theme } from "../support/theme.js";
+import type { Section, TypeFeatures } from "../project/project-type.js";
+import { buildColophonLines, formatAuthors } from "../support/metadata.js";
+import { getLabels } from "../support/i18n.js";
+import { collectImagePaths, rewriteImagePaths } from "../support/images.js";
+import { loadTypography, formatPartHeading, formatChapterHeading } from "../support/typography.js";
+import { typographyClasses, typographyCssVars } from "../support/typography.js";
+import type { Labels as TypoLabels } from "../support/typography.js";
 
 function escapeXml(text: string): string {
         return text

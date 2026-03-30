@@ -2,13 +2,13 @@ import { Command } from "commander";
 import { watch, type FSWatcher } from "node:fs";
 import { join } from "node:path";
 import { checkProject, printCheckResults } from "./check.js";
-import { loadConfig, loadChapters } from "../lib/parse.js";
+import { loadConfig, loadChapters } from "../project/parse.js";
 import { syncProject } from "./sync.js";
-import { loadTheme } from "../lib/theme.js";
-import { loadType, hasType } from "../lib/project-type.js";
-import { assertProject, dirExists } from "../lib/fs-utils.js";
-import { buildFormat as runFormatBuild } from "../lib/format-registry.js";
-import { c, icon } from "../lib/ui.js";
+import { loadTheme } from "../support/theme.js";
+import { loadType, hasType } from "../project/project-type.js";
+import { assertProject, dirExists } from "../support/fs-utils.js";
+import { resolveConfiguredFormats, buildFormat as runFormatBuild } from "../formats/format-registry.js";
+import { c, icon } from "../support/ui.js";
 
 const WATCH_DIRS = [
     ".",
@@ -75,7 +75,7 @@ async function runCycle(
     // Build — reload config every cycle to pick up changes
     if (needsBuild) {
         const config = await loadConfig(projectDir);
-        const formats = config.build_formats ?? ["html"];
+        const formats = await resolveConfiguredFormats(projectDir, config.build_formats);
         const chapters = await loadChapters(projectDir);
         if (chapters.length === 0) {
             console.log(`${timestamp()} ${c.dim("No chapters — skipping build")}`);
@@ -114,7 +114,7 @@ export const watchCommand = new Command("watch")
         await assertProject(projectDir);
 
         const config = await loadConfig(projectDir);
-        const formats = config.build_formats ?? ["html"];
+        const formats = await resolveConfiguredFormats(projectDir, config.build_formats);
 
         console.log(`\n${icon.watch} ${c.bold("Watching for changes...")} ${c.dim(`(build: ${formats.join(", ")})`)}`);
         console.log(`${c.dim("  Press Ctrl+C to stop.")}\n`);

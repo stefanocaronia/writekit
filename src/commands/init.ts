@@ -4,10 +4,10 @@ import { join } from "node:path";
 import { execSync } from "node:child_process";
 import { stringify } from "yaml";
 import { input, select } from "@inquirer/prompts";
-import { frontmatter } from "../lib/fs-utils.js";
-import { loadType, allTypeNames, resolveTypeFile, type ProjectType } from "../lib/project-type.js";
-import { languageChoices } from "../lib/i18n.js";
-import { ensureAgentsMd } from "../lib/agents.js";
+import { frontmatter } from "../support/fs-utils.js";
+import { loadType, allTypeNames, resolveTypeFile, type ProjectType } from "../project/project-type.js";
+import { languageChoices } from "../support/i18n.js";
+import { ensureAgentsMd } from "../project/agents.js";
 
 interface InitOptions {
     title: string;
@@ -156,8 +156,8 @@ function buildReadme(options: InitOptions, typeDef: ProjectType): string {
     lines.push("");
     lines.push("```bash");
     lines.push("wk check              # Validate project");
-    lines.push("wk build [format]     # Build (pdf, epub, html, docx, all)");
-    lines.push("wk watch [format]     # Watch and rebuild on changes");
+    lines.push("wk build [format]     # Build (pdf, epub, html, docx, md, all)");
+    lines.push("wk watch              # Watch and rebuild build_formats from config.yaml");
 
     for (const cmd of typeDef.add_commands) {
         const argName = cmd === "event" ? "<desc>" : `<${cmd === "chapter" ? "title" : "name"}>`;
@@ -209,7 +209,7 @@ export const initCommand = new Command("init")
         const typeDef = await loadType(options.type, process.cwd());
         const typeSource = await resolveTypeFile(options.type, process.cwd());
 
-        const { c, icon } = await import("../lib/ui.js");
+        const { c, icon } = await import("../support/ui.js");
         console.log(`\n${icon.book} ${c.bold("Creating project:")} ${c.cyan(name)} ${c.dim(`(${typeDef.name})`)}\n`);
 
         // Create directories
@@ -299,7 +299,7 @@ export const initCommand = new Command("init")
 
         // Create contributor sheet for author if provided
         if (options.author) {
-            const { slugify } = await import("../lib/slug.js");
+            const { slugify } = await import("../support/slug.js");
             const contribDir = join(projectDir, "contributors");
             await mkdir(contribDir, { recursive: true });
             const slug = slugify(options.author);

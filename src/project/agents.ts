@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { fileExists } from "./fs-utils.js";
+import { fileExists } from "../support/fs-utils.js";
 
 const START_TAG = "<!-- writekit:start — DO NOT REMOVE THIS SECTION -->";
 const END_TAG = "<!-- writekit:end -->";

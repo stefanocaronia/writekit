@@ -28,15 +28,15 @@ import type { ISectionOptions } from "docx";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import JSZip from "jszip";
-import { SECTION_LABEL_KEY } from "./parse.js";
-import type { BookConfig, Chapter, Contributor } from "./parse.js";
-import { buildColophonLines, formatAuthors } from "./metadata.js";
-import { collectImagePaths } from "./images.js";
-import { getLabels } from "./i18n.js";
-import type { DocxStyle } from "./theme.js";
-import type { Section, TypeFeatures } from "./project-type.js";
-import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
-import type { Labels as TypoLabels } from "./typography.js";
+import { SECTION_LABEL_KEY } from "../project/parse.js";
+import type { BookConfig, Chapter, Contributor } from "../project/parse.js";
+import { buildColophonLines, formatAuthors } from "../support/metadata.js";
+import { collectImagePaths } from "../support/images.js";
+import { getLabels } from "../support/i18n.js";
+import type { DocxStyle } from "../support/theme.js";
+import type { Section, TypeFeatures } from "../project/project-type.js";
+import { loadTypography, formatPartHeading, formatChapterHeading } from "../support/typography.js";
+import type { Labels as TypoLabels } from "../support/typography.js";
 import { resolvePrintPreset, type PrintPreset } from "./print-presets.js";
 // Template support removed — externalStyles doesn't work reliably. See PLAN.md.
 

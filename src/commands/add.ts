@@ -2,10 +2,10 @@ import { Command } from "commander";
 import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
-import { slugify, padNumber } from "../lib/slug.js";
-import { fileExists, dirExists, assertProject, frontmatter } from "../lib/fs-utils.js";
-import { loadType, hasType } from "../lib/project-type.js";
-import { c, icon } from "../lib/ui.js";
+import { slugify, padNumber } from "../support/slug.js";
+import { fileExists, dirExists, assertProject, frontmatter } from "../support/fs-utils.js";
+import { loadType, hasType } from "../project/project-type.js";
+import { c, icon } from "../support/ui.js";
 
 async function ensureDir(dir: string): Promise<void> {
     await mkdir(dir, { recursive: true });

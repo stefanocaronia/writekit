@@ -2,11 +2,11 @@ import { Command } from "commander";
 import { readFile, writeFile, readdir, unlink, rename, rm } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
-import { assertProject, fileExists, dirExists } from "../lib/fs-utils.js";
-import { SECTION_FILE_MAP } from "../lib/parse.js";
-import { slugify, padNumber } from "../lib/slug.js";
-import { loadType, hasType, getRemoveCommands } from "../lib/project-type.js";
-import { c, icon } from "../lib/ui.js";
+import { assertProject, fileExists, dirExists } from "../support/fs-utils.js";
+import { SECTION_FILE_MAP } from "../project/parse.js";
+import { slugify, padNumber } from "../support/slug.js";
+import { loadType, hasType, getRemoveCommands } from "../project/project-type.js";
+import { c, icon } from "../support/ui.js";
 
 async function assertRemoveCommand(projectDir: string, command: string): Promise<void> {
     try {

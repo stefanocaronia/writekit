@@ -2,12 +2,12 @@ import { Command } from "commander";
 import { readdir, readFile, writeFile, rename } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml, stringify } from "yaml";
-import { assertProject } from "../lib/fs-utils.js";
-import { SECTION_FILE_MAP } from "../lib/parse.js";
-import { padNumber } from "../lib/slug.js";
-import { ensureAgentsMd } from "../lib/agents.js";
-import { generateReports } from "../lib/reports.js";
-import { c, icon } from "../lib/ui.js";
+import { assertProject } from "../support/fs-utils.js";
+import { SECTION_FILE_MAP } from "../project/parse.js";
+import { padNumber } from "../support/slug.js";
+import { ensureAgentsMd } from "../project/agents.js";
+import { generateReports } from "../project/reports.js";
+import { c, icon } from "../support/ui.js";
 
 const CONTRIBUTOR_ROLES = ["author", "translator", "editor", "illustrator"] as const;
 

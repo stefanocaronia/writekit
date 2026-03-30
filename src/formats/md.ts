@@ -1,13 +1,13 @@
 import { copyFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { SECTION_LABEL_KEY } from "./parse.js";
-import type { BookConfig, Chapter, Contributor } from "./parse.js";
-import type { Section, TypeFeatures } from "./project-type.js";
-import { buildColophonLines, formatAuthors } from "./metadata.js";
-import { getLabels } from "./i18n.js";
-import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
-import type { Labels as TypoLabels } from "./typography.js";
-import { collectImagePaths } from "./images.js";
+import { SECTION_LABEL_KEY } from "../project/parse.js";
+import type { BookConfig, Chapter, Contributor } from "../project/parse.js";
+import type { Section, TypeFeatures } from "../project/project-type.js";
+import { buildColophonLines, formatAuthors } from "../support/metadata.js";
+import { getLabels } from "../support/i18n.js";
+import { loadTypography, formatPartHeading, formatChapterHeading } from "../support/typography.js";
+import type { Labels as TypoLabels } from "../support/typography.js";
+import { collectImagePaths } from "../support/images.js";
 
 export async function renderBookMd(
     projectDir: string,

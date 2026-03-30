@@ -1,16 +1,16 @@
 import { Command } from "commander";
 import { join } from "node:path";
 import { readdir, rm } from "node:fs/promises";
-import { loadConfig, loadChapters } from "../lib/parse.js";
-import { loadTheme } from "../lib/theme.js";
-import { assertProject } from "../lib/fs-utils.js";
+import { loadConfig, loadChapters } from "../project/parse.js";
+import { loadTheme } from "../support/theme.js";
+import { assertProject } from "../support/fs-utils.js";
 import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
-import { loadType, hasType } from "../lib/project-type.js";
-import { allFormatNames, hasFormat, buildFormat as runFormatBuild } from "../lib/format-registry.js";
+import { loadType, hasType } from "../project/project-type.js";
+import { allFormatNames, hasFormat, resolveConfiguredFormats, buildFormat as runFormatBuild } from "../formats/format-registry.js";
 
 async function cleanBuild(projectDir: string): Promise<void> {
-    const { c, icon } = await import("../lib/ui.js");
+    const { c, icon } = await import("../support/ui.js");
     const buildDir = join(projectDir, "build");
     try {
         const entries = await readdir(buildDir);
@@ -38,23 +38,14 @@ async function resolveFormats(
         process.exit(1);
     }
 
-    const configured = Array.isArray(config.build_formats) ? config.build_formats : [];
-    const validConfigured: string[] = [];
-    for (const entry of configured) {
-        if (typeof entry === "string" && await hasFormat(entry, projectDir)) {
-            validConfigured.push(entry);
-        }
-    }
-    if (validConfigured.length > 0) return validConfigured;
-
-    return ["html"];
+    return resolveConfiguredFormats(projectDir, config.build_formats);
 }
 
 export const buildCommand = new Command("build")
     .description("Build the project (pdf, epub, html, docx, md, all, clean)")
     .argument("[format]", "Output format (default: from config or html)")
     .action(async (format: string | undefined) => {
-        const { c, icon } = await import("../lib/ui.js");
+        const { c, icon } = await import("../support/ui.js");
         const projectDir = process.cwd();
 
         if (format === "clean") {
@@ -117,7 +108,7 @@ export const buildCommand = new Command("build")
         }
 
         console.log(`\n${icon.report} ${c.bold("Generating reports...")}\n`);
-        const { generateReports } = await import("../lib/reports.js");
+        const { generateReports } = await import("../project/reports.js");
         const reports = await generateReports(projectDir);
         console.log(`  ${c.dim(`✓ ${reports.join(", ")}`)}`);
 

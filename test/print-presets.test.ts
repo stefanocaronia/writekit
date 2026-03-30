@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { resolvePrintPreset } from "../src/lib/print-presets";
+import { resolvePrintPreset } from "../src/formats/print-presets";
 import { checkProject } from "../src/commands/check";
 
 const ROOT = process.cwd();

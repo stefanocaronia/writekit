@@ -2,9 +2,9 @@ import { Command } from "commander";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml, stringify } from "yaml";
-import { listThemes, createTheme } from "../lib/theme.js";
-import { assertProject } from "../lib/fs-utils.js";
-import { c, icon } from "../lib/ui.js";
+import { listThemes, createTheme } from "../support/theme.js";
+import { assertProject } from "../support/fs-utils.js";
+import { c, icon } from "../support/ui.js";
 
 async function getActiveTheme(projectDir: string): Promise<string> {
     const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");

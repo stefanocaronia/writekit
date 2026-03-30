@@ -254,7 +254,7 @@ Due livelli di accesso:
 - **CLI pubblica** (`wk *`) — per umani e agent semplici, esecuzione come processo
 - **API Node** (`import from "writekit"`) — per agent avanzati, MCP server, integrazioni custom. Accesso diretto alle strutture dati in memoria (config, chapters, characters, glossary, typography). Più veloce, più potente, permette operazioni complesse (grafo personaggi, diff semantici tra draft, analisi timeline) impossibili via CLI
 
-L'API Node è già quasi pronta — le funzioni in `src/lib/` sono modulari. Serve esportarle pulite dal package entry point e documentarle. Un MCP server sarebbe un wrapper sottile sopra questa API.
+L'API Node è già quasi pronta — le funzioni in `src/project/`, `src/formats/` e `src/support/` sono modulari. Serve esportarle pulite dal package entry point e documentarle. Un MCP server sarebbe un wrapper sottile sopra questa API.
 
 Il valore aggiunto non è "ha l'AI dentro" ma "qualsiasi AI ci lavora immediatamente".
 
@@ -264,20 +264,20 @@ Il valore aggiunto non è "ha l'AI dentro" ma "qualsiasi AI ci lavora immediatam
 
 ### File critici
 - Comandi: `src/commands/*.ts`
-- Build: `src/lib/html.ts`, `src/lib/epub.ts`, `src/lib/pdf.ts`, `src/lib/docx.ts`
-- Validazione: `src/commands/check.ts`, `src/lib/schema.ts`
-- Report: `src/lib/reports.ts`
-- Temi: `src/lib/theme.ts`, `src/themes/*/`
-- Tipi: `src/lib/project-type.ts`, `src/types/*/type.yaml`
-- Parsing: `src/lib/parse.ts`, `src/lib/metadata.ts`
+- Build: `src/formats/html.ts`, `src/formats/epub.ts`, `src/formats/pdf.ts`, `src/formats/docx.ts`
+- Validazione: `src/commands/check.ts`, `src/project/schema.ts`
+- Report: `src/project/reports.ts`
+- Temi: `src/support/theme.ts`, `src/themes/*/`
+- Tipi: `src/project/project-type.ts`, `src/types/*/type.yaml`
+- Parsing: `src/project/parse.ts`, `src/support/metadata.ts`
 
 ### Utility condivise
-- `src/lib/fs-utils.ts` — fileExists, dirExists, assertProject, frontmatter, bookFilename
-- `src/lib/metadata.ts` — buildColophonLines
-- `src/lib/slug.ts` — slugify, padNumber
-- `src/lib/ui.ts` — colori e icone
-- `src/lib/schema.ts` — validateData (config, style, timeline)
-- `src/lib/project-type.ts` — loadType, isValidType, allTypeNames
+- `src/support/fs-utils.ts` — fileExists, dirExists, assertProject, frontmatter, bookFilename
+- `src/support/metadata.ts` — buildColophonLines
+- `src/support/slug.ts` — slugify, padNumber
+- `src/support/ui.ts` — colori e icone
+- `src/project/schema.ts` — validateData (config, style, timeline)
+- `src/project/project-type.ts` — loadType, isValidType, allTypeNames
 
 ---
 
@@ -350,7 +350,7 @@ typography:
     paragraph_spacing: 0.3rem    # override solo questo
 ```
 
-#### 3. Loader (`src/lib/typography.ts`)
+#### 3. Loader (`src/support/typography.ts`)
 
 Nuovo modulo che:
 - Carica typography dal type.yaml
@@ -405,7 +405,7 @@ body { line-height: var(--line-height, 1.6); }
 .chapter p { orphans: var(--orphans, 2); widows: var(--widows, 2); }
 ```
 
-#### 5. DOCX builder (`src/lib/docx.ts`)
+#### 5. DOCX builder (`src/formats/docx.ts`)
 
 Legge `Typography` e applica:
 - `paragraphIndent` → `indent.firstLine`
@@ -423,14 +423,14 @@ Stesse classi CSS dell'HTML, iniettate nel body dei capitoli.
 ### File da modificare
 
 1. `src/types/*/type.yaml` — aggiungere `typography:` a tutti i 5 tipi
-2. `src/lib/typography.ts` — nuovo modulo loader/merger
-3. `src/lib/html.ts` — iniettare classi su body
-4. `src/lib/epub.ts` — iniettare classi su body capitoli
-5. `src/lib/docx.ts` — leggere typography e applicare
-6. `src/lib/md.ts` — non impattato (è testo puro)
+2. `src/support/typography.ts` — nuovo modulo loader/merger
+3. `src/formats/html.ts` — iniettare classi su body
+4. `src/formats/epub.ts` — iniettare classi su body capitoli
+5. `src/formats/docx.ts` — leggere typography e applicare
+6. `src/formats/md.ts` — non impattato (è testo puro)
 7. `src/themes/*/html.css` — aggiungere classi typo-*
 8. `src/themes/*/epub.css` — aggiungere classi typo-*
-9. `src/lib/parse.ts` — caricare typography da style.yaml
+9. `src/project/parse.ts` — caricare typography da style.yaml
 10. `src/commands/check.ts` — validare campi typography
 
 ### Ordine di implementazione

@@ -6,7 +6,7 @@ import {
     formatPartHeading,
     type HeadingFormat,
     type Labels,
-} from "../src/lib/typography.js";
+} from "../src/support/typography.js";
 
 // ---------------------------------------------------------------------------
 // Shared label sets
