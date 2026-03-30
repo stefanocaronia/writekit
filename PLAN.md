@@ -1,8 +1,8 @@
 ---
 project: writekit
-version: 0.2.0
+version: 0.4.1
 last_updated: 2026-03-31
-status: v0.4 complete, v0.4.1 technically complete with a few manual DOCX/PDF checks still pending; plugin system for types, formats, and presets implemented; npm publish pending
+status: v0.4.1 released in git, with a few manual DOCX/PDF follow-ups still pending; plugin system for types, formats, and presets implemented; npm publish pending
 last_published_npm: 0.1.0
 types_planned: [novel, collection, essay, paper]
 ---
@@ -185,7 +185,10 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.5.0 — Analisi e intelligenza
 
-- [ ] **Cross-reference validation** — personaggi/locations nel frontmatter esistono davvero?
+- [x] **Cross-reference validation** — `wk check` valida riferimenti espliciti tra frontmatter e archivi progetto:
+    - novel: `pov` nei capitoli, `pov`/`characters`/`location` in `outline/chapters`, `relationships` in `characters/`
+    - essay/paper: `related` in `concepts/` e `arguments/`
+    - warnings strutturati, senza NLP o matching fuzzy
 - [ ] **Grafo relazioni** — report relazioni personaggi
 - [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
 - [ ] **Draft tracking** — stato draft per capitolo

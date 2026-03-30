@@ -1,6 +1,6 @@
 {
   "name": "writekit",
-  "version": "0.2.0",
+  "version": "0.4.1",
   "description": "CLI framework for creating books — generates PDF, ePub, HTML, and DOCX",
   "type": "module",
   "bin": {

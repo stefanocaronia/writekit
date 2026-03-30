@@ -17,7 +17,7 @@ const program = new Command();
 program
     .name("wk")
     .description("CLI toolkit for writing books, essays, and articles")
-    .version("0.2.0");
+    .version("0.4.1");
 
 program.addCommand(initCommand);
 program.addCommand(buildCommand);

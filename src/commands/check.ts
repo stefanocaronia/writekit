@@ -31,6 +31,162 @@ async function getMdFiles(dir: string): Promise<string[]> {
     }
 }
 
+function normalizedRef(value: string): string {
+    return value.trim().toLowerCase();
+}
+
+async function collectFrontmatterStrings(
+    projectDir: string,
+    folder: string,
+    field: string,
+): Promise<Set<string>> {
+    const values = new Set<string>();
+    const dir = join(projectDir, folder);
+    const files = await getMdFiles(dir);
+
+    for (const file of files) {
+        const content = await readFile(join(dir, file), "utf-8");
+        const { data } = parseFrontmatter(content);
+        const value = data[field];
+        if (typeof value === "string" && value.trim()) {
+            values.add(normalizedRef(value));
+        }
+    }
+
+    return values;
+}
+
+function stringValues(value: unknown): string[] {
+    if (typeof value === "string" && value.trim()) {
+        return [value.trim()];
+    }
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+        .map((entry) => entry.trim());
+}
+
+function relationshipTargets(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    const targets: string[] = [];
+    for (const entry of value) {
+        if (typeof entry === "string" && entry.trim()) {
+            targets.push(entry.trim());
+            continue;
+        }
+        if (!isPlainObject(entry)) continue;
+
+        for (const key of ["character", "name", "target"]) {
+            const target = entry[key];
+            if (typeof target === "string" && target.trim()) {
+                targets.push(target.trim());
+                break;
+            }
+        }
+    }
+
+    return targets;
+}
+
+function pushMissingReferenceWarning(
+    issues: ValidationIssue[],
+    filePath: string,
+    label: string,
+    value: string,
+    destination: string,
+): void {
+    issues.push({
+        level: "warning",
+        message: `${filePath}: ${label} "${value}" not found in ${destination}`,
+    });
+}
+
+async function validateCrossReferences(
+    projectDir: string,
+    typeName: string,
+    issues: ValidationIssue[],
+): Promise<void> {
+    const characterNames = await collectFrontmatterStrings(projectDir, "characters", "name");
+    const worldNames = await collectFrontmatterStrings(projectDir, "world", "name");
+    const conceptTerms = await collectFrontmatterStrings(projectDir, "concepts", "term");
+    const argumentClaims = await collectFrontmatterStrings(projectDir, "arguments", "claim");
+
+    const referenceCatalog = new Set<string>([...conceptTerms, ...argumentClaims]);
+
+    if (typeName === "novel") {
+        const manuscriptDir = join(projectDir, "manuscript");
+        const manuscriptFiles = await getMdFiles(manuscriptDir);
+        for (const file of manuscriptFiles) {
+            if (file in SECTION_FILE_MAP) continue;
+            const content = await readFile(join(manuscriptDir, file), "utf-8");
+            const { data } = parseFrontmatter(content);
+            const filePath = `manuscript/${file}`;
+
+            if (typeof data.pov === "string" && data.pov.trim() && !characterNames.has(normalizedRef(data.pov))) {
+                pushMissingReferenceWarning(issues, filePath, "pov", data.pov, "characters/");
+            }
+        }
+
+        const outlineDir = join(projectDir, "outline", "chapters");
+        const outlineFiles = await getMdFiles(outlineDir);
+        for (const file of outlineFiles) {
+            const content = await readFile(join(outlineDir, file), "utf-8");
+            const { data } = parseFrontmatter(content);
+            const filePath = `outline/chapters/${file}`;
+
+            if (typeof data.pov === "string" && data.pov.trim() && !characterNames.has(normalizedRef(data.pov))) {
+                pushMissingReferenceWarning(issues, filePath, "pov", data.pov, "characters/");
+            }
+
+            for (const character of stringValues(data.characters)) {
+                if (!characterNames.has(normalizedRef(character))) {
+                    pushMissingReferenceWarning(issues, filePath, "character", character, "characters/");
+                }
+            }
+
+            if (typeof data.location === "string" && data.location.trim() && !worldNames.has(normalizedRef(data.location))) {
+                pushMissingReferenceWarning(issues, filePath, "location", data.location, "world/");
+            }
+        }
+
+        const characterDir = join(projectDir, "characters");
+        const characterFiles = await getMdFiles(characterDir);
+        for (const file of characterFiles) {
+            const content = await readFile(join(characterDir, file), "utf-8");
+            const { data } = parseFrontmatter(content);
+            const filePath = `characters/${file}`;
+
+            for (const target of relationshipTargets(data.relationships)) {
+                if (!characterNames.has(normalizedRef(target))) {
+                    pushMissingReferenceWarning(issues, filePath, "relationship target", target, "characters/");
+                }
+            }
+        }
+    }
+
+    for (const folder of ["concepts", "arguments"]) {
+        const dir = join(projectDir, folder);
+        const files = await getMdFiles(dir);
+        for (const file of files) {
+            const content = await readFile(join(dir, file), "utf-8");
+            const { data } = parseFrontmatter(content);
+            const filePath = `${folder}/${file}`;
+
+            for (const related of stringValues(data.related)) {
+                if (!referenceCatalog.has(normalizedRef(related))) {
+                    pushMissingReferenceWarning(issues, filePath, "related reference", related, "concepts/ or arguments/");
+                }
+            }
+        }
+    }
+}
+
 function tryParseYaml(
     raw: string,
     file: string,
@@ -524,6 +680,8 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
             }
         } catch { /* config already validated above */ }
     }
+
+    await validateCrossReferences(projectDir, projectTypeName, issues);
 
     // Split into errors and warnings
     return {

@@ -239,7 +239,7 @@ Format plugins can also expose `configSchema`, and then read their validated opt
 
 | Command | What it does |
 |---|---|
-| `wk check` | Validate your project — checks for missing files, broken YAML, and formatting issues |
+| `wk check` | Validate your project — checks missing files, broken YAML, naming issues, and explicit cross-references |
 | `wk watch` | Watch for changes and rebuild all formats from `build_formats` in config. Reloads config on every change. |
 | `wk sync` | Synchronize derived fields — contributor roles, AGENTS.md, reports |
 | `wk stats` | Show detailed statistics — word count, reading time, chapter balance, word frequency |
