@@ -88,6 +88,76 @@ function validateFrontmatter(
     return issues;
 }
 
+function validateLayoutOverrides(data: unknown): ValidationIssue[] {
+    const issues: ValidationIssue[] = [];
+
+    if (data === undefined) return issues;
+
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+        return [{ level: "error", message: 'config.yaml: layout should be an object' }];
+    }
+
+    const layout = data as Record<string, unknown>;
+    const allowedKeys = new Set(["page_numbers", "running_header", "recto_start", "margin"]);
+    for (const key of Object.keys(layout)) {
+        if (!allowedKeys.has(key)) {
+            issues.push({
+                level: "warning",
+                message: `config.yaml: layout.${key} is unknown`,
+            });
+        }
+    }
+
+    for (const key of ["page_numbers", "running_header", "recto_start"]) {
+        const value = layout[key];
+        if (value !== undefined && typeof value !== "boolean") {
+            issues.push({
+                level: "error",
+                message: `config.yaml: layout.${key} should be boolean`,
+            });
+        }
+    }
+
+    if (layout.margin !== undefined) {
+        if (!layout.margin || typeof layout.margin !== "object" || Array.isArray(layout.margin)) {
+            issues.push({
+                level: "error",
+                message: "config.yaml: layout.margin should be an object",
+            });
+        } else {
+            const margin = layout.margin as Record<string, unknown>;
+            const allowedMarginKeys = new Set(["inner", "outer"]);
+            for (const key of Object.keys(margin)) {
+                if (!allowedMarginKeys.has(key)) {
+                    issues.push({
+                        level: "warning",
+                        message: `config.yaml: layout.margin.${key} is unknown`,
+                    });
+                }
+            }
+
+            for (const key of ["inner", "outer"]) {
+                const value = margin[key];
+                if (value !== undefined) {
+                    if (typeof value !== "number" || !Number.isFinite(value)) {
+                        issues.push({
+                            level: "error",
+                            message: `config.yaml: layout.margin.${key} should be a number`,
+                        });
+                    } else if (value <= 0) {
+                        issues.push({
+                            level: "error",
+                            message: `config.yaml: layout.margin.${key} should be greater than 0`,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    return issues;
+}
+
 export async function checkProject(projectDir: string): Promise<CheckResult> {
     const issues: ValidationIssue[] = [];
 
@@ -165,6 +235,8 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
                     });
                 }
             }
+
+            issues.push(...validateLayoutOverrides(data.layout));
 
             // Validate theme exists
             const themeName = (data.theme as string) || "default";

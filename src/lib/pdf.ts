@@ -6,7 +6,7 @@ import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import type { Theme } from "./theme.js";
 import type { Section, TypeFeatures } from "./project-type.js";
 import { renderBook } from "./html.js";
-import { getPreset, DEFAULT_PRESET, type PrintPreset } from "./print-presets.js";
+import { resolvePrintPreset } from "./print-presets.js";
 import { loadTypography } from "./typography.js";
 
 const CHROME_PATHS_WIN = [
@@ -44,11 +44,6 @@ function findBrowser(): string | null {
     return null;
 }
 
-function resolvePreset(config: BookConfig, typeDefaultPreset?: string): PrintPreset {
-    const presetName = config.print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
-    return getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
-}
-
 export async function buildPdf(
     projectDir: string,
     config: BookConfig,
@@ -69,7 +64,7 @@ export async function buildPdf(
         );
     }
 
-    const preset = resolvePreset(config, typeDefaultPreset);
+    const preset = resolvePrintPreset(config, typeDefaultPreset);
     const buildDir = join(projectDir, "build");
     await mkdir(buildDir, { recursive: true });
 

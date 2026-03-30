@@ -13,7 +13,7 @@ import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
 import { loadTypography } from "../lib/typography.js";
 import { loadType, isValidType, type Section, type TypeFeatures } from "../lib/project-type.js";
-import { getPreset, DEFAULT_PRESET } from "../lib/print-presets.js";
+import { resolvePrintPreset } from "../lib/print-presets.js";
 
 const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
 type Format = (typeof SUPPORTED_FORMATS)[number];
@@ -89,8 +89,7 @@ async function buildDocx(
     const contributors = await loadContributors(projectDir);
     const backcover = await loadBackcover(projectDir);
     const coverPath = await resolveCover(projectDir, config);
-    const presetName = config.print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
-    const preset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
+    const preset = resolvePrintPreset(config, typeDefaultPreset);
     const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, sections, features, preset);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);

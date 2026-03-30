@@ -2,6 +2,16 @@ import { readFile, readdir, access, stat } from "node:fs/promises";
 import { join, extname, basename } from "node:path";
 import { parse as parseYaml } from "yaml";
 
+export interface LayoutOverrides {
+    page_numbers?: boolean;
+    running_header?: boolean;
+    recto_start?: boolean;
+    margin?: {
+        inner?: number;
+        outer?: number;
+    };
+}
+
 export interface BookConfig {
     type?: string;
     title: string;
@@ -25,6 +35,7 @@ export interface BookConfig {
     theme?: string;
     cover?: string;
     print_preset?: string;
+    layout?: LayoutOverrides;
     abstract?: string;
     keywords?: string[];
 }

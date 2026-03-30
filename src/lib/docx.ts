@@ -37,7 +37,7 @@ import type { DocxStyle } from "./theme.js";
 import type { Section, TypeFeatures } from "./project-type.js";
 import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
 import type { Labels as TypoLabels } from "./typography.js";
-import { DEFAULT_PRESET, getPreset, type PrintPreset } from "./print-presets.js";
+import { resolvePrintPreset, type PrintPreset } from "./print-presets.js";
 // Template support removed — externalStyles doesn't work reliably. See PLAN.md.
 
 // Module-level style, set by buildDocx before rendering
@@ -532,7 +532,7 @@ export async function buildDocx(
     TYPO_INDENT = typo.paragraphIndent === "0" ? 0 : convertInchesToTwip(0.3);
     TYPO_SPACING = spacingToTwips(typo.paragraphSpacing);
     TYPO_ALIGN = typo.textAlign === "left" ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
-    const resolvedPreset = preset ?? getPreset(config.print_preset ?? DEFAULT_PRESET) ?? getPreset(DEFAULT_PRESET)!;
+    const resolvedPreset = preset ?? resolvePrintPreset(config);
     const pageMargin = {
         top: mmToTwips(resolvedPreset.margin.top),
         bottom: mmToTwips(resolvedPreset.margin.bottom),

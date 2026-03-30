@@ -418,6 +418,28 @@ If `print_preset` is omitted, writekit uses the default for the project type:
 
 Use `print_preset: screen` when you want a preview-oriented layout with no print features.
 
+For the rare cases where you want a preset as a base but need a small adjustment, you can add `layout` overrides:
+
+```yaml
+print_preset: trade
+
+layout:
+  running_header: false
+  page_numbers: true
+  recto_start: true
+  margin:
+    inner: 24
+    outer: 18
+```
+
+Supported layout overrides are intentionally limited:
+
+- `page_numbers`
+- `running_header`
+- `recto_start`
+- `margin.inner`
+- `margin.outer`
+
 ### Supported languages
 
 The `language` field controls editorial labels ("Table of Contents", "Colophon", etc.) and section titles (prologue, epilogue, etc.).

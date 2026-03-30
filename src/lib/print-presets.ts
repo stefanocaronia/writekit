@@ -2,6 +2,7 @@
  * Print presets for PDF generation.
  * Dimensions in millimeters, margins in millimeters.
  */
+import type { LayoutOverrides } from "./parse.js";
 
 export interface PrintPreset {
     name: string;
@@ -124,6 +125,34 @@ export const DEFAULT_PRESET = "screen";
 
 export function getPreset(name: string): PrintPreset | null {
     return presets[name.toLowerCase()] ?? null;
+}
+
+function applyLayoutOverrides(
+    preset: PrintPreset,
+    layout?: LayoutOverrides,
+): PrintPreset {
+    if (!layout) return preset;
+
+    return {
+        ...preset,
+        ...(typeof layout.page_numbers === "boolean" ? { pageNumbers: layout.page_numbers } : {}),
+        ...(typeof layout.running_header === "boolean" ? { runningHeader: layout.running_header } : {}),
+        ...(typeof layout.recto_start === "boolean" ? { rectoStart: layout.recto_start } : {}),
+        margin: {
+            ...preset.margin,
+            ...(typeof layout.margin?.inner === "number" ? { inner: layout.margin.inner } : {}),
+            ...(typeof layout.margin?.outer === "number" ? { outer: layout.margin.outer } : {}),
+        },
+    };
+}
+
+export function resolvePrintPreset(
+    config: { print_preset?: string; layout?: LayoutOverrides },
+    typeDefaultPreset?: string,
+): PrintPreset {
+    const presetName = config.print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
+    const basePreset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
+    return applyLayoutOverrides(basePreset, config.layout);
 }
 
 export function listPresets(): { key: string; preset: PrintPreset }[] {

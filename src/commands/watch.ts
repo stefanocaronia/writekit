@@ -13,7 +13,7 @@ import { syncProject } from "./sync.js";
 import { loadTheme } from "../lib/theme.js";
 import { loadTypography } from "../lib/typography.js";
 import { loadType, isValidType } from "../lib/project-type.js";
-import { getPreset, DEFAULT_PRESET } from "../lib/print-presets.js";
+import { resolvePrintPreset } from "../lib/print-presets.js";
 import { assertProject, bookFilename, dirExists } from "../lib/fs-utils.js";
 import { c, icon } from "../lib/ui.js";
 
@@ -77,8 +77,7 @@ async function buildFormat(
     } else if (fmt === "pdf") {
         await buildPdfFile(projectDir, config as any, chapters, theme, fname, contributors, backcover, coverPath, typeSections, typeFeatures, typeDefaultPreset);
     } else if (fmt === "docx") {
-        const presetName = (config as any).print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
-        const preset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
+        const preset = resolvePrintPreset(config as any, typeDefaultPreset);
         await buildDocxFile(projectDir, config as any, chapters, fname, contributors, backcover, coverPath, theme.docx, typeSections, typeFeatures, preset);
     } else if (fmt === "md") {
         const md = await renderBookMd(projectDir, config as any, chapters, contributors, backcover, typeSections, typeFeatures);
