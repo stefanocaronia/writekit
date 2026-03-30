@@ -2,7 +2,7 @@ import { readdir, readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { parseFrontmatter, loadConfig, loadChapters } from "./parse.js";
-import { loadType, isValidType } from "./project-type.js";
+import { loadType, hasType } from "./project-type.js";
 
 interface OutlineChapter {
     chapter: number;
@@ -294,7 +294,7 @@ export async function generateReports(projectDir: string): Promise<string[]> {
     // Determine which reports this type needs
     const config = await loadConfig(projectDir);
     const typeName = config.type || "novel";
-    const typeDef = isValidType(typeName) ? await loadType(typeName) : await loadType("novel");
+    const typeDef = await hasType(typeName, projectDir) ? await loadType(typeName, projectDir) : await loadType("novel");
     const activeReports = typeDef.reports;
 
     const generated: string[] = [];

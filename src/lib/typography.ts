@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { loadType, isValidType } from "./project-type.js";
+import { loadType, hasType } from "./project-type.js";
 
 export type HeadingFormat = "label_number_title" | "label_number" | "number_title" | "number" | "title";
 
@@ -68,8 +68,8 @@ export async function loadTypography(projectDir: string): Promise<Typography> {
         const configRaw = await readFile(join(projectDir, "config.yaml"), "utf-8");
         const config = parseYaml(configRaw) as Record<string, unknown>;
         const typeName = (config.type as string) || "novel";
-        if (isValidType(typeName)) {
-            const typeDef = await loadType(typeName);
+        if (await hasType(typeName, projectDir)) {
+            const typeDef = await loadType(typeName, projectDir);
             const typeRaw = typeDef as unknown as Record<string, unknown>;
             if (typeRaw.typography && typeof typeRaw.typography === "object") {
                 result = { ...result, ...yamlToTypography(typeRaw.typography as Record<string, unknown>) };

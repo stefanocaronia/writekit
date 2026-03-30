@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
@@ -61,6 +61,9 @@ describe("writekit smoke tests", () => {
         expect(existsSync(join(TEST_DIR, "AGENTS.md"))).toBe(true);
         const agents = readFileSync(join(TEST_DIR, "AGENTS.md"), "utf-8");
         expect(agents).toContain("writekit:start");
+        const instructions = readFileSync(join(ROOT, "dist", "agents", "instructions.md"), "utf-8");
+        expect(instructions).toContain("Recommended workflow after `wk init`");
+        expect(instructions).toContain("Back cover");
         const config = readFileSync(join(TEST_DIR, "config.yaml"), "utf-8");
         expect(config).not.toContain("print_preset:");
         expect(config).toContain('cover: ""');
@@ -386,6 +389,70 @@ describe("project types", () => {
             expect(() => {
                 run(`${CLI} add part "Test"`, PAPER_DIR);
             }).toThrow();
+        });
+    });
+
+    describe("local custom type", () => {
+        const WORKSPACE_DIR = join(ROOT, "sandbox", "custom-type-workspace");
+        const CUSTOM_DIR = join(WORKSPACE_DIR, "microbook");
+
+        beforeAll(() => {
+            rmSync(WORKSPACE_DIR, { recursive: true, force: true });
+            mkdirSync(join(WORKSPACE_DIR, "types", "microbook"), { recursive: true });
+            writeFileSync(join(WORKSPACE_DIR, "types", "microbook", "type.yaml"), `name: Microbook
+description: Small custom local type
+default_preset: screen
+sections:
+    - title_page
+    - content
+features:
+    supports_parts: false
+dirs:
+    - manuscript
+    - notes
+    - assets
+    - build
+files:
+    - style.yaml
+    - synopsis.md
+add_commands:
+    - chapter
+    - note
+reports:
+    - status
+schemas:
+    manuscript:
+        required: [title]
+        optional: [chapter, draft]
+sample_files:
+    manuscript/01-opening.md:
+        frontmatter:
+            chapter: 1
+            title: "Opening"
+            draft: 1
+        body: "# Opening\\n\\nStart here...\\n"
+    notes/ideas.md:
+        body: "# Ideas\\n\\nNotes...\\n"
+`, "utf-8");
+            run(`${CLI} init microbook --yes --type microbook`, WORKSPACE_DIR);
+        });
+
+        afterAll(() => {
+            rmSync(WORKSPACE_DIR, { recursive: true, force: true });
+        });
+
+        it("copies the local type into the project", () => {
+            expect(existsSync(join(CUSTOM_DIR, "types", "microbook", "type.yaml"))).toBe(true);
+            const config = readFileSync(join(CUSTOM_DIR, "config.yaml"), "utf-8");
+            expect(config).toContain("type: microbook");
+        });
+
+        it("check and build work for the local type", () => {
+            const checkOut = run(`${CLI} check`, CUSTOM_DIR);
+            expect(checkOut).toContain("All good");
+            run(`${CLI} build html`, CUSTOM_DIR);
+            const htmlFiles = readdirSync(join(CUSTOM_DIR, "build")).filter((f) => f.endsWith(".html"));
+            expect(htmlFiles.length).toBeGreaterThan(0);
         });
     });
 });

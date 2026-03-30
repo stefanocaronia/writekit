@@ -5,7 +5,7 @@ import { stringify, parse as parseYaml } from "yaml";
 import { assertProject, fileExists, dirExists } from "../lib/fs-utils.js";
 import { SECTION_FILE_MAP } from "../lib/parse.js";
 import { slugify, padNumber } from "../lib/slug.js";
-import { loadType, isValidType, getRemoveCommands } from "../lib/project-type.js";
+import { loadType, hasType, getRemoveCommands } from "../lib/project-type.js";
 import { c, icon } from "../lib/ui.js";
 
 async function assertRemoveCommand(projectDir: string, command: string): Promise<void> {
@@ -13,8 +13,8 @@ async function assertRemoveCommand(projectDir: string, command: string): Promise
         const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
         const cfg = parseYaml(raw) as Record<string, unknown>;
         const typeName = (cfg.type as string) || "novel";
-        if (isValidType(typeName)) {
-            const typeDef = await loadType(typeName);
+        if (await hasType(typeName, projectDir)) {
+            const typeDef = await loadType(typeName, projectDir);
             const allowed = getRemoveCommands(typeDef);
             if (!allowed.includes(command)) {
                 console.error(

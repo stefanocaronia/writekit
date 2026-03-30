@@ -8,6 +8,13 @@ A single argumentative or exploratory arc.
 - `concepts/*.md` — terminology definitions. Use consistently.
 - `outline/structure.md` — planned section structure.
 
+## Recommended setup order
+- State the core claim in `thesis.md`.
+- Break it into supporting moves in `arguments/*.md`.
+- Define recurring terms in `concepts/*.md`.
+- Build the progression in `outline/structure.md`.
+- Only then draft the manuscript sections.
+
 ## Rules
 - Structure: introduction -> body sections -> conclusion.
 - No new material in conclusion — synthesize what was argued.
@@ -19,6 +26,10 @@ A single argumentative or exploratory arc.
 - Front matter: dedication, preface, foreword
 - Back matter: afterword, appendix, author-note
 - Parts: `wk add part`, `wk add chapter --part N`
+
+## Back cover guidance
+- Frame the central question, not every argument.
+- Make the value to the reader obvious in one paragraph.
 
 ## Available commands
 `chapter`, `part`, `argument`, `concept`, `note`, `dedication`, `preface`, `foreword`, `afterword`, `appendix`, `author-note`

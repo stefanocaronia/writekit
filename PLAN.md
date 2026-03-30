@@ -113,15 +113,15 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **Heading configurabili** — `part_heading` e `chapter_heading` in typography con 5 formati: `label_number_title`, `label_number`, `number_title`, `number`, `title`. Parti con numeri romani, CJK per zh/ja (一二三), arabi per ko/ar/hi.
 - [x] **i18n esteso** — `part`, `chapter_label`, `partSuffix`, `chapterSuffix`, 8 label sezioni (prologue, epilogue, preface, foreword, afterword, appendix, authorNote, dedication) in 17 lingue.
 - [x] **CSS parti e sezioni** — `.part-page`, `.chapter-number`, `.chapter-author`, `.toc-part`, `.toc-author` in tutti e 4 i temi CSS.
-- [ ] **Agent instructions complete** — completare le istruzioni embedded per un agent autonomo:
-    - Workflow completo step-by-step (config → style → synopsis → outline → characters → write)
-    - Come popolare i file iniziali dopo `wk init`
-    - Sintassi footnotes e immagini nel markdown
-    - Sections disponibili per tipo (paper non ha cover/colophon)
-    - Come scrivere backcover.md (pitch commerciale, blurb)
-    - Abstract e keywords nel config.yaml per paper
-    - Come usare `wk stats` per valutare il bilanciamento
-    - Parti e front/back matter: struttura directory, comandi, frontmatter
+- [x] **Agent instructions complete** — istruzioni embedded estese per agent autonomi:
+    - workflow consigliato dopo `wk init`
+    - ordine di popolamento dei file iniziali
+    - sintassi footnotes e immagini
+    - sections disponibili per tipo
+    - linee guida per `backcover.md`
+    - abstract e keywords per paper
+    - uso di `wk stats`
+    - parti e front/back matter: struttura e comandi
 - [ ] **DOCX template custom** — da rifare con approccio diverso. `externalStyles` della libreria docx non funziona. Serve aprire il .docx come zip e sostituire document.xml mantenendo styles/fonts/settings del template.
 
 ---

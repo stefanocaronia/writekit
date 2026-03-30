@@ -4,7 +4,7 @@ import { join, extname } from "node:path";
 import { parse as parseYaml, stringify } from "yaml";
 import { assertProject, fileExists } from "../lib/fs-utils.js";
 import { slugify } from "../lib/slug.js";
-import { loadType, isValidType } from "../lib/project-type.js";
+import { loadType, hasType } from "../lib/project-type.js";
 import { c, icon } from "../lib/ui.js";
 
 async function replaceInMdFiles(dir: string, oldName: string, newName: string): Promise<number> {
@@ -44,8 +44,8 @@ async function assertRenameCommand(projectDir: string, dir: string): Promise<voi
         const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
         const cfg = parseYaml(raw) as Record<string, unknown>;
         const typeName = (cfg.type as string) || "novel";
-        if (isValidType(typeName)) {
-            const typeDef = await loadType(typeName);
+        if (await hasType(typeName, projectDir)) {
+            const typeDef = await loadType(typeName, projectDir);
             if (!typeDef.dirs.includes(dir)) {
                 console.error(`\n${icon.error} ${c.red(`"${dir}/" is not available for ${typeDef.name} projects.`)}\n`);
                 process.exit(1);

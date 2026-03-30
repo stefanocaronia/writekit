@@ -4,7 +4,7 @@ import { join, extname } from "node:path";
 import { stringify, parse as parseYaml } from "yaml";
 import { slugify, padNumber } from "../lib/slug.js";
 import { fileExists, dirExists, assertProject, frontmatter } from "../lib/fs-utils.js";
-import { loadType, isValidType } from "../lib/project-type.js";
+import { loadType, hasType } from "../lib/project-type.js";
 import { c, icon } from "../lib/ui.js";
 
 async function ensureDir(dir: string): Promise<void> {
@@ -16,8 +16,8 @@ async function assertAddCommand(projectDir: string, command: string): Promise<vo
         const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
         const cfg = parseYaml(raw) as Record<string, unknown>;
         const typeName = (cfg.type as string) || "novel";
-        if (isValidType(typeName)) {
-            const typeDef = await loadType(typeName);
+        if (await hasType(typeName, projectDir)) {
+            const typeDef = await loadType(typeName, projectDir);
             if (!typeDef.add_commands.includes(command)) {
                 console.error(
                     `\n${icon.error} ${c.red(`"wk add ${command}" is not available for ${typeDef.name} projects.`)}`,
@@ -45,8 +45,8 @@ async function getTypeSchema(projectDir: string): Promise<{ manuscript: Set<stri
         const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
         const cfg = parseYaml(raw) as Record<string, unknown>;
         const typeName = (cfg.type as string) || "novel";
-        if (isValidType(typeName)) {
-            const typeDef = await loadType(typeName);
+        if (await hasType(typeName, projectDir)) {
+            const typeDef = await loadType(typeName, projectDir);
             const msSchema = typeDef.schemas?.manuscript;
             const olSchema = typeDef.schemas?.["outline/chapters"];
             const msFields = new Set([

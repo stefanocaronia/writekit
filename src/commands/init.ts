@@ -1,11 +1,11 @@
 import { Command } from "commander";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, copyFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 import { stringify } from "yaml";
 import { input, select } from "@inquirer/prompts";
 import { frontmatter } from "../lib/fs-utils.js";
-import { loadType, allTypeNames, type ProjectType, type TypeName } from "../lib/project-type.js";
+import { loadType, allTypeNames, resolveTypeFile, type ProjectType } from "../lib/project-type.js";
 import { languageChoices } from "../lib/i18n.js";
 import { ensureAgentsMd } from "../lib/agents.js";
 
@@ -13,7 +13,7 @@ interface InitOptions {
     title: string;
     author: string;
     language: string;
-    type: TypeName;
+    type: string;
 }
 
 async function promptOptions(name: string, skip: boolean, typeFlag?: string): Promise<InitOptions> {
@@ -22,17 +22,19 @@ async function promptOptions(name: string, skip: boolean, typeFlag?: string): Pr
             title: name,
             author: "",
             language: "it",
-            type: (typeFlag as TypeName) || "novel",
+            type: typeFlag || "novel",
         };
     }
 
+    const availableTypes = await allTypeNames(process.cwd());
+
     const type = typeFlag
-        ? (typeFlag as TypeName)
+        ? typeFlag
         : await select({
             message: "Project type:",
-            choices: allTypeNames().map((t) => ({ value: t, name: t })),
+            choices: availableTypes.map((t) => ({ value: t, name: t })),
             default: "novel",
-        }) as TypeName;
+        });
 
     const title = await input({
         message: "Title:",
@@ -204,7 +206,8 @@ export const initCommand = new Command("init")
     .action(async (name: string, opts: { yes?: boolean; type?: string }) => {
         const projectDir = join(process.cwd(), name);
         const options = await promptOptions(name, !!opts.yes, opts.type);
-        const typeDef = await loadType(options.type);
+        const typeDef = await loadType(options.type, process.cwd());
+        const typeSource = await resolveTypeFile(options.type, process.cwd());
 
         const { c, icon } = await import("../lib/ui.js");
         console.log(`\n${icon.book} ${c.bold("Creating project:")} ${c.cyan(name)} ${c.dim(`(${typeDef.name})`)}\n`);
@@ -320,6 +323,13 @@ export const initCommand = new Command("init")
 
         // AGENTS.md
         await ensureAgentsMd(projectDir);
+
+        // Copy custom local type into the new project so future commands can resolve it.
+        if (typeSource?.source === "local") {
+            const targetDir = join(projectDir, "types", options.type);
+            await mkdir(targetDir, { recursive: true });
+            await copyFile(typeSource.path, join(targetDir, "type.yaml"));
+        }
 
         // git init
         let gitOk = false;

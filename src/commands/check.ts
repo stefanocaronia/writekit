@@ -6,7 +6,7 @@ import { SECTION_FILE_MAP, parseFrontmatter } from "../lib/parse.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
 import { listThemes } from "../lib/theme.js";
 import { supportedLanguages } from "../lib/i18n.js";
-import { loadType, isValidType, allTypeNames, type FrontmatterSchema } from "../lib/project-type.js";
+import { loadType, hasType, allTypeNames, type FrontmatterSchema } from "../lib/project-type.js";
 import {
     validateData,
     configSchema,
@@ -168,19 +168,20 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
             const raw = await readFile(join(projectDir, "config.yaml"), "utf-8");
             const cfg = parseYaml(raw) as Record<string, unknown>;
             if (cfg.type && typeof cfg.type === "string") {
-                if (isValidType(cfg.type)) {
+                if (await hasType(cfg.type, projectDir)) {
                     projectTypeName = cfg.type;
                 } else {
+                    const validTypes = await allTypeNames(projectDir);
                     issues.push({
                         level: "error",
-                        message: `config.yaml: unknown type "${cfg.type}" — valid types: ${allTypeNames().join(", ")}`,
+                        message: `config.yaml: unknown type "${cfg.type}" — valid types: ${validTypes.join(", ")}`,
                     });
                 }
             }
         } catch { /* will be caught by config validation below */ }
     }
 
-    const typeDef = await loadType(projectTypeName);
+    const typeDef = await loadType(projectTypeName, projectDir);
 
     // Check required files (config.yaml always + type-specific files)
     // Some files are optional (created by build or user choice)

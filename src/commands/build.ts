@@ -12,7 +12,7 @@ import { assertProject, bookFilename } from "../lib/fs-utils.js";
 import { checkProject, printCheckResults } from "./check.js";
 import { syncProject } from "./sync.js";
 import { loadTypography } from "../lib/typography.js";
-import { loadType, isValidType, type Section, type TypeFeatures } from "../lib/project-type.js";
+import { loadType, hasType, type Section, type TypeFeatures } from "../lib/project-type.js";
 import { resolvePrintPreset } from "../lib/print-presets.js";
 
 const SUPPORTED_FORMATS = ["pdf", "epub", "html", "docx", "md"] as const;
@@ -220,7 +220,7 @@ export const buildCommand = new Command("build")
 
         // Load type sections
         const typeName = config.type || "novel";
-        const typeDef = isValidType(typeName) ? await loadType(typeName) : undefined;
+        const typeDef = await hasType(typeName, projectDir) ? await loadType(typeName, projectDir) : undefined;
         const typeSections = typeDef?.sections;
         const typeFeatures = typeDef?.features;
 

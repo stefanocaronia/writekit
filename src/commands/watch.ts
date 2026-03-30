@@ -12,7 +12,7 @@ import { renderBookMd } from "../lib/md.js";
 import { syncProject } from "./sync.js";
 import { loadTheme } from "../lib/theme.js";
 import { loadTypography } from "../lib/typography.js";
-import { loadType, isValidType } from "../lib/project-type.js";
+import { loadType, hasType } from "../lib/project-type.js";
 import { resolvePrintPreset } from "../lib/print-presets.js";
 import { assertProject, bookFilename, dirExists } from "../lib/fs-utils.js";
 import { c, icon } from "../lib/ui.js";
@@ -119,7 +119,7 @@ async function runCycle(
         } else {
             const theme = await loadTheme(config.theme, projectDir);
             const typeName = config.type || "novel";
-            const typeDef = isValidType(typeName) ? await loadType(typeName) : undefined;
+            const typeDef = await hasType(typeName, projectDir) ? await loadType(typeName, projectDir) : undefined;
 
             for (const fmt of formats) {
                 const buildStart = Date.now();

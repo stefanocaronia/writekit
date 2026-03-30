@@ -9,6 +9,24 @@ You are working inside a **writekit** project. Read `README.md` for full command
 3. Read `synopsis.md` — the story/argument summary. Stay aligned.
 4. Read the type-specific instructions for your project type.
 
+## Recommended workflow after `wk init`
+
+Populate the project in this order unless the author asks otherwise:
+
+1. `config.yaml` — title, author, language, metadata, build formats, theme, print preset if needed.
+2. `style.yaml` — POV, tense, tone, voice, writing rules, typography overrides if explicitly requested.
+3. `synopsis.md` — one-page summary of the whole work.
+4. Outline files — structure before prose:
+   - novel: `outline/plot.md`, `outline/chapters/*.md`
+   - collection: `outline/contents.md`
+   - essay/paper: `outline/structure.md`
+5. Reference/context files:
+   - novel: `characters/*.md`, `world/*.md`, `timeline.yaml`
+   - essay: `thesis.md`, `arguments/*.md`, `concepts/*.md`
+   - paper: `config.yaml` `abstract` and `keywords`, `bibliography.yaml`, `concepts/*.md`
+6. Front/back matter if the project needs it.
+7. Only then write or revise `manuscript/`.
+
 ## Commands
 
 Use `wk` commands. Never create, rename, or move files manually.
@@ -46,11 +64,46 @@ See `README.md` for the full list.
 - Section titles come from i18n. Custom title via frontmatter `title:`.
 - `show_title: false` hides heading in page. `toc: false` excludes from TOC.
 
+### Parts and section workflow
+
+- Create a part with `wk add part "Title"`.
+- Add a chapter inside a part with `wk add chapter "Title" --part N`.
+- Use parts only for works that need macro-structure; do not create them by habit.
+- Front/back matter stays in `manuscript/` root, never inside a part directory.
+- If parts exist, numbered root chapters should normally be moved into parts.
+
 ## Markdown
 
 - Footnotes: `text[^1]` + `[^1]: Note text.`
 - Images: `![alt](assets/img.jpg)` or `![alt](assets/img.jpg){width=50%}`
 - Scene breaks: `---` or `***` (never just a blank line)
+
+Use images only when they materially help the work. Keep paths relative to project root, usually `assets/...`.
+
+## Back cover
+
+If the project has `backcover.md`, write it as reader-facing copy, not as a synopsis dump:
+
+- Start with a strong hook.
+- Make the promise of the book clear.
+- Keep spoilers out.
+- Prefer a short blurb or commercial pitch over analytical summary.
+
+## Output structure by type
+
+- Novel / collection / essay: cover -> title page -> TOC -> content -> back cover -> about -> colophon
+- Paper: title block -> abstract -> content -> bibliography
+
+Paper projects do not use cover, title page, TOC, back cover, about, or colophon.
+
+## Using `wk stats`
+
+Run `wk stats` when planning or revising:
+
+- Check chapter balance and outliers.
+- Check total word count and reading time.
+- Use it to spot chapters that are too short, too long, or structurally uneven.
+- Treat stats as signals, not as hard rules.
 
 ## Workflow
 
