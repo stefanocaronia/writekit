@@ -3,6 +3,12 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { dirExists, fileExists } from "../support/fs-utils.js";
+import {
+    findInstalledPluginPackage,
+    listInstalledPluginPackages,
+    packageWritekitConfig,
+    resolvePluginPackageFile,
+} from "../support/plugin-packages.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TYPES_DIR = join(__dirname, "..", "types");
@@ -90,6 +96,9 @@ export async function allTypeNames(projectDir?: string): Promise<string[]> {
         for (const name of await listLocalTypeNames(projectDir)) {
             names.add(name);
         }
+        for (const pluginPackage of await listInstalledPluginPackages("type", projectDir)) {
+            names.add(pluginPackage.pluginName);
+        }
     }
     return [...names].sort();
 }
@@ -98,13 +107,19 @@ export async function hasType(name: string, projectDir?: string): Promise<boolea
     if (projectDir && await fileExists(join(localTypesDir(projectDir), name, "type.yaml"))) {
         return true;
     }
-    return isValidType(name);
+    if (isValidType(name)) {
+        return true;
+    }
+    if (!projectDir) {
+        return false;
+    }
+    return (await findInstalledPluginPackage("type", name, projectDir)) !== null;
 }
 
 export async function resolveTypeFile(
     name: string,
     projectDir?: string,
-): Promise<{ path: string; source: "local" | "builtin" } | null> {
+): Promise<{ path: string; source: "local" | "builtin" | "package" } | null> {
     if (projectDir) {
         const localTypeFile = join(localTypesDir(projectDir), name, "type.yaml");
         if (await fileExists(localTypeFile)) {
@@ -114,6 +129,17 @@ export async function resolveTypeFile(
 
     if (isValidType(name)) {
         return { path: join(TYPES_DIR, name, "type.yaml"), source: "builtin" };
+    }
+
+    if (projectDir) {
+        const pluginPackage = await findInstalledPluginPackage("type", name, projectDir);
+        if (pluginPackage) {
+            const definition = packageWritekitConfig(pluginPackage)?.type?.definition ?? "type.yaml";
+            return {
+                path: resolvePluginPackageFile(pluginPackage, definition),
+                source: "package",
+            };
+        }
     }
 
     return null;

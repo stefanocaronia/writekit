@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const ROOT = process.cwd();
 const CLI = `node ${join(ROOT, "dist", "cli.js")}`;
@@ -14,6 +14,14 @@ function run(cmd: string, cwd?: string): string {
         encoding: "utf-8",
         timeout: 30_000,
     });
+}
+
+function writeFiles(baseDir: string, files: Record<string, string>): void {
+    for (const [relativePath, content] of Object.entries(files)) {
+        const fullPath = join(baseDir, relativePath);
+        mkdirSync(dirname(fullPath), { recursive: true });
+        writeFileSync(fullPath, content, "utf-8");
+    }
 }
 
 describe("writekit smoke tests", () => {
@@ -470,6 +478,112 @@ sample_files:
             run(`${CLI} build html`, CUSTOM_DIR);
             const htmlFiles = readdirSync(join(CUSTOM_DIR, "build")).filter((f) => f.endsWith(".html"));
             expect(htmlFiles.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe("external package plugins", () => {
+        const EXTERNAL_WORKSPACE_DIR = join(ROOT, "sandbox", "external-plugin-workspace");
+        const EXTERNAL_TYPE_DIR = join(EXTERNAL_WORKSPACE_DIR, "package-type-book");
+        const PLUGINS_NODE_MODULES = join(EXTERNAL_WORKSPACE_DIR, "node_modules");
+
+        beforeAll(() => {
+            rmSync(EXTERNAL_WORKSPACE_DIR, { recursive: true, force: true });
+
+            writeFiles(join(PLUGINS_NODE_MODULES, "writekit-type-atlas"), {
+                "package.json": JSON.stringify({
+                    name: "writekit-type-atlas",
+                    version: "1.0.0",
+                    type: "module",
+                    exports: "./index.js",
+                    writekit: {
+                        type: {
+                            definition: "./defs/type.yaml",
+                        },
+                    },
+                }, null, 2),
+                "index.js": "export default {};\n",
+                "defs/type.yaml": `name: Atlas
+description: External package type
+default_preset: screen
+sections:
+    - title_page
+    - content
+features:
+    supports_parts: false
+dirs:
+    - manuscript
+    - notes
+    - assets
+    - build
+files:
+    - style.yaml
+    - synopsis.md
+add_commands:
+    - chapter
+    - note
+reports:
+    - status
+schemas:
+    manuscript:
+        required: [title]
+        optional: [chapter, draft]
+sample_files:
+    manuscript/01-opening.md:
+        frontmatter:
+            chapter: 1
+            title: "Opening"
+        body: "# Opening\\n\\nExternal type package.\\n"
+`,
+            });
+
+            writeFiles(join(PLUGINS_NODE_MODULES, "writekit-format-typescript"), {
+                "package.json": JSON.stringify({
+                    name: "writekit-format-typescript",
+                    version: "1.0.0",
+                    type: "module",
+                    exports: "./src/plugin.js",
+                }, null, 2),
+                "src/plugin.js": `export default {
+  extension: "ts.txt",
+  async build(ctx) {
+    return "TITLE=" + ctx.config.title + "\\nCHAPTERS=" + ctx.chapters.length;
+  }
+};
+`,
+            });
+
+            run(`${CLI} init package-type-book --yes --type atlas`, EXTERNAL_WORKSPACE_DIR);
+        });
+
+        afterAll(() => {
+            rmSync(EXTERNAL_WORKSPACE_DIR, { recursive: true, force: true });
+        });
+
+        it("init resolves an external package type", () => {
+            expect(existsSync(join(EXTERNAL_TYPE_DIR, "config.yaml"))).toBe(true);
+            const config = readFileSync(join(EXTERNAL_TYPE_DIR, "config.yaml"), "utf-8");
+            expect(config).toContain("type: atlas");
+        });
+
+        it("check and build work for an external package type", () => {
+            const checkOut = run(`${CLI} check`, EXTERNAL_TYPE_DIR);
+            expect(checkOut).toContain("All good");
+            run(`${CLI} build html`, EXTERNAL_TYPE_DIR);
+            const htmlFiles = readdirSync(join(EXTERNAL_TYPE_DIR, "build")).filter((f) => f.endsWith(".html"));
+            expect(htmlFiles.length).toBeGreaterThan(0);
+        });
+
+        it("build resolves an external package format plugin", () => {
+            const configPath = join(EXTERNAL_TYPE_DIR, "config.yaml");
+            const config = readFileSync(configPath, "utf-8").replace("- html", "- typescript");
+            writeFileSync(configPath, config, "utf-8");
+
+            const checkOut = run(`${CLI} check`, EXTERNAL_TYPE_DIR);
+            expect(checkOut).toContain("All good");
+
+            run(`${CLI} build`, EXTERNAL_TYPE_DIR);
+            const builtFiles = readdirSync(join(EXTERNAL_TYPE_DIR, "build")).filter((f) => f.endsWith(".ts.txt"));
+            expect(builtFiles.length).toBeGreaterThan(0);
         });
     });
 });

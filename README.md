@@ -45,6 +45,15 @@ Each type sets up only the folders and files you need. You choose the type once 
 wk init my-essay --type essay
 ```
 
+You can also install external type packages. A package named `writekit-type-screenplay` makes the type available as `screenplay`:
+
+```bash
+npm install writekit-type-screenplay
+wk init my-script --type screenplay
+```
+
+External type packages are discovered from `node_modules` in the current folder or any parent folder. By default they should include a `type.yaml` file at package root. If needed, the package can point somewhere else with `package.json -> writekit.type.definition`.
+
 ### 4. Build your book
 
 ```bash
@@ -208,6 +217,17 @@ wk build plaintext
 ```
 
 Local formats can also be listed in `build_formats` in `config.yaml`.
+
+#### External format packages
+
+You can also install a format plugin as an npm package. A package named `writekit-format-latex` makes the format available as `latex`:
+
+```bash
+npm install writekit-format-latex
+wk build latex
+```
+
+The package should export a default plugin object with a `build(ctx)` function. By default, writekit loads the package entrypoint; if needed, the package can override it with `package.json -> writekit.format.entry`.
 
 ### Validating and watching
 

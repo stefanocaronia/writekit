@@ -9,6 +9,13 @@ import { renderBookMd } from "./md.js";
 import { loadTypography } from "../support/typography.js";
 import { resolvePrintPreset } from "./print-presets.js";
 import { bookFilename, dirExists, fileExists } from "../support/fs-utils.js";
+import {
+    findInstalledPluginPackage,
+    listInstalledPluginPackages,
+    packageWritekitConfig,
+    resolvePluginPackageEntry,
+    resolvePluginPackageFile,
+} from "../support/plugin-packages.js";
 import { loadContributors, loadBackcover, resolveCover, type BookConfig, type Chapter } from "../project/parse.js";
 import type { Theme } from "../support/theme.js";
 import type { Section, TypeFeatures } from "../project/project-type.js";
@@ -229,6 +236,30 @@ async function loadLocalPlugin(projectDir: string, name: string): Promise<Format
     };
 }
 
+async function loadExternalPlugin(projectDir: string, name: string): Promise<FormatPlugin | null> {
+    const pluginPackage = await findInstalledPluginPackage("format", name, projectDir);
+    if (!pluginPackage) return null;
+
+    const formatConfig = packageWritekitConfig(pluginPackage)?.format;
+    const entry = formatConfig?.entry
+        ? resolvePluginPackageFile(pluginPackage, formatConfig.entry)
+        : resolvePluginPackageEntry(pluginPackage, projectDir);
+
+    const mod = await import(pathToFileURL(entry).href);
+    const plugin = (mod.default ?? mod.plugin ?? mod) as Partial<FormatPlugin>;
+
+    if (!plugin || typeof plugin.build !== "function") {
+        throw new Error(`Invalid format plugin "${name}" in ${pluginPackage.packageName}: missing build()`);
+    }
+
+    return {
+        name: pluginPackage.pluginName,
+        extension: plugin.extension,
+        description: plugin.description,
+        build: plugin.build,
+    };
+}
+
 export function builtinFormatNames(): readonly string[] {
     return BUILTIN_FORMATS;
 }
@@ -241,6 +272,11 @@ export async function allFormatNames(projectDir?: string): Promise<string[]> {
             const ext = extname(entry);
             if (!LOCAL_PLUGIN_EXTS.has(ext)) continue;
             names.add(basename(entry, ext));
+        }
+    }
+    if (projectDir) {
+        for (const pluginPackage of await listInstalledPluginPackages("format", projectDir)) {
+            names.add(pluginPackage.pluginName);
         }
     }
     return [...names].sort();
@@ -262,13 +298,16 @@ export async function resolveConfiguredFormats(projectDir: string, configured: u
 export async function hasFormat(name: string, projectDir?: string): Promise<boolean> {
     if (name in builtinPlugins) return true;
     if (!projectDir) return false;
-    return (await resolveLocalFormatFile(projectDir, name)) !== null;
+    if ((await resolveLocalFormatFile(projectDir, name)) !== null) return true;
+    return (await findInstalledPluginPackage("format", name, projectDir)) !== null;
 }
 
 export async function resolveFormatPlugin(name: string, projectDir?: string): Promise<FormatPlugin | null> {
     if (name in builtinPlugins) return builtinPlugins[name];
     if (!projectDir) return null;
-    return loadLocalPlugin(projectDir, name);
+    const localPlugin = await loadLocalPlugin(projectDir, name);
+    if (localPlugin) return localPlugin;
+    return loadExternalPlugin(projectDir, name);
 }
 
 export async function buildFormat(

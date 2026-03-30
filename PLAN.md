@@ -218,18 +218,19 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
         - Il builder chiama `type.renderSection("abstract", ...)` invece di `if (config.type === "paper")`
     - **Fase 2 (type esterni)** — permettere type da npm package:
         - Naming convention: `writekit-type-{name}` (es. `writekit-type-screenplay`)
-        - Type loader cerca in: builtin `src/types/` → `node_modules/writekit-type-*`
-        - Il package esporta `type.yaml` + `TypePlugin`
-        - `wk init my-script --type screenplay` funziona se il package è installato
+        - [x] Type loader cerca in: locale `types/` → builtin `src/types/` → `node_modules/writekit-type-*`
+        - [x] `wk init my-script --type screenplay` funziona se il package è installato
+        - [x] Supporto data-driven: il package fornisce `type.yaml` (o `package.json -> writekit.type.definition`)
+        - [ ] Hook runtime `TypePlugin` per logica custom non ancora implementati
     - **Fase 2b (type locali)** — type nel progetto: `types/{name}/` con type.yaml + index.ts
     - **Impatto sullo sviluppo attuale**: da subito, quando si aggiunge logica type-specific, isolarla in modo che sia spostabile in un modulo. Evitare `if (config.type === "X")` nel core — preferire dati nel type.yaml o hook pattern.
     - **Già fatto**: `TypeFeatures` (show_chapter_author, supports_parts) nel type.yaml, builder ricevono features invece di controllare config.type.
 - [ ] **Format plugin system** — builder di output estensibili dalla community:
     - [x] Fase locale: il core registra i builder builtin (html, epub, pdf, docx, md) in un registry e supporta format locali in `formats/{name}.mjs|js|cjs`
-    - [ ] Fase package: plugin via npm e discovery esterno
+    - [x] Fase package: plugin via npm e discovery esterno in `node_modules/writekit-format-*`
     - Interfaccia `FormatPlugin`: `{ name, extension, build(projectDir, config, chapters, theme, features) }`
     - Plugin via npm: `writekit-format-{name}` (es. `writekit-format-latex`, `writekit-format-asciidoc`)
-    - Format loader cerca in: builtin → `node_modules/writekit-format-*`
+    - [x] Format loader cerca in: locale → builtin → `node_modules/writekit-format-*`
     - `wk build latex` funziona se il plugin è installato
     - `config.yaml build_formats: [html, epub, latex]` include format custom
     - Il TypePlugin può dichiarare format aggiuntivi specifici per il tipo (es. screenplay → fountain)
