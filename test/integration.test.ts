@@ -10,6 +10,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, copyFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import JSZip from "jszip";
 
 const ROOT = process.cwd();
 const CLI = `node ${join(ROOT, "dist", "cli.js")}`;
@@ -569,6 +570,58 @@ Water in Italian culture carries deep symbolic weight: purification, memory, the
         run(`${CLI} build docx`, DIR);
         const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".docx"));
         expect(files.length).toBeGreaterThan(0);
+    });
+
+    it("build docx keeps chapter footnotes distinct", async () => {
+        const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".docx"));
+        expect(files.length).toBeGreaterThan(0);
+
+        const docxPath = join(DIR, "build", files[0]);
+        const zip = await JSZip.loadAsync(readFileSync(docxPath));
+        const documentXml = await zip.file("word/document.xml")!.async("string");
+        const footnotesXml = await zip.file("word/footnotes.xml")!.async("string");
+
+        const refIds = [...documentXml.matchAll(/<w:footnoteReference[^>]*w:id="(\d+)"/g)]
+            .map((match) => Number(match[1]))
+            .filter((id) => id >= 3);
+        const footnoteIds = [...footnotesXml.matchAll(/<w:footnote\b[^>]*w:id="(\d+)"/g)]
+            .map((match) => Number(match[1]))
+            .filter((id) => id >= 3);
+
+        expect(new Set(refIds).size).toBeGreaterThanOrEqual(2);
+        expect(new Set(footnoteIds).size).toBeGreaterThanOrEqual(2);
+        expect(footnotesXml).toContain("It was actually a Tuesday");
+        expect(footnotesXml).toContain("hiding from the authorities tends to age a person");
+    });
+
+    it("build docx puts the title page on recto when cover and print preset are used", async () => {
+        const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".docx"));
+        expect(files.length).toBeGreaterThan(0);
+
+        const docxPath = join(DIR, "build", files[0]);
+        const zip = await JSZip.loadAsync(readFileSync(docxPath));
+        const documentXml = await zip.file("word/document.xml")!.async("string");
+        const titleIndex = documentXml.indexOf("The Fountain of Secrets");
+        expect(titleIndex).toBeGreaterThan(-1);
+
+        const windowStart = Math.max(0, titleIndex - 2200);
+        const context = documentXml.slice(windowStart, titleIndex + 200);
+
+        expect(context).toContain('<w:color w:val="FFFFFF"');
+        expect(context).toContain('<w:t xml:space="preserve"> </w:t>');
+        expect(context).toContain('<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0"');
+        expect(context).toContain('<w:pgMar w:top="1020" w:right="1020" w:bottom="1020" w:left="1247"');
+    });
+
+    it("build docx encodes mirror margins for print presets", async () => {
+        const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".docx"));
+        expect(files.length).toBeGreaterThan(0);
+
+        const docxPath = join(DIR, "build", files[0]);
+        const zip = await JSZip.loadAsync(readFileSync(docxPath));
+        const settingsXml = await zip.file("word/settings.xml")!.async("string");
+
+        expect(settingsXml).toContain("<w:mirrorMargins/>");
     });
 
     it("build md works", () => {
@@ -1176,6 +1229,17 @@ Luca Conti is Professor of Public Health at the University of Bologna. His resea
             const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(`.${fmt}`));
             expect(files.length, `expected ${fmt} file`).toBeGreaterThan(0);
         }
+    });
+
+    it("build docx does not encode mirror margins for a4 preset", async () => {
+        const files = readdirSync(join(DIR, "build")).filter((f) => f.endsWith(".docx"));
+        expect(files.length).toBeGreaterThan(0);
+
+        const docxPath = join(DIR, "build", files[0]);
+        const zip = await JSZip.loadAsync(readFileSync(docxPath));
+        const settingsXml = await zip.file("word/settings.xml")!.async("string");
+
+        expect(settingsXml).not.toContain("<w:mirrorMargins/>");
     });
 });
 

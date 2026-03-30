@@ -387,7 +387,7 @@ If you place a `cover.jpg` or `cover.png` in the `assets/` folder, it will autom
 
 ### Print presets
 
-The `print_preset` field in config.yaml controls page size, margins, and print layout features:
+The optional `print_preset` field in config.yaml controls page size, margins, and print layout features:
 
 ```yaml
 print_preset: trade    # 6×9in, US trade paperback
@@ -395,7 +395,7 @@ print_preset: trade    # 6×9in, US trade paperback
 
 | Preset | Size | Page numbers | Running header | Mirror margins | Recto start |
 |---|---|---|---|---|---|
-| `screen` (default) | A4 | no | no | no | no |
+| `screen` | A4 | no | no | no | no |
 | `a4` | 210×297mm | yes | no | no | no |
 | `a5` | 148×210mm | yes | yes | yes | yes |
 | `pocket` | 4.25×7in | yes | yes | yes | yes |
@@ -411,7 +411,12 @@ print_preset: trade    # 6×9in, US trade paperback
 - **Mirror margins** — inner margin (gutter) is larger for binding, alternates sides on odd/even pages
 - **Recto start** — chapters and parts start on right-hand pages (blank page inserted if needed)
 
-The `screen` preset is for preview — no print features. Switch to a book preset when ready for print.
+If `print_preset` is omitted, writekit uses the default for the project type:
+
+- `novel`, `collection`, `essay` → `a5`
+- `paper` → `a4`
+
+Use `print_preset: screen` when you want a preview-oriented layout with no print features.
 
 ### Supported languages
 

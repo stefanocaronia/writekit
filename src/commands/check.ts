@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { fileExists, dirExists } from "../lib/fs-utils.js";
-import { SECTION_FILE_MAP } from "../lib/parse.js";
+import { SECTION_FILE_MAP, parseFrontmatter } from "../lib/parse.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
 import { listThemes } from "../lib/theme.js";
 import { supportedLanguages } from "../lib/i18n.js";
@@ -200,6 +200,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
     }
 
     // Validate frontmatter using type-defined schemas
+    const sectionFileNames = Object.keys(SECTION_FILE_MAP);
     for (const [folder, schema] of Object.entries(typeDef.schemas)) {
         const dir = join(projectDir, folder);
         const files = await getMdFiles(dir);
@@ -209,27 +210,21 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
         }
 
         for (const file of files) {
+            if (folder === "manuscript" && sectionFileNames.includes(file)) {
+                continue;
+            }
+
             const content = await readFile(join(dir, file), "utf-8");
             const filePath = `${folder}/${file}`;
 
-            // Check frontmatter exists
-            const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-            if (!fmMatch) {
+            const { data: frontmatterData, body } = parseFrontmatter(content);
+            if (body === content) {
                 issues.push({ level: "warning", message: `${filePath}: missing frontmatter` });
                 continue;
             }
 
-            // Parse frontmatter YAML
-            const { data, issues: parseIssues } = tryParseYaml(fmMatch[1], filePath);
-            issues.push(
-                ...parseIssues.map((i) => ({
-                    ...i,
-                    message: i.message.replace(filePath, `${filePath} frontmatter`),
-                })),
-            );
-
-            if (data) {
-                issues.push(...validateFrontmatter(data, schema, filePath));
+            if (frontmatterData) {
+                issues.push(...validateFrontmatter(frontmatterData, schema, filePath));
             }
         }
     }
@@ -237,7 +232,6 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
     // Check manuscript naming convention (NN-slug.md) and parts
     const manuscriptDir = join(projectDir, "manuscript");
     const manuscriptFiles = await getMdFiles(manuscriptDir);
-    const sectionFileNames = Object.keys(SECTION_FILE_MAP);
     let hasParts = false;
     try {
         const entries = await readdir(manuscriptDir);
@@ -295,17 +289,15 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
                 const manuscriptDir = join(projectDir, "manuscript");
                 const msFiles = await getMdFiles(manuscriptDir);
                 for (const file of msFiles) {
+                    if (sectionFileNames.includes(file)) continue;
                     const content = await readFile(join(manuscriptDir, file), "utf-8");
-                    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-                    if (fmMatch) {
-                        const { data } = tryParseYaml(fmMatch[1], `manuscript/${file}`);
-                        if (data?.author && typeof data.author === "string" && data.author) {
-                            if (!globalAuthors.has(data.author.toLowerCase())) {
-                                issues.push({
-                                    level: "warning",
-                                    message: `manuscript/${file}: author "${data.author}" is not in config.yaml authors`,
-                                });
-                            }
+                    const { data } = parseFrontmatter(content);
+                    if (data?.author && typeof data.author === "string" && data.author) {
+                        if (!globalAuthors.has(data.author.toLowerCase())) {
+                            issues.push({
+                                level: "warning",
+                                message: `manuscript/${file}: author "${data.author}" is not in config.yaml authors`,
+                            });
                         }
                     }
                 }

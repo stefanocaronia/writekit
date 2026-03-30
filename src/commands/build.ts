@@ -91,8 +91,7 @@ async function buildDocx(
     const coverPath = await resolveCover(projectDir, config);
     const presetName = config.print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
     const preset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
-    const layoutFlags = { pageNumbers: preset.pageNumbers, runningHeader: preset.runningHeader, mirrorMargins: preset.mirrorMargins };
-    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, sections, features, layoutFlags);
+    const outPath = await buildDocxFile(projectDir, config, chapters, buildFilename(config,"docx"), contributors, backcover, coverPath, theme.docx, sections, features, preset);
     console.log(`  → ${outPath}`);
     console.log(`  ${chapters.length} chapter(s)`);
 }

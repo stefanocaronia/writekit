@@ -93,7 +93,7 @@ ${isBook ? "edition: 1\n" : ""}date: ""
 build_formats:
     - html
 theme: default
-${isBook ? 'cover: ""\nprint_preset: a5\n' : ""}
+${isBook ? 'cover: ""\n' : ""}
 # Legal
 license: All rights reserved
 license_url: ""

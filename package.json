@@ -11,7 +11,9 @@
     "build": "tsc && node -e \"const{cpSync}=require('fs');cpSync('src/themes','dist/themes',{recursive:true});cpSync('src/types','dist/types',{recursive:true});cpSync('src/agents','dist/agents',{recursive:true})\"",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preflight:layout": "node scripts/preflight-layout.mjs",
+    "review:layout": "node scripts/layout-review.mjs"
   },
   "keywords": [
     "novel",

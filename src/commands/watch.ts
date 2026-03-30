@@ -79,8 +79,7 @@ async function buildFormat(
     } else if (fmt === "docx") {
         const presetName = (config as any).print_preset ?? typeDefaultPreset ?? DEFAULT_PRESET;
         const preset = getPreset(presetName) ?? getPreset(DEFAULT_PRESET)!;
-        const layoutFlags = { pageNumbers: preset.pageNumbers, runningHeader: preset.runningHeader, mirrorMargins: preset.mirrorMargins };
-        await buildDocxFile(projectDir, config as any, chapters, fname, contributors, backcover, coverPath, theme.docx, typeSections, typeFeatures, layoutFlags);
+        await buildDocxFile(projectDir, config as any, chapters, fname, contributors, backcover, coverPath, theme.docx, typeSections, typeFeatures, preset);
     } else if (fmt === "md") {
         const md = await renderBookMd(projectDir, config as any, chapters, contributors, backcover, typeSections, typeFeatures);
         await writeFile(join(buildDir, fname), md, "utf-8");

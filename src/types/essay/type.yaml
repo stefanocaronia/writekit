@@ -1,5 +1,6 @@
 name: Essay
 description: Single essay or long-form non-fiction
+default_preset: a5
 sections:
     - cover
     - title_page

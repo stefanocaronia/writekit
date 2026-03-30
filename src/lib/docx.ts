@@ -20,12 +20,14 @@ import {
     Header,
     Footer,
     PageNumber,
+    SectionType,
     TabStopType,
     TabStopPosition,
 } from "docx";
 import type { ISectionOptions } from "docx";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import JSZip from "jszip";
 import { SECTION_LABEL_KEY } from "./parse.js";
 import type { BookConfig, Chapter, Contributor } from "./parse.js";
 import { buildColophonLines, formatAuthors } from "./metadata.js";
@@ -35,6 +37,7 @@ import type { DocxStyle } from "./theme.js";
 import type { Section, TypeFeatures } from "./project-type.js";
 import { loadTypography, formatPartHeading, formatChapterHeading } from "./typography.js";
 import type { Labels as TypoLabels } from "./typography.js";
+import { DEFAULT_PRESET, getPreset, type PrintPreset } from "./print-presets.js";
 // Template support removed — externalStyles doesn't work reliably. See PLAN.md.
 
 // Module-level style, set by buildDocx before rendering
@@ -45,6 +48,8 @@ let MUTED = "666666";
 let TYPO_INDENT = convertInchesToTwip(0.3);
 let TYPO_SPACING = 0;
 let TYPO_ALIGN: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.JUSTIFIED;
+let PAGE_SIZE = { width: 8391, height: 11906 };
+let CONTENT_WIDTH = PAGE_SIZE.width - convertInchesToTwip(2);
 
 /** Convert a CSS-like spacing value (e.g. "0.5rem", "6pt", "0") to twips. */
 function spacingToTwips(value: string): number {
@@ -56,6 +61,35 @@ function spacingToTwips(value: string): number {
     if (v.endsWith("pt")) return Math.round(num * 20);    // 1pt = 20 twips
     if (v.endsWith("px")) return Math.round(num * 15);    // 1px ≈ 0.75pt ≈ 15 twips
     return Math.round(num * 240); // default: treat as rem
+}
+
+function mmToTwips(value: number): number {
+    return Math.round((value / 25.4) * 1440);
+}
+
+async function applyDocxSettingsPatch(buffer: Buffer, mirrorMargins: boolean): Promise<Buffer> {
+    const zip = await JSZip.loadAsync(buffer);
+    const settingsFile = zip.file("word/settings.xml");
+    if (!settingsFile) {
+        return buffer;
+    }
+
+    const originalXml = await settingsFile.async("string");
+    const hasMirrorMargins = originalXml.includes("<w:mirrorMargins");
+    let patchedXml = originalXml;
+
+    if (mirrorMargins && !hasMirrorMargins) {
+        patchedXml = patchedXml.replace("</w:settings>", "<w:mirrorMargins/></w:settings>");
+    } else if (!mirrorMargins && hasMirrorMargins) {
+        patchedXml = patchedXml.replace(/<w:mirrorMargins\s*\/>/g, "");
+    }
+
+    if (patchedXml === originalXml) {
+        return buffer;
+    }
+
+    zip.file("word/settings.xml", patchedXml);
+    return zip.generateAsync({ type: "nodebuffer" });
 }
 
 // ── Inline parsing ──────────────────────────────────────────────────────────
@@ -148,6 +182,12 @@ function extractFootnotes(markdown: string): FootnoteMap {
 
 function stripFootnoteDefinitions(markdown: string): string {
     return markdown.replace(/^\[\^[^\]]+\]:\s*.+$/gm, "").trim();
+}
+
+function namespaceFootnotes(markdown: string, namespace: string): string {
+    return markdown
+        .replace(/^\[\^([^\]]+)\]:/gm, (_match, id: string) => `[^${namespace}${id}]:`)
+        .replace(/\[\^([^\]]+)\](?!:)/g, (_match, id: string) => `[^${namespace}${id}]`);
 }
 
 // ── Inline parsing ──────────────────────────────────────────────────────────
@@ -426,7 +466,7 @@ function parseMarkdownToDocxBlocks(
                         new TableRow({
                             children: Array.from({ length: colCount }, (_, ci) =>
                                 new TableCell({
-                                    width: { size: Math.floor(TABLE_WIDTH / colCount), type: WidthType.DXA },
+                                    width: { size: Math.floor(CONTENT_WIDTH / colCount), type: WidthType.DXA },
                                     children: [
                                         new Paragraph({
                                             children: parseInline(cells[ci] || "", footnotes),
@@ -442,7 +482,7 @@ function parseMarkdownToDocxBlocks(
                 blocks.push(
                     new Table({
                         rows,
-                        width: { size: TABLE_WIDTH, type: WidthType.DXA },
+                        width: { size: CONTENT_WIDTH, type: WidthType.DXA },
                         layout: TableLayoutType.FIXED,
                     }),
                 );
@@ -473,10 +513,6 @@ function parseMarkdownToDocxBlocks(
 
 // ── Document builder ────────────────────────────────────────────────────────
 
-const PAGE_A5 = { width: 8391, height: 11906 };
-const PAGE_MARGIN = 1440; // 1 inch in twips
-const TABLE_WIDTH = PAGE_A5.width - PAGE_MARGIN * 2; // available content width
-
 export async function buildDocx(
     projectDir: string,
     config: BookConfig,
@@ -488,7 +524,7 @@ export async function buildDocx(
     docxStyle?: DocxStyle,
     sections?: Section[],
     features?: TypeFeatures,
-    layoutFlags?: { pageNumbers: boolean; runningHeader: boolean; mirrorMargins: boolean },
+    preset?: PrintPreset,
 ): Promise<string> {
     const has = (s: Section) => !sections || sections.includes(s);
     // Load typography and set module-level vars
@@ -496,6 +532,29 @@ export async function buildDocx(
     TYPO_INDENT = typo.paragraphIndent === "0" ? 0 : convertInchesToTwip(0.3);
     TYPO_SPACING = spacingToTwips(typo.paragraphSpacing);
     TYPO_ALIGN = typo.textAlign === "left" ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
+    const resolvedPreset = preset ?? getPreset(config.print_preset ?? DEFAULT_PRESET) ?? getPreset(DEFAULT_PRESET)!;
+    const pageMargin = {
+        top: mmToTwips(resolvedPreset.margin.top),
+        bottom: mmToTwips(resolvedPreset.margin.bottom),
+        left: mmToTwips(resolvedPreset.margin.inner),
+        right: mmToTwips(resolvedPreset.margin.outer),
+        header: mmToTwips(Math.min(resolvedPreset.margin.top, 10)),
+        footer: mmToTwips(Math.min(resolvedPreset.margin.bottom, 10)),
+    };
+    PAGE_SIZE = {
+        width: mmToTwips(resolvedPreset.width),
+        height: mmToTwips(resolvedPreset.height),
+    };
+    CONTENT_WIDTH = PAGE_SIZE.width - pageMargin.left - pageMargin.right;
+    const defaultPage = {
+        size: PAGE_SIZE,
+        margin: pageMargin,
+    };
+    const partPageTopSpacing = (lineCount: number): number => {
+        const contentHeight = PAGE_SIZE.height - pageMargin.top - pageMargin.bottom;
+        const estimatedBlockHeight = lineCount > 1 ? 1800 : 1200;
+        return Math.max(2400, Math.round((contentHeight - estimatedBlockHeight) / 2));
+    };
 
     // Apply theme style
     if (docxStyle) {
@@ -541,22 +600,30 @@ export async function buildDocx(
         });
     }
 
+    /** Page number only, used by non-book presets such as A4 draft. */
+    function pageNumberOnlyHeader(): Header {
+        return new Header({
+            children: [new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [
+                    new TextRun({ children: [PageNumber.CURRENT], ...headerStyle }),
+                ],
+            })],
+        });
+    }
+
     const docSections: ISectionOptions[] = [];
 
     // Cover image page — full bleed, no margins
     if (has("cover") && coverImagePath) {
         try {
             const imgData = await readFile(coverImagePath);
-            // A5 in EMU: 1 inch = 914400 EMU, A5 = 5.83 x 8.27 inches
-            // Page size in twips: PAGE_A5 = { width: 8391, height: 11906 }
-            // Convert twips to points for image: 1 twip = 1/20 pt, image uses pt-like units
-            // Width in px-like units for docx: A5 ≈ 420 x 595 points
-            const coverWidth = Math.round(PAGE_A5.width / 20 * 1.33); // twips to approx pixels
-            const coverHeight = Math.round(PAGE_A5.height / 20 * 1.33);
+            const coverWidth = Math.round(PAGE_SIZE.width / 20 * 1.33);
+            const coverHeight = Math.round(PAGE_SIZE.height / 20 * 1.33);
             docSections.push({
                 properties: {
                     page: {
-                        size: PAGE_A5,
+                        size: PAGE_SIZE,
                         margin: { top: 0, bottom: 0, left: 0, right: 0 },
                     },
                 },
@@ -574,6 +641,19 @@ export async function buildDocx(
                     }),
                 ],
             });
+
+            if (resolvedPreset.rectoStart && has("title_page")) {
+                docSections.push({
+                    properties: { page: defaultPage },
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: " ", size: 2, color: "FFFFFF", font: FONT }),
+                            ],
+                        }),
+                    ],
+                });
+            }
         } catch { /* skip cover if error */ }
     }
 
@@ -613,7 +693,7 @@ export async function buildDocx(
         }
 
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: { page: defaultPage },
             children: titleChildren,
         });
     } else if (has("title_block") && (config.title || config.author)) {
@@ -638,7 +718,7 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: { page: defaultPage },
             children: blockChildren,
         });
     } else if (!has("title_page") && !has("title_block") && (config.title || config.author)) {
@@ -661,7 +741,7 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: { page: defaultPage },
             children: headerChildren,
         });
     }
@@ -670,7 +750,7 @@ export async function buildDocx(
     const labels = getLabels(config.language);
     if (has("toc")) {
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: { page: defaultPage },
             children: [
                 new Paragraph({
                     heading: HeadingLevel.HEADING_2,
@@ -687,8 +767,13 @@ export async function buildDocx(
         });
     }
 
+    const normalizedChapters = chapters.map((chapter, index) => ({
+        ...chapter,
+        body: namespaceFootnotes(chapter.body, `ch${index + 1}-`),
+    }));
+
     // Extract footnotes from all chapters
-    const allMarkdown = chapters.map((c) => c.body).join("\n\n");
+    const allMarkdown = normalizedChapters.map((c) => c.body).join("\n\n");
     const footnotes = extractFootnotes(allMarkdown);
 
     // Build Document footnotes config
@@ -703,9 +788,9 @@ export async function buildDocx(
     }
 
     // Collect images from all chapters
-    const allBodies = chapters.map((c) => c.body).join("\n");
+    const allBodies = normalizedChapters.map((c) => c.body).join("\n");
     const imgPaths = collectImagePaths(allBodies, projectDir);
-    const maxImgWidth = TABLE_WIDTH / 20; // twips to points, approx px
+    const maxImgWidth = CONTENT_WIDTH / 20; // twips to points, approx px
     const imageDataMap = new Map<string, { data: Buffer; width: number; height: number }>();
     for (const img of imgPaths) {
         try {
@@ -751,8 +836,8 @@ export async function buildDocx(
     let partIndex = 0;
     let chapterIndex = 0;
 
-    for (let ci = 0; ci < chapters.length; ci++) {
-        const chapter = chapters[ci];
+    for (let ci = 0; ci < normalizedChapters.length; ci++) {
+        const chapter = normalizedChapters[ci];
 
         // Front/back matter section: simple title + body, no numbering/part/author
         if (chapter.sectionKind) {
@@ -767,7 +852,7 @@ export async function buildDocx(
             }
             sectionChildren.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
             docSections.push({
-                properties: { page: { size: PAGE_A5 } },
+                properties: { page: defaultPage },
                 children: sectionChildren,
             });
             continue;
@@ -780,8 +865,7 @@ export async function buildDocx(
             const partText = formatPartHeading(typo.partHeading, partIndex, currentPart, typoLabels, lang);
             const partLines = partText.split("\n");
             const partChildren: Paragraph[] = [
-                // Generous top spacing to center vertically
-                new Paragraph({ spacing: { before: 6000 } }),
+                new Paragraph({ spacing: { before: partPageTopSpacing(partLines.length) } }),
             ];
             if (partLines.length > 1) {
                 // First line: number/label in smaller font
@@ -810,7 +894,10 @@ export async function buildDocx(
                 );
             }
             docSections.push({
-                properties: { page: { size: PAGE_A5 } },
+                properties: {
+                    page: defaultPage,
+                    type: resolvedPreset.rectoStart ? SectionType.ODD_PAGE : undefined,
+                },
                 children: partChildren,
             });
         }
@@ -871,12 +958,28 @@ export async function buildDocx(
         }
         children.push(...parseMarkdownToDocxBlocks(chapter.body, footnotes, imageDataMap));
 
+        const chapterHeaders = resolvedPreset.runningHeader
+            ? {
+                default: rectoHeader(chapter.title),
+                even: versoHeader(),
+            }
+            : resolvedPreset.pageNumbers
+                ? {
+                    default: pageNumberOnlyHeader(),
+                }
+                : undefined;
+
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
-            ...((layoutFlags?.pageNumbers || layoutFlags?.runningHeader) && {
+            properties: {
+                page: {
+                    ...defaultPage,
+                    ...(resolvedPreset.pageNumbers ? { pageNumbers: chapterIndex === 1 ? { start: 1 } : {} } : {}),
+                },
+                type: resolvedPreset.rectoStart ? SectionType.ODD_PAGE : undefined,
+            },
+            ...(chapterHeaders && {
                 headers: {
-                    default: rectoHeader(chapter.title),  // odd/recto: chapter title + page#
-                    even: versoHeader(),                    // even/verso: page# + book title
+                    ...chapterHeaders,
                 },
             }),
             children,
@@ -886,7 +989,7 @@ export async function buildDocx(
     // Back cover
     if (has("backcover") && backcover) {
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: { page: defaultPage },
             children: parseMarkdownToDocxBlocks(backcover),
         });
     }
@@ -915,7 +1018,7 @@ export async function buildDocx(
             );
         }
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: { page: defaultPage },
             children: aboutChildren,
         });
     }
@@ -939,7 +1042,7 @@ export async function buildDocx(
         }
 
         docSections.push({
-            properties: { page: { size: PAGE_A5 } },
+            properties: { page: defaultPage },
             children: colophonChildren,
         });
     }
@@ -947,7 +1050,7 @@ export async function buildDocx(
     const authorStr = formatAuthors(config.author);
 
     const doc = new Document({
-        evenAndOddHeaderAndFooters: layoutFlags?.runningHeader ?? false,
+        evenAndOddHeaderAndFooters: resolvedPreset.runningHeader,
         title: config.title,
         subject: config.subtitle || undefined,
         creator: authorStr || undefined,
@@ -985,7 +1088,8 @@ export async function buildDocx(
         sections: docSections,
     });
 
-    const buffer = await Packer.toBuffer(doc);
+    const rawBuffer = await Packer.toBuffer(doc);
+    const buffer = await applyDocxSettingsPatch(rawBuffer, resolvedPreset.mirrorMargins);
     const outPath = join(buildDir, filename);
     await writeFile(outPath, buffer);
 

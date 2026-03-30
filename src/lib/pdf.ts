@@ -113,11 +113,9 @@ export async function buildPdf(
         const showRunningHeader = preset.runningHeader;
         const bookTitle = config.title || "";
 
-        // CSS @page margin boxes for headers/footers (Chrome 131+)
-        // :first suppresses on cover, :left/:right for recto/verso layout
-        let pageRules = "";
-        if (showPageNumbers || showRunningHeader) {
-            pageRules = `
+        // CSS @page rules must exist for all presets, otherwise long chapters in
+        // screen PDFs lose top/bottom margins on continued pages.
+        const pageRules = `
             @page {
                 margin: ${mt}mm ${mr}mm ${mb}mm ${ml}mm;
                 ${showRunningHeader ? `@top-center { content: "${bookTitle.replace(/"/g, '\\"')}"; font: italic 8pt Georgia, serif; color: #555; }` : ""}
@@ -153,7 +151,6 @@ export async function buildPdf(
                 @top-left { content: "${bookTitle.replace(/"/g, '\\"')}"; font: italic 8pt Georgia, serif; color: #555; }
                 @top-right { content: none; }` : ""}
             }` : ""}`;
-        }
 
         await page.addStyleTag({
             content: `
@@ -162,7 +159,18 @@ export async function buildPdf(
             /* Content sections */
             .cover, #toc, .chapter, .backcover, .about-authors, .colophon, .part-page {
                 max-width: none;
-                padding: ${showPageNumbers || showRunningHeader ? "0" : `${mt}mm ${mr}mm ${mb}mm ${ml}mm`};
+                padding: 0;
+            }
+
+            /* Title page should be centered within the printable area, not the full sheet. */
+            .cover {
+                min-height: auto;
+                height: calc(${preset.height}mm - ${mt + mb}mm);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: none;
             }
 
             /* Cover: full bleed, no margins, no headers */
@@ -187,8 +195,30 @@ export async function buildPdf(
                 display: block;
             }
 
-            /* Chapters and parts start on recto (right page) if preset requires it */
-            ${preset.rectoStart ? `.chapter, .part-page { break-before: recto; }` : `.part-page { break-before: page; page-break-before: always; }`}`,
+            /* Screen/non-print presets should not keep book-style half-page chapter openings */
+            ${!preset.rectoStart ? `
+            .chapter > h1:first-child,
+            .chapter > .chapter-number:first-child + h1 {
+                margin-top: 2rem !important;
+            }
+            .part-page {
+                padding: 2rem 0 1.5rem !important;
+            }` : ""}
+
+            /* Keep TOC on the next page after title; chapters/parts start on right pages. */
+            #toc {
+                break-before: page;
+                page-break-before: always;
+            }
+            ${preset.rectoStart
+                ? `.chapter, .part-page {
+                break-before: right;
+                page-break-before: right;
+            }`
+                : `.part-page {
+                break-before: page;
+                page-break-before: always;
+            }`}`,
         });
 
         const outPath = join(buildDir, filename);
@@ -196,9 +226,7 @@ export async function buildPdf(
             path: outPath,
             width: `${preset.width}mm`,
             height: `${preset.height}mm`,
-            margin: (showPageNumbers || showRunningHeader)
-                ? { top: `${mt}mm`, bottom: `${mb}mm`, left: `${ml}mm`, right: `${mr}mm` }
-                : { top: "0", bottom: "0", left: "0", right: "0" },
+            margin: { top: "0", bottom: "0", left: "0", right: "0" },
             printBackground: true,
             displayHeaderFooter: false,
         });

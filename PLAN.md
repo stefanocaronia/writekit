@@ -1,8 +1,8 @@
 ---
 project: writekit
 version: 0.2.0
-last_updated: 2026-03-19
-status: v0.4 complete, v0.4.1 impaginazione mostly done, npm publish pending
+last_updated: 2026-03-22
+status: v0.4 complete, v0.4.1 largely implemented with a few manual DOCX/PDF checks still pending, npm publish pending
 last_published_npm: 0.1.0
 types_planned: [novel, collection, essay, paper]
 ---
@@ -11,7 +11,7 @@ types_planned: [novel, collection, essay, paper]
 
 ## Context
 
-writekit è un CLI Node.js/TypeScript per creare testi strutturati (romanzi, saggi, paper, raccolte, poesia). Stato attuale: v0.1 funzionante con scaffolding, validazione, build 4 formati (HTML, ePub, PDF, DOCX), watcher, comandi add, sistema temi, report auto-generati.
+writekit è un CLI Node.js/TypeScript per creare testi strutturati (romanzi, saggi, paper, raccolte). Stato attuale: v0.2.x funzionante con scaffolding, validazione, build 5 formati (HTML, ePub, PDF, DOCX, Markdown), watcher, comandi add/remove/rename, sistema temi, print presets, report auto-generati.
 
 ---
 
@@ -128,16 +128,20 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.4.1 — Impaginazione professionale (PDF/DOCX)
 
-### DOCX (implementato ✓)
+### DOCX (parziale)
 - [x] **Header recto/verso** — standard editoriale:
     - Verso (sinistra): numero pagina a sinistra, titolo libro a destra
     - Recto (destra): titolo capitolo a sinistra, numero pagina a destra
     - Tab stops per allineamento left+right in singolo paragrafo
     - Headers solo sui capitoli, soppressi su cover/title/toc/colophon/about/part pages
     - `evenAndOddHeaderAndFooters` per differenziare pagine pari/dispari
-- [x] **Recto start** — capitoli e parti iniziano su pagina destra (`SectionType.ODD_PAGE`)
-- [x] **Mirror margins** — gutter per rilegatura, lato interno più largo
-- [x] **Layout flags dal preset** — `pageNumbers`, `runningHeader`, `mirrorMargins` letti dal print preset
+- [x] **Preset applicato al builder** — il DOCX builder riceve il preset completo, non solo flag astratti
+- [x] **Page size e margini dal preset** — dimensioni pagina e margini derivano da `print_preset`
+- [x] **Recto start** — capitoli e parti possono iniziare su pagina destra (`SectionType.ODD_PAGE`)
+- [x] **Title page su recto nei preset print** — se esiste una cover, il front matter inserisce il verso necessario per evitare il titolo sul retro della copertina
+- [x] **Page numbering dal primo capitolo** — il primo blocco di contenuto può ripartire da pagina 1
+- [x] **Part opener più equilibrato** — la pagina parte usa uno spacing calcolato invece di un offset fisso troppo rozzo
+- [x] **Mirror margins strutturali** — i preset print codificano `w:mirrorMargins` nel package DOCX, così Word può trattare `left/right` come `inside/outside`
 
 ### PDF (implementato ✓)
 - [x] **Header/footer via CSS @page margin boxes** — supportato nativamente da Chrome/Puppeteer:
@@ -153,12 +157,28 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [ ] Copertina fullpage PDF con tutti i preset (a5, trade, kdp, ecc.)
 - [ ] Header/footer soppressi su tutte le pagine non-content
 - [ ] Mirror margins visivamente corretti
+- [x] DOCX page size coerente col preset scelto (preflight verde sui preset chiave; conferma manuale Word su A5)
+- [ ] DOCX margini coerenti col preset scelto
 - [ ] DOCX headers leggibili su diversi reader (Word, LibreOffice)
-- [ ] Recto start funzionante (pagine vuote inserite)
+- [x] DOCX recto start funzionante nei preset print (confermato in Word Print Preview per title page, parti e capitoli)
+- [x] DOCX part opener visivamente centrato in Word
+- [x] DOCX inside/outside margins percepiti correttamente in Word su documenti multipagina (preset print; `screen` escluso)
+
+### Preflight strutturale (implementato)
+- [x] **Script `npm run preflight:layout`** — costruisce progetti temporanei dai sandbox di integrazione e verifica automaticamente:
+    - page size PDF vs `print_preset`
+    - page size e margini DOCX vs `print_preset`
+    - presenza/assenza di `mirrorMargins` in DOCX secondo preset
+    - presenza/assenza header DOCX secondo preset
+    - page-number fields DOCX
+    - `oddPage` section breaks per preset con recto start
+    - assenza del titolo nei preset DOCX senza running header
+- [x] **Copertura preset chiave** — `screen`, `a4`, `a5`, `trade`, `kdp` + `novel-parts/a5`
+- [x] **Ultimo run** — 2026-03-22, 6/6 casi verdi
 
 ### Refactoring preset (da fare)
 - [ ] **Preset come unica fonte** — `mirror_margins`, `page_numbers`, `running_header` escono dalla typography → diventano proprietà del preset. L'utente sceglie il preset, tutto è automatico.
-- [ ] **default_preset per tipo** — `type.yaml` ha `default_preset: screen` (novel) o `default_preset: a4` (paper). L'utente override con `print_preset: kdp` nel config.
+- [x] **default_preset per tipo** — `novel`, `collection`, `essay` usano `a5`, `paper` usa `a4`. `wk init` non scrive più `print_preset` nel `config.yaml`: il default arriva dal tipo, con override esplicito possibile nel progetto.
 - [ ] **screen preset** come default — niente print features, margini larghi per leggibilità
 
 ---

@@ -4,6 +4,38 @@ Tests that require **human eyes**. Everything else is automated in `npm test`.
 
 Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the build output.
 
+## Scope
+
+This checklist is intentionally for things automation cannot fully certify:
+
+- Visual rendering and typography
+- Reader-specific behavior (browser, Word, Thorium, Calibre, LibreOffice)
+- Layout quality judgments (spacing, balance, readability)
+
+What can be preflighted automatically or semi-automatically:
+
+- Existence of generated files in `build/`
+- Presence of expected sections/elements in HTML, DOCX XML, or ePub package
+- PDF/DOCX page size metadata versus `print_preset`
+- Structural clues like section breaks, headers, and page-number fields
+- Structural clues like section breaks, headers, page-number fields, and DOCX `mirrorMargins`
+
+Available structural preflight:
+
+- `npm run preflight:layout`
+  - Rebuilds temporary DOCX/PDF outputs for key presets
+  - Verifies page size metadata for PDF and DOCX
+  - Verifies DOCX margins, `mirrorMargins`, presence/absence of headers, page-number fields, and odd-page section breaks
+  - Writes a machine-readable report to `tmp/layout-preflight/report.json`
+  - Does **not** replace visual review
+- `npm run review:layout`
+  - Rebuilds a review gallery under `tmp/layout-review/`
+  - Flattens outputs into easy-to-browse folders like `pdf/`, `html/`, `docx/`
+  - Names files as `project--preset.ext`
+  - Also keeps per-case copies under `tmp/layout-review/by-case/`
+
+If a box says something "looks good", it is still a human check even if the underlying file can be inspected programmatically.
+
 ## Visual inspection
 
 ### HTML — open `sandbox/int-*/build/*.html` in browser
@@ -36,11 +68,17 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [x] Footnotes as native Word footnotes
 - [x] With minimal theme: different font/colors than default
 
+Use **Print Preview** for recto/verso verification. Normal Word layout view can be misleading for inserted blank pages from odd-page section breaks.
+
 #### DOCX pagination (novel, default preset)
 - [x] Running header recto: chapter title left, page number right
 - [x] Running header verso: page number left, book title right
 - [x] No header/footer on cover, title page, TOC
-- [x] No Word errors on open (except known footnote warning)
+- [x] No Word repair errors on open (field-update prompt may still appear)
+- [x] Page size matches `print_preset` (preflight green for `screen` / `a4` / `a5` / `trade` / `kdp`; confirmed in Word on A5)
+- [x] Recto start inserts blank pages where needed for print presets (confirmed in Word Print Preview: title page, part pages, and chapter starts land on recto)
+- [x] Part opener page feels vertically centered in Word (`Parte I / The Beginning` manually confirmed)
+- [x] Inside/outside margins feel correct in a real paginated reader for print presets (confirmed in Word; not applicable to `screen`)
 
 ### PDF — run `wk build pdf` in a test project
 
@@ -51,7 +89,7 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [x] No header/footer on cover, title page, TOC, colophon, about, part pages
 - [x] Mirror margins: gutter side larger (alternates left/right)
 - [x] Chapters start on recto (right page), blank page inserted if needed
-- [ ] Page size matches `print_preset`
+- [ ] Page size matches `print_preset` (can be preflighted from PDF metadata, then visually confirmed)
 - [ ] Try presets: `screen` (no print features), `a5`, `trade`, `kdp`
 
 ### Markdown — open `sandbox/int-*/build/*.md`
@@ -75,3 +113,11 @@ Run `npm test` first to generate projects in `sandbox/int-*`, then inspect the b
 - [ ] `a4` preset: page numbers only
 - [x] `a5` / book presets: full print layout (page numbers, headers, mirror, recto)
 - [ ] `kdp` preset: bleed margins, full print layout
+
+## Suggested workflow
+
+1. Run `npm test` to rebuild `sandbox/`.
+2. Run `npm run preflight:layout` for structural preset checks.
+3. Run `npm run review:layout` if you want all reviewable outputs collected under `tmp/layout-review/`.
+4. Use structural checks first: file exists, format built, page size metadata, presence of headers/TOC/sections.
+5. Do the visual pass last in the real target reader.

@@ -81,13 +81,27 @@ export function parseFrontmatter(content: string): {
     data: Record<string, unknown>;
     body: string;
 } {
-    const match = content.match(/^---\n([\s\S]*?)\n---\n\n?([\s\S]*)$/);
-    if (!match) {
+    const normalized = content.startsWith("\uFEFF") ? content.slice(1) : content;
+    const lines = normalized.split(/\r?\n/);
+
+    if (lines[0] !== "---") {
         return { data: {}, body: content };
     }
+
+    const closingIndex = lines.slice(1).findIndex((line) => line === "---");
+    if (closingIndex === -1) {
+        return { data: {}, body: content };
+    }
+
+    const yamlBody = lines.slice(1, closingIndex + 1).join("\n");
+    let body = lines.slice(closingIndex + 2).join("\n");
+    if (body.startsWith("\n")) {
+        body = body.slice(1);
+    }
+
     try {
-        const data = parseYaml(match[1]) as Record<string, unknown>;
-        return { data: data ?? {}, body: match[2] };
+        const data = parseYaml(yamlBody) as Record<string, unknown>;
+        return { data: data ?? {}, body };
     } catch {
         return { data: {}, body: content };
     }

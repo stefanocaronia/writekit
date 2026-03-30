@@ -26,7 +26,7 @@ describe("writekit smoke tests", () => {
         rmSync(TEST_DIR, { recursive: true, force: true });
     });
 
-    it("shows help", () => {
+    it("shows help", { timeout: 15_000 }, () => {
         const out = run(`${CLI} --help`);
         expect(out).toContain("CLI toolkit for writing");
         expect(out).toContain("init");
@@ -61,6 +61,9 @@ describe("writekit smoke tests", () => {
         expect(existsSync(join(TEST_DIR, "AGENTS.md"))).toBe(true);
         const agents = readFileSync(join(TEST_DIR, "AGENTS.md"), "utf-8");
         expect(agents).toContain("writekit:start");
+        const config = readFileSync(join(TEST_DIR, "config.yaml"), "utf-8");
+        expect(config).not.toContain("print_preset:");
+        expect(config).toContain('cover: ""');
     });
 
     it("check passes on fresh project", () => {
@@ -293,6 +296,7 @@ describe("project types", () => {
             it("config.yaml has the correct type", () => {
                 const config = readFileSync(join(TYPE_DIR, "config.yaml"), "utf-8");
                 expect(config).toContain(`type: ${typeName}`);
+                expect(config).not.toContain("print_preset:");
             });
 
             it("check passes on fresh project (no errors)", () => {

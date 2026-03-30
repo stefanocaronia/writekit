@@ -1,5 +1,6 @@
 name: Novel
 description: Novel, novella, or long-form fiction
+default_preset: a5
 sections:
     - cover
     - title_page
