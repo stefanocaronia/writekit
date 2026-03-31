@@ -597,6 +597,7 @@ Every time you build, writekit generates reports in `build/reports/`:
 
 - **status.md** — Word count per chapter, total progress, latest draft, missing draft metadata, draft distribution
 - **cast.md** — Which characters appear in which chapters
+- **relationships.md** — Character relationships as a graph and per-character summary
 - **locations.md** — Which locations appear in which chapters
 - **timeline.md** — Your timeline formatted and readable
 

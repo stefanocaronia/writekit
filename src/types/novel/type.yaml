@@ -58,6 +58,7 @@ add_commands:
 reports:
     - status
     - cast
+    - relationships
     - locations
     - timeline
 schemas:

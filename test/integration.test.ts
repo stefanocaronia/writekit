@@ -641,6 +641,7 @@ Water in Italian culture carries deep symbolic weight: purification, memory, the
     it("reports generated", () => {
         expect(existsSync(join(DIR, "build", "reports", "status.md"))).toBe(true);
         expect(existsSync(join(DIR, "build", "reports", "cast.md"))).toBe(true);
+        expect(existsSync(join(DIR, "build", "reports", "relationships.md"))).toBe(true);
         expect(existsSync(join(DIR, "build", "reports", "locations.md"))).toBe(true);
         expect(existsSync(join(DIR, "build", "reports", "timeline.md"))).toBe(true);
     });
@@ -1529,6 +1530,11 @@ describe("content verification", () => {
         expect(status).toContain("Total words");
         expect(status).toContain("## Draft tracking");
         expect(status).toContain("Latest draft");
+
+        const relationships = readFileSync(join(SANDBOX, "int-novel", "build", "reports", "relationships.md"), "utf-8");
+        expect(relationships).toContain("## Graph");
+        expect(relationships).toContain("Elena Rossi");
+        expect(relationships).toContain("Giovanni Moretti");
     });
 
     it("essay: thesis.md present", () => {

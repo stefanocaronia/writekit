@@ -18,9 +18,15 @@ interface TimelineEvent {
     chapter: string;
 }
 
+interface CharacterRelationship {
+    target: string;
+    type?: string;
+}
+
 interface CharacterEntry {
     name: string;
     role: string;
+    relationships: CharacterRelationship[];
 }
 
 interface WorldEntry {
@@ -72,6 +78,7 @@ async function loadCharacters(projectDir: string): Promise<CharacterEntry[]> {
                 characters.push({
                     name: data.name as string,
                     role: (data.role as string) ?? "",
+                    relationships: relationshipEntries(data.relationships),
                 });
             }
         }
@@ -106,8 +113,44 @@ function wordCount(text: string): number {
     return text.split(/\s+/).filter((w) => w.length > 0).length;
 }
 
+function relationshipEntries(value: unknown): CharacterRelationship[] {
+    if (!Array.isArray(value)) return [];
+
+    const relationships: CharacterRelationship[] = [];
+    for (const entry of value) {
+        if (typeof entry === "string" && entry.trim()) {
+            relationships.push({ target: entry.trim() });
+            continue;
+        }
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+        const data = entry as Record<string, unknown>;
+
+        const target = [data.character, data.name, data.target]
+            .find((candidate): candidate is string => typeof candidate === "string" && candidate.trim().length > 0);
+        if (!target) continue;
+
+        const type = [data.type, data.relationship, data.label]
+            .find((candidate): candidate is string => typeof candidate === "string" && candidate.trim().length > 0);
+
+        relationships.push({
+            target: target.trim(),
+            type: type?.trim(),
+        });
+    }
+
+    return relationships;
+}
+
 function trackedChapters<T extends { number: number; sectionKind?: string; draft?: number }>(chapters: T[]): T[] {
     return chapters.filter((chapter) => chapter.number > 0 && !chapter.sectionKind);
+}
+
+function mermaidNodeId(index: number): string {
+    return `character_${index + 1}`;
+}
+
+function mermaidLabel(value: string): string {
+    return value.replace(/"/g, '\\"');
 }
 
 // --- Status Report ---
@@ -234,6 +277,60 @@ ${sections.join("\n\n")}
 `;
 }
 
+// --- Relationships Report ---
+
+async function generateRelationships(projectDir: string): Promise<string> {
+    const config = await loadConfig(projectDir);
+    const characters = await loadCharacters(projectDir);
+
+    if (characters.length === 0) {
+        return `# Relationships — ${config.title}\n\n> Auto-generated report. Do not edit.\n\n_No characters yet._\n`;
+    }
+
+    const knownCharacters = new Set(characters.map((character) => character.name.toLowerCase()));
+    const nodeIds = new Map<string, string>();
+    characters.forEach((character, index) => nodeIds.set(character.name, mermaidNodeId(index)));
+
+    const graphLines: string[] = ["graph LR"];
+    const sections: string[] = [];
+
+    for (const character of characters) {
+        const lines = character.relationships.length > 0
+            ? character.relationships.map((relationship) => {
+                const relation = relationship.type ? ` (${relationship.type})` : "";
+                const missing = knownCharacters.has(relationship.target.toLowerCase()) ? "" : " ⚠ no character sheet";
+                return `- ${relationship.target}${relation}${missing}`;
+            }).join("\n")
+            : "- _No declared relationships_";
+
+        sections.push(`### ${character.name} (${character.role})\n\n${lines}`);
+
+        const sourceNode = nodeIds.get(character.name)!;
+        for (const relationship of character.relationships) {
+            const targetNode = nodeIds.get(relationship.target) ?? `${sourceNode}_${graphLines.length}`;
+            const edgeLabel = relationship.type ? ` -- ${mermaidLabel(relationship.type)} --> ` : " --> ";
+            graphLines.push(`    ${sourceNode}["${mermaidLabel(character.name)}"]${edgeLabel}${targetNode}["${mermaidLabel(relationship.target)}"]`);
+        }
+    }
+
+    const graph = graphLines.length > 1
+        ? ["```mermaid", ...graphLines, "```"].join("\n")
+        : "_No declared relationships yet._";
+
+    return `# Relationships — ${config.title}
+
+> Auto-generated report. Do not edit.
+
+## Graph
+
+${graph}
+
+## Details
+
+${sections.join("\n\n")}
+`;
+}
+
 // --- Locations Report ---
 
 async function generateLocations(projectDir: string): Promise<string> {
@@ -310,6 +407,7 @@ ${rows.join("\n")}
 const REPORT_GENERATORS: Record<string, (dir: string) => Promise<string>> = {
     status: generateStatus,
     cast: generateCast,
+    relationships: generateRelationships,
     locations: generateLocations,
     timeline: generateTimeline,
 };

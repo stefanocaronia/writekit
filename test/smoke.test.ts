@@ -149,6 +149,7 @@ describe("writekit smoke tests", () => {
     it("build generates reports", () => {
         expect(existsSync(join(TEST_DIR, "build", "reports", "status.md"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "build", "reports", "cast.md"))).toBe(true);
+        expect(existsSync(join(TEST_DIR, "build", "reports", "relationships.md"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "build", "reports", "locations.md"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "build", "reports", "timeline.md"))).toBe(true);
     });
