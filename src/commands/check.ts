@@ -343,8 +343,8 @@ function validateFrontmatter(
         }
     }
 
-    // Warn about unknown fields
-    const knownFields = new Set([...schema.required, ...schema.optional]);
+    // Warn about unknown fields (translation metadata is always allowed)
+    const knownFields = new Set([...schema.required, ...schema.optional, "source_path", "source_hash"]);
     for (const key of Object.keys(data)) {
         if (!knownFields.has(key)) {
             issues.push({

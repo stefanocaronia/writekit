@@ -36,4 +36,5 @@ export const icon = {
     report: "📊",
     words: "📝",
     time: "⏱️",
+    translate: "🌐",
 };
