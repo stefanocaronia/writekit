@@ -460,12 +460,13 @@ print_preset: trade    # 6×9in, US trade paperback
 - **Mirror margins** — inner margin (gutter) is larger for binding, alternates sides on odd/even pages
 - **Recto start** — chapters and parts start on right-hand pages (blank page inserted if needed)
 
-If `print_preset` is omitted, writekit uses the default for the project type:
+If `print_preset` is omitted, all project types default to `screen` — an A4 layout with no print features, optimized for on-screen reading. When you're ready to print or publish, add `print_preset` to your `config.yaml`:
 
-- `novel`, `collection`, `essay` → `a5`
-- `paper` → `a4`
-
-Use `print_preset: screen` when you want a preview-oriented layout with no print features.
+```yaml
+print_preset: a5     # EU standard book
+# print_preset: trade  # 6×9 in US trade paperback
+# print_preset: kdp    # Amazon KDP with bleed
+```
 
 For the rare cases where you want a preset as a base but need a small adjustment, you can add `layout` overrides:
 

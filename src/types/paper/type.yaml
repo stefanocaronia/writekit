@@ -20,7 +20,12 @@ typography:
     hyphenation: true
     orphans_widows: 3
     chapter_heading: title
-default_preset: a4
+config_extra:
+    academic:
+        abstract: ""
+        keywords: []
+        doi: ""
+default_preset: screen
 dirs:
     - outline
     - manuscript
@@ -54,6 +59,24 @@ schemas:
         required: [name]
         optional: [roles]
 sample_files:
+    style.yaml:
+        body: |
+            pov: third-person
+            tense: past
+            tone: ""
+            voice: ""
+            rules: []
+    synopsis.md:
+        body: "# Synopsis\n\nWrite your synopsis here...\n"
+    abstract.md:
+        body: "# Abstract\n\n150\u2013300 words summarizing purpose, method, results, and conclusion.\n"
+    bibliography.yaml:
+        body: |
+            sources:
+              - author: ""
+                title: ""
+                year: ""
+                url: ""
     outline/structure.md:
         body: "# Structure\n\nOutline the argument and sections here...\n"
     manuscript/01-introduction.md:

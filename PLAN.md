@@ -154,12 +154,12 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **Layout flags dal preset** — pageNumbers, runningHeader, mirrorMargins
 
 ### Da verificare manualmente
-- [ ] Copertina fullpage PDF con tutti i preset (a5, trade, kdp, ecc.)
-- [ ] Header/footer soppressi su tutte le pagine non-content
-- [ ] Mirror margins visivamente corretti
+- [x] Copertina fullpage PDF con tutti i preset (a5, trade, kdp, ecc.)
+- [x] Header/footer soppressi su tutte le pagine non-content
+- [x] Mirror margins visivamente corretti
 - [x] DOCX page size coerente col preset scelto (preflight verde sui preset chiave; conferma manuale Word su A5)
-- [ ] DOCX margini coerenti col preset scelto
-- [ ] DOCX headers leggibili su diversi reader (Word, LibreOffice)
+- [x] DOCX margini coerenti col preset scelto
+- [x] DOCX headers leggibili su diversi reader (Word, LibreOffice)
 - [x] DOCX recto start funzionante nei preset print (confermato in Word Print Preview per title page, parti e capitoli)
 - [x] DOCX part opener visivamente centrato in Word
 - [x] DOCX inside/outside margins percepiti correttamente in Word su documenti multipagina (preset print; `screen` escluso)
@@ -178,8 +178,8 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ### Refactoring preset (da fare)
 - [x] **Preset come unica fonte** — `mirror_margins`, `page_numbers`, `running_header` escono dalla typography → diventano proprietà del preset. L'utente sceglie il preset, tutto è automatico.
-- [x] **default_preset per tipo** — `novel`, `collection`, `essay` usano `a5`, `paper` usa `a4`. `wk init` non scrive più `print_preset` nel `config.yaml`: il default arriva dal tipo, con override esplicito possibile nel progetto.
-- [ ] **screen preset** come default — niente print features, margini larghi per leggibilità
+- [x] **default_preset per tipo** — tutti i tipi usano `screen` come default. `wk init` non scrive più `print_preset` nel `config.yaml`: il default arriva dal tipo, con override esplicito possibile nel progetto. Per stampare, l'utente aggiunge `print_preset: a5` (o trade, kdp, ecc.) nel config.yaml.
+- [x] **screen preset** come default — niente print features, margini larghi per leggibilità
 
 ---
 
@@ -253,22 +253,19 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - Entry point: `writekit/api` o export diretti dal package
     - Documentazione API per agent e integrazioni custom
     - Predisposizione per MCP server wrapper
-- [ ] **Type modulari e plugin system** — ogni type diventa un modulo indipendente, preparazione per type custom:
-    - **Fase 1 (refactoring interno)** — separare la logica type-specific dal core:
-        - [x] Ogni type in `src/types/{type}/` ha già `type.yaml`. Aggiungere `index.ts` opzionale per logica custom
-        - [x] Interfaccia `TypePlugin` runtime minima: `{ onInit?, onBuild?, onCheck?, onSync?, configSchema? }`
-        - Spostare logica hardcoded (paper abstract, collection per-chapter author, novel timeline) nei rispettivi type module
-        - Il core diventa generico: legge type.yaml + chiama hook dal TypePlugin
-        - Il builder chiama `type.renderSection("abstract", ...)` invece di `if (config.type === "paper")`
-    - **Fase 2 (type esterni)** — permettere type da npm package:
-        - Naming convention: `writekit-type-{name}` (es. `writekit-type-screenplay`)
+- [x] **Type modulari e plugin system** — ogni type è un modulo indipendente, supporto type custom completo:
+    - [x] **Fase 1 (refactoring interno)** — logica type-specific rimossa dal core:
+        - [x] Ogni type in `src/types/{type}/` con `type.yaml` completo (dirs, files, schemas, reports, add_commands, sample_files, config_extra, typography)
+        - [x] Interfaccia `TypePlugin` runtime: `{ onInit?, onBuild?, onCheck?, onSync?, configSchema? }`
+        - [x] Init completamente data-driven: `config_extra` per campi config per tipo, `sample_files` per contenuto file iniziale. Zero `if (config.type === "X")` nel core
+        - [x] Builder data-driven via `TypeFeatures` (show_chapter_author, supports_parts) e `sections[]`
+    - [x] **Fase 2 (type esterni)** — type da npm package:
+        - [x] Naming convention: `writekit-type-{name}` (es. `writekit-type-screenplay`)
         - [x] Type loader cerca in: locale `types/` → builtin `src/types/` → `node_modules/writekit-type-*`
         - [x] `wk init my-script --type screenplay` funziona se il package è installato
         - [x] Supporto data-driven: il package fornisce `type.yaml` (o `package.json -> writekit.type.definition`)
         - [x] Hook runtime `TypePlugin` per logica custom
     - [x] **Fase 2b (type locali)** — type nel progetto: `types/{name}/` con type.yaml + index.ts
-    - **Impatto sullo sviluppo attuale**: da subito, quando si aggiunge logica type-specific, isolarla in modo che sia spostabile in un modulo. Evitare `if (config.type === "X")` nel core — preferire dati nel type.yaml o hook pattern.
-    - **Già fatto**: `TypeFeatures` (show_chapter_author, supports_parts) nel type.yaml, builder ricevono features invece di controllare config.type.
 - [x] **Format plugin system** — builder di output estensibili dalla community:
     - [x] Fase locale: il core registra i builder builtin (html, epub, pdf, docx, md) in un registry e supporta format locali in `formats/{name}.mjs|js|cjs`
     - [x] Fase package: plugin via npm e discovery esterno in `node_modules/writekit-format-*`
@@ -282,7 +279,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
 - [ ] **Import da Markdown** — splitta un .md in capitoli
 - [ ] **Font embedding** — woff2/ttf in HTML e ePub
-- [ ] **Backup command** — `wk backup` crea zip del progetto
+- ~~**Backup command**~~ — rimosso: ridondante con git e zip standard
 
 ---
 

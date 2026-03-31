@@ -471,6 +471,10 @@ schemas:
         required: [title]
         optional: [chapter, draft]
 sample_files:
+    style.yaml:
+        body: "pov: third-person\\ntense: past\\ntone: \\\"\\\"\\nvoice: \\\"\\\"\\nrules: []\\n"
+    synopsis.md:
+        body: "# Synopsis\\n\\nWrite your synopsis here...\\n"
     manuscript/01-opening.md:
         frontmatter:
             chapter: 1
@@ -579,6 +583,10 @@ schemas:
         required: [title]
         optional: [chapter, draft]
 sample_files:
+    style.yaml:
+        body: "pov: third-person\\ntense: past\\ntone: \\\"\\\"\\nvoice: \\\"\\\"\\nrules: []\\n"
+    synopsis.md:
+        body: "# Synopsis\\n\\nWrite your synopsis here...\\n"
     manuscript/01-opening.md:
         frontmatter:
             chapter: 1

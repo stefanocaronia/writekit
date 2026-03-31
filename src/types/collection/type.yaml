@@ -1,6 +1,11 @@
 name: Collection
 description: Anthology of short stories, poems, or essays — per-piece author in frontmatter
-default_preset: a5
+default_preset: screen
+config_extra:
+    publication:
+        edition: 1
+    build:
+        cover: ""
 features:
     show_chapter_author: true
 sections:
@@ -57,6 +62,17 @@ schemas:
         required: [name]
         optional: [roles]
 sample_files:
+    style.yaml:
+        body: |
+            pov: third-person
+            tense: past
+            tone: ""
+            voice: ""
+            rules: []
+    synopsis.md:
+        body: "# Synopsis\n\nWrite your synopsis here...\n"
+    backcover.md:
+        body: "# Back Cover\n\nWrite the back cover text here \u2014 this is the pitch your reader sees when they pick up the book.\n"
     outline/contents.md:
         body: "# Contents\n\nList and order of pieces in this collection...\n"
     manuscript/01-untitled.md:

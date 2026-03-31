@@ -1,6 +1,11 @@
 name: Essay
 description: Single essay or long-form non-fiction
-default_preset: a5
+default_preset: screen
+config_extra:
+    publication:
+        edition: 1
+    build:
+        cover: ""
 sections:
     - cover
     - title_page
@@ -66,6 +71,19 @@ schemas:
         required: [name]
         optional: [roles]
 sample_files:
+    style.yaml:
+        body: |
+            pov: third-person
+            tense: past
+            tone: ""
+            voice: ""
+            rules: []
+    synopsis.md:
+        body: "# Synopsis\n\nWrite your synopsis here...\n"
+    thesis.md:
+        body: "# Thesis\n\nState your central thesis here \u2014 the one claim your entire essay supports.\n"
+    backcover.md:
+        body: "# Back Cover\n\nWrite the back cover text here \u2014 this is the pitch your reader sees when they pick up the book.\n"
     outline/structure.md:
         body: "# Structure\n\nOutline the argument and sections here...\n"
     manuscript/01-introduction.md:

@@ -41,6 +41,7 @@ export interface ProjectType {
     sections: Section[];
     features: TypeFeatures;
     default_preset?: string;
+    config_extra?: Record<string, Record<string, unknown>>;
     dirs: string[];
     files: string[];
     add_commands: string[];

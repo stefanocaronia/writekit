@@ -1,6 +1,18 @@
 name: Novel
 description: Novel, novella, or long-form fiction
-default_preset: a5
+default_preset: screen
+config_extra:
+    identity:
+        series: ""
+        volume: 1
+    people:
+        translator: ""
+        editor: ""
+        illustrator: ""
+    publication:
+        edition: 1
+    build:
+        cover: ""
 sections:
     - cover
     - title_page
@@ -78,6 +90,33 @@ schemas:
         required: [name]
         optional: [roles]
 sample_files:
+    style.yaml:
+        body: |
+            pov: third-person
+            tense: past
+            tone: ""
+            voice: ""
+            rules: []
+    timeline.yaml:
+        body: |
+            events:
+              - date: ""
+                description: Example event
+                chapter: ""
+    synopsis.md:
+        body: "# Synopsis\n\nWrite your synopsis here...\n"
+    backcover.md:
+        body: "# Back Cover\n\nWrite the back cover text here \u2014 this is the pitch your reader sees when they pick up the book.\n"
+    outline/plot.md:
+        frontmatter:
+            acts:
+                - name: "Act 1"
+                  summary: ""
+                - name: "Act 2"
+                  summary: ""
+                - name: "Act 3"
+                  summary: ""
+        body: "# Plot\n\nDescribe the overall story arc here...\n"
     outline/chapters/01.md:
         frontmatter:
             chapter: 1

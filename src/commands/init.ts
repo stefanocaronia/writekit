@@ -2,7 +2,6 @@ import { Command } from "commander";
 import { cp, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { execSync } from "node:child_process";
-import { stringify } from "yaml";
 import { input, select } from "@inquirer/prompts";
 import { frontmatter } from "../support/fs-utils.js";
 import { loadConfig } from "../project/parse.js";
@@ -57,13 +56,26 @@ async function promptOptions(name: string, skip: boolean, typeFlag?: string): Pr
     return { title, author, language, type };
 }
 
-function buildConfigYaml(options: InitOptions): string {
+function serializeConfigFields(fields: Record<string, unknown>): string {
+    let result = "";
+    for (const [key, value] of Object.entries(fields)) {
+        if (Array.isArray(value) && value.length === 0) {
+            result += `${key}: []\n`;
+        } else if (typeof value === "string") {
+            result += `${key}: ${JSON.stringify(value)}\n`;
+        } else {
+            result += `${key}: ${value}\n`;
+        }
+    }
+    return result;
+}
+
+function buildConfigYaml(options: InitOptions, typeDef: ProjectType): string {
     const copyrightLine = options.author
         ? `\u00A9 ${new Date().getFullYear()} ${options.author}`
         : "";
 
-    const isBook = ["novel", "collection", "essay"].includes(options.type);
-    const isPaper = options.type === "paper";
+    const extra = typeDef.config_extra ?? {};
 
     let yaml = `# Project
 type: ${options.type}
@@ -71,18 +83,18 @@ type: ${options.type}
 # Identity
 title: ${JSON.stringify(options.title)}
 subtitle: ""
-${options.type === "novel" ? 'series: ""\nvolume: 1\n' : ""}
+`;
+    if (extra.identity) yaml += serializeConfigFields(extra.identity);
+
+    yaml += `
 # People
 author: ${JSON.stringify(options.author)}
-${options.type === "novel" ? 'translator: ""\neditor: ""\nillustrator: ""\n' : ""}`;
-
-    if (isPaper) {
-        yaml += `
-# Academic
-abstract: ""
-keywords: []
-${`doi: ""`}
 `;
+    if (extra.people) yaml += serializeConfigFields(extra.people);
+
+    if (extra.academic) {
+        yaml += `\n# Academic\n`;
+        yaml += serializeConfigFields(extra.academic);
     }
 
     yaml += `
@@ -91,13 +103,18 @@ language: ${options.language}
 genre: ""
 isbn: ""
 publisher: ""
-${isBook ? "edition: 1\n" : ""}date: ""
+`;
+    if (extra.publication) yaml += serializeConfigFields(extra.publication);
+    yaml += `date: ""
 
 # Build
 build_formats:
     - html
 theme: default
-${isBook ? 'cover: ""\n' : ""}
+`;
+    if (extra.build) yaml += serializeConfigFields(extra.build);
+
+    yaml += `
 # Legal
 license: All rights reserved
 license_url: ""
@@ -185,6 +202,7 @@ async function writeSampleFiles(
 
     for (const [path, sample] of Object.entries(typeDef.sample_files)) {
         const fullPath = join(projectDir, path);
+        await mkdir(dirname(fullPath), { recursive: true });
         let content: string;
 
         if (sample.frontmatter) {
@@ -220,84 +238,10 @@ export const initCommand = new Command("init")
         }
 
         // config.yaml
-        await writeFile(join(projectDir, "config.yaml"), buildConfigYaml(options));
+        await writeFile(join(projectDir, "config.yaml"), buildConfigYaml(options, typeDef));
 
-        // Type-specific YAML files
-        if (typeDef.files.includes("style.yaml")) {
-            await writeFile(
-                join(projectDir, "style.yaml"),
-                stringify({
-                    pov: "third-person",
-                    tense: "past",
-                    tone: "",
-                    voice: "",
-                    rules: [],
-                }),
-            );
-        }
-
-        if (typeDef.files.includes("timeline.yaml")) {
-            await writeFile(
-                join(projectDir, "timeline.yaml"),
-                stringify({
-                    events: [{ date: "", description: "Example event", chapter: "" }],
-                }),
-            );
-        }
-
-        if (typeDef.files.includes("synopsis.md")) {
-            await writeFile(
-                join(projectDir, "synopsis.md"),
-                `# ${options.title}\n\nWrite your synopsis here...\n`,
-            );
-        }
-
-        if (typeDef.files.includes("thesis.md")) {
-            await writeFile(
-                join(projectDir, "thesis.md"),
-                `# Thesis\n\nState your central thesis here — the one claim your entire essay supports.\n`,
-            );
-        }
-
-        if (typeDef.files.includes("abstract.md")) {
-            await writeFile(
-                join(projectDir, "abstract.md"),
-                `# Abstract\n\n150–300 words summarizing purpose, method, results, and conclusion.\n`,
-            );
-        }
-
-        if (typeDef.files.includes("backcover.md")) {
-            await writeFile(
-                join(projectDir, "backcover.md"),
-                `# Back Cover\n\nWrite the back cover text here — this is the pitch your reader sees when they pick up the book.\n`,
-            );
-        }
-
-        if (typeDef.files.includes("bibliography.yaml")) {
-            await writeFile(
-                join(projectDir, "bibliography.yaml"),
-                stringify({
-                    sources: [{ author: "", title: "", year: "", url: "" }],
-                }),
-            );
-        }
-
-        // Novel-specific: plot.md with acts
-        if (options.type === "novel") {
-            await writeFile(
-                join(projectDir, "outline", "plot.md"),
-                frontmatter(
-                    {
-                        acts: [
-                            { name: "Act 1", summary: "" },
-                            { name: "Act 2", summary: "" },
-                            { name: "Act 3", summary: "" },
-                        ],
-                    },
-                    "# Plot\n\nDescribe the overall story arc here...\n",
-                ),
-            );
-        }
+        // Sample files from type definition (includes all root files and subdirectory samples)
+        const createdFiles = await writeSampleFiles(projectDir, typeDef);
 
         // Create contributor sheet for author if provided
         if (options.author) {
@@ -313,9 +257,6 @@ export const initCommand = new Command("init")
                 ),
             );
         }
-
-        // Sample files from type definition
-        const createdFiles = await writeSampleFiles(projectDir, typeDef);
 
         // README.md
         await writeFile(join(projectDir, "README.md"), buildReadme(options, typeDef));
