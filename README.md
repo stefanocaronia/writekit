@@ -605,6 +605,14 @@ These are auto-generated and overwritten on every build. Don't edit them.
 
 `wk check` also validates `timeline.yaml`: it warns if an event points to a missing chapter, or if the chronological timeline goes backward relative to chapter order.
 
+If your book is intentionally non-linear, you can keep the timeline chronological and disable only the chapter-order warning:
+
+```yaml
+type_options:
+  timeline:
+    allow_non_linear: true
+```
+
 ## License
 
 MIT

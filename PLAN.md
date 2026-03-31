@@ -190,7 +190,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - essay/paper: `related` in `concepts/` e `arguments/`
     - warnings strutturati, senza NLP o matching fuzzy
 - [x] **Grafo relazioni** — report `relationships.md` con grafo Mermaid e riepilogo per personaggio delle relazioni dichiarate in `characters/*.md`
-- [x] **Timeline validation** — `wk check` valida i riferimenti capitolo in `timeline.yaml` e avvisa quando la timeline cronologica punta all'indietro rispetto all'ordine dei capitoli (warning editoriale, utile per rilevare flashback/non-linearità non intenzionali)
+- [x] **Timeline validation** — `wk check` valida i riferimenti capitolo in `timeline.yaml` e avvisa quando la timeline cronologica punta all'indietro rispetto all'ordine dei capitoli (warning editoriale, utile per rilevare flashback/non-linearità non intenzionali). Override esplicito con `type_options.timeline.allow_non_linear: true`
 - [x] **Draft tracking** — stato draft per capitolo:
     - `wk check` avvisa se `draft` non è un intero positivo
     - `wk check` avvisa se alcuni capitoli tracciano il draft e altri no

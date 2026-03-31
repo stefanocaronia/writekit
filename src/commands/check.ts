@@ -22,6 +22,11 @@ interface CheckResult {
     errors: string[];
 }
 
+function allowNonLinearTimeline(typeOptions: Record<string, unknown>): boolean {
+    const timeline = typeOptions.timeline;
+    return isPlainObject(timeline) && timeline.allow_non_linear === true;
+}
+
 async function getMdFiles(dir: string): Promise<string[]> {
     try {
         const entries = await readdir(dir);
@@ -233,6 +238,7 @@ async function validateDraftTracking(
 
 async function validateTimelineTracking(
     projectDir: string,
+    typeOptions: Record<string, unknown>,
     issues: ValidationIssue[],
 ): Promise<void> {
     const timelinePath = join(projectDir, "timeline.yaml");
@@ -248,6 +254,7 @@ async function validateTimelineTracking(
             .filter((chapter) => !chapter.sectionKind && chapter.number > 0)
             .map((chapter) => chapter.number),
     );
+    const nonLinear = allowNonLinearTimeline(typeOptions);
 
     let previousChapter: number | null = null;
 
@@ -277,7 +284,7 @@ async function validateTimelineTracking(
             continue;
         }
 
-        if (previousChapter !== null && currentChapter < previousChapter) {
+        if (!nonLinear && previousChapter !== null && currentChapter < previousChapter) {
             const label = typeof event.description === "string" && event.description.trim()
                 ? `"${event.description.trim()}"`
                 : `event ${index + 1}`;
@@ -475,6 +482,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
 
     const typeDef = await loadType(projectTypeName, projectDir);
     const typePlugin = await loadTypePlugin(projectTypeName, projectDir);
+    let resolvedTypeOptions: Record<string, unknown> = {};
 
     // Check required files (config.yaml always + type-specific files)
     // Some files are optional (created by build or user choice)
@@ -533,6 +541,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
             issues.push(...validateLayoutOverrides(data.layout));
             issues.push(...validateTypeOptions(data.type_options));
             issues.push(...validateFormatOptions(data.format_options));
+            resolvedTypeOptions = resolveTypeOptions(data as unknown as BookConfig);
 
             if (typePlugin?.configSchema && isPlainObject(data.type_options)) {
                 issues.push(...validateData(data.type_options, typePlugin.configSchema, "config.yaml:type_options"));
@@ -787,7 +796,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
 
     await validateCrossReferences(projectDir, projectTypeName, issues);
     await validateDraftTracking(projectDir, issues);
-    await validateTimelineTracking(projectDir, issues);
+    await validateTimelineTracking(projectDir, resolvedTypeOptions, issues);
 
     // Split into errors and warnings
     return {

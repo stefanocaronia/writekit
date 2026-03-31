@@ -194,4 +194,56 @@ Text.
         expect(result.warnings.some((msg) => msg.includes('timeline.yaml: event 2 ("Flashback") points back to chapter 1 after chapter 2'))).toBe(true);
         expect(result.warnings.some((msg) => msg.includes("timeline.yaml: event 3 refers to missing chapter 99"))).toBe(true);
     });
+
+    it("allows nonlinear timelines when explicitly enabled", async () => {
+        rmSync(TIMELINE_DIR, { recursive: true, force: true });
+        run(`${CLI} init test-timeline-validation --yes --type novel`, SANDBOX);
+
+        const configPath = join(TIMELINE_DIR, "config.yaml");
+        const config = readFileSync(configPath, "utf-8");
+        writeFileSync(configPath, `${config}
+type_options:
+  timeline:
+    allow_non_linear: true
+`, "utf-8");
+
+        writeFileSync(join(TIMELINE_DIR, "manuscript", "01-chapter-one.md"), `---
+chapter: 1
+title: Chapter One
+draft: 1
+---
+
+# Chapter One
+
+Text.
+`, "utf-8");
+
+        writeFileSync(join(TIMELINE_DIR, "manuscript", "02-chapter-two.md"), `---
+chapter: 2
+title: Chapter Two
+draft: 1
+---
+
+# Chapter Two
+
+Text.
+`, "utf-8");
+
+        writeFileSync(join(TIMELINE_DIR, "timeline.yaml"), `events:
+  - date: day 1
+    description: Second chapter event
+    chapter: "2"
+  - date: day 2
+    description: Flashback
+    chapter: "1"
+  - date: day 3
+    description: Missing chapter
+    chapter: "99"
+`, "utf-8");
+
+        const result = await checkProject(TIMELINE_DIR);
+
+        expect(result.warnings.some((msg) => msg.includes('points back to chapter 1 after chapter 2'))).toBe(false);
+        expect(result.warnings.some((msg) => msg.includes("timeline.yaml: event 3 refers to missing chapter 99"))).toBe(true);
+    });
 });
