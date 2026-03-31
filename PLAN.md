@@ -202,11 +202,13 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 
 ## v0.6.0 — Estensioni
 
-- [ ] **Traduzione agent-assisted** — tool CLI che l'AI chiama per prepararsi il terreno, poi traduce:
+- [x] **Traduzione agent-assisted** — tool CLI che l'AI chiama per prepararsi il terreno, poi traduce:
     - [x] `wk translate init --to en` — clona struttura progetto in cartella target, aggiorna config.language, genera `translation-glossary.yaml` con tutti i nomi estratti da characters/world/config/concepts (originale → tradotto vuoto). Opzioni: `--output`, `--context`, `--translator`. Ogni file manuscript ha `source_path` e `source_hash` nel frontmatter per drift detection.
-    - [ ] `wk translate glossary` — mostra glossario corrente, evidenzia voci non ancora tradotte
-    - [ ] `wk translate status` — quali capitoli sono tradotti e quali no (confronto sorgente → target)
-    - `wk translate verify` — verifica coerenza: nomi del glossario usati consistentemente nei capitoli tradotti, frontmatter intatto, nessun nome originale rimasto nel testo
+    - [x] `wk translate glossary` — mostra glossario corrente con progresso, evidenzia voci non ancora tradotte
+    - [x] `wk translate status` — progresso traduzione: tradotti, non tradotti, outdated (source cambiato), source mancante
+    - [x] `wk translate verify` — verifica coerenza: termini sorgente rimasti nel testo tradotto, voci glossario non tradotte, source drift
+    - [x] `wk translate sync` — riallinea struttura target: aggiunge nuovi file dal source, segnala file source rimossi, aggiorna hash per file non tradotti
+    - [x] `wk translate diff` — mostra file target non allineati al source con hash mismatch
     - Workflow agent: legge AGENTS.md → chiama `translate init` → popola glossario → traduce capitolo per capitolo con glossario per coerenza → chiama `translate verify` → `wk build`
     - L'agent è l'orchestratore (ha le sue API key), writekit è l'infrastruttura
     - **Modello di progetto** — la traduzione vive di default dentro il progetto sorgente, non nello stesso manuscript:
@@ -238,9 +240,9 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
         - voci glossario non risolte
         - termini sorgente rimasti nel target dove non dovrebbero
         - frontmatter modificato in modo non ammesso
-    - **Comandi possibili aggiuntivi**:
-        - `wk translate sync` — riallinea struttura target se nel source compaiono nuovi capitoli/sezioni
-        - `wk translate diff` — mostra quali file target sono indietro rispetto al source
+    - **Comandi implementati**:
+        - [x] `wk translate sync` — riallinea struttura target se nel source compaiono nuovi capitoli/sezioni
+        - [x] `wk translate diff` — mostra quali file target sono indietro rispetto al source
     - **Ruolo dell'agent**:
         - writekit prepara struttura, mapping, glossario e verifiche
         - l'agent traduce capitolo per capitolo

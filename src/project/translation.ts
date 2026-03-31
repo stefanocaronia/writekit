@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir, mkdir, writeFile, cp, copyFile } from "node:fs/promises";
-import { join, relative, dirname, extname } from "node:path";
-import { stringify } from "yaml";
+import { join, resolve, relative, dirname, extname } from "node:path";
+import { parse as parseYaml, stringify } from "yaml";
 import { parseFrontmatter, type BookConfig } from "./parse.js";
 import { type ProjectType } from "./project-type.js";
 import { frontmatter as fmFormat, fileExists, dirExists } from "../support/fs-utils.js";
@@ -279,6 +279,298 @@ This is a **translation project** created by \`wk translate init\`.
 - Do NOT translate proper names without consulting \`translation-glossary.yaml\`.
 - Preserve all markdown formatting, footnotes, and image references.
 `;
+}
+
+// ---------------------------------------------------------------------------
+// Translation README
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Load translation config from target project
+// ---------------------------------------------------------------------------
+
+export async function loadTranslationConfig(projectDir: string): Promise<TranslationConfig> {
+    const path = join(projectDir, "translation.yaml");
+    if (!(await fileExists(path))) {
+        throw new Error("Not a translation project — translation.yaml not found.");
+    }
+    const raw = await readFile(path, "utf-8");
+    return parseYaml(raw) as TranslationConfig;
+}
+
+export function resolveSourceDir(targetDir: string, tc: TranslationConfig): string {
+    return resolve(targetDir, tc.source_project);
+}
+
+// ---------------------------------------------------------------------------
+// Load glossary from target project
+// ---------------------------------------------------------------------------
+
+export async function loadGlossary(projectDir: string): Promise<TranslationGlossary> {
+    const path = join(projectDir, "translation-glossary.yaml");
+    if (!(await fileExists(path))) {
+        return { characters: [], locations: [], concepts: [], people: [], titles: [] };
+    }
+    const raw = await readFile(path, "utf-8");
+    // Strip comment lines before parsing
+    const yamlContent = raw.split("\n").filter((l) => !l.startsWith("#")).join("\n");
+    const parsed = parseYaml(yamlContent) as Partial<TranslationGlossary> | null;
+    return {
+        characters: parsed?.characters ?? [],
+        locations: parsed?.locations ?? [],
+        concepts: parsed?.concepts ?? [],
+        people: parsed?.people ?? [],
+        titles: parsed?.titles ?? [],
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Status: compare source and target manuscript files
+// ---------------------------------------------------------------------------
+
+export interface FileStatus {
+    relPath: string;
+    sourcePath: string;
+    sourceHash: string;
+    currentSourceHash: string | null; // null if source file missing
+    hasTranslation: boolean;          // target body is non-empty
+    status: "translated" | "untranslated" | "outdated" | "source_missing";
+}
+
+async function collectTargetManuscriptFiles(
+    dir: string,
+    baseDir: string,
+    results: FileStatus[],
+    sourceDir: string,
+): Promise<void> {
+    if (!(await dirExists(dir))) return;
+    const entries = await readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            await collectTargetManuscriptFiles(fullPath, baseDir, results, sourceDir);
+        } else if (extname(entry.name) === ".md") {
+            const content = await readFile(fullPath, "utf-8");
+            const { data, body } = parseFrontmatter(content);
+            const sourcePath = (data.source_path as string) || "";
+            const sourceHash = (data.source_hash as string) || "";
+
+            if (!sourcePath) continue; // not a translation file
+
+            let currentSourceHash: string | null = null;
+            const sourceFilePath = join(sourceDir, sourcePath);
+            if (await fileExists(sourceFilePath)) {
+                const sourceContent = await readFile(sourceFilePath, "utf-8");
+                currentSourceHash = hashContent(sourceContent);
+            }
+
+            const hasTranslation = body.trim().length > 0;
+            let status: FileStatus["status"];
+            if (currentSourceHash === null) {
+                status = "source_missing";
+            } else if (currentSourceHash !== sourceHash) {
+                status = "outdated";
+            } else if (hasTranslation) {
+                status = "translated";
+            } else {
+                status = "untranslated";
+            }
+
+            results.push({
+                relPath: relative(baseDir, fullPath).replace(/\\/g, "/"),
+                sourcePath,
+                sourceHash,
+                currentSourceHash,
+                hasTranslation,
+                status,
+            });
+        }
+    }
+}
+
+export async function getTranslationStatus(
+    targetDir: string,
+    sourceDir: string,
+): Promise<FileStatus[]> {
+    const results: FileStatus[] = [];
+    await collectTargetManuscriptFiles(
+        join(targetDir, "manuscript"),
+        targetDir,
+        results,
+        sourceDir,
+    );
+    return results;
+}
+
+// ---------------------------------------------------------------------------
+// Verify: check glossary consistency in translated text
+// ---------------------------------------------------------------------------
+
+export interface VerifyIssue {
+    file: string;
+    message: string;
+    level: "warning" | "error";
+}
+
+export async function verifyTranslation(
+    targetDir: string,
+    sourceDir: string,
+    glossary: TranslationGlossary,
+): Promise<VerifyIssue[]> {
+    const issues: VerifyIssue[] = [];
+    const statuses = await getTranslationStatus(targetDir, sourceDir);
+
+    // Collect all source terms from glossary
+    const sourceTerms: string[] = [];
+    for (const entries of [glossary.characters, glossary.locations, glossary.concepts]) {
+        for (const entry of entries) {
+            if (entry.source) sourceTerms.push(entry.source);
+        }
+    }
+
+    // Check untranslated glossary entries
+    const allEntries = [
+        ...glossary.characters,
+        ...glossary.locations,
+        ...glossary.concepts,
+        ...glossary.people,
+        ...glossary.titles,
+    ];
+    const untranslated = allEntries.filter((e) => !e.translation);
+    if (untranslated.length > 0) {
+        issues.push({
+            file: "translation-glossary.yaml",
+            message: `${untranslated.length} glossary entries have no translation`,
+            level: "warning",
+        });
+    }
+
+    // For translated files: check if source terms appear in the body
+    for (const fs of statuses) {
+        if (!fs.hasTranslation) continue;
+
+        const content = await readFile(join(targetDir, fs.relPath), "utf-8");
+        const { body } = parseFrontmatter(content);
+
+        for (const term of sourceTerms) {
+            // Only flag if the term has a glossary translation but the source term still appears
+            const entry = allEntries.find((e) => e.source === term);
+            if (entry?.translation && body.includes(term)) {
+                issues.push({
+                    file: fs.relPath,
+                    message: `source term "${term}" found in translated text (expected: "${entry.translation}")`,
+                    level: "warning",
+                });
+            }
+        }
+
+        if (fs.status === "outdated") {
+            issues.push({
+                file: fs.relPath,
+                message: "source has changed since translation — review needed",
+                level: "warning",
+            });
+        }
+    }
+
+    return issues;
+}
+
+// ---------------------------------------------------------------------------
+// Sync: realign target structure with source
+// ---------------------------------------------------------------------------
+
+export interface SyncResult {
+    added: string[];
+    removed: string[];
+    updated: string[];
+}
+
+export async function syncTranslation(
+    targetDir: string,
+    sourceDir: string,
+): Promise<SyncResult> {
+    const result: SyncResult = { added: [], removed: [], updated: [] };
+
+    // Collect existing target files with source_path
+    const targetFiles = await getTranslationStatus(targetDir, sourceDir);
+    const targetSourcePaths = new Set(targetFiles.map((f) => f.sourcePath));
+
+    // Walk source manuscript to find new files
+    const sourceMs = join(sourceDir, "manuscript");
+    if (!(await dirExists(sourceMs))) return result;
+
+    const sourceFiles: string[] = [];
+    await collectSourcePaths(sourceMs, sourceDir, sourceFiles);
+
+    // Add new files from source
+    for (const sourcePath of sourceFiles) {
+        if (!targetSourcePaths.has(sourcePath)) {
+            const sourceFilePath = join(sourceDir, sourcePath);
+            const content = await readFile(sourceFilePath, "utf-8");
+            const { data } = parseFrontmatter(content);
+
+            data.source_path = sourcePath;
+            data.source_hash = hashContent(content);
+
+            const targetPath = join(targetDir, sourcePath);
+            await mkdir(dirname(targetPath), { recursive: true });
+            await writeFile(targetPath, fmFormat(data, "\n"));
+            result.added.push(sourcePath);
+        }
+    }
+
+    // Detect files in target whose source no longer exists
+    const sourcePathSet = new Set(sourceFiles);
+    for (const tf of targetFiles) {
+        if (tf.sourcePath && !sourcePathSet.has(tf.sourcePath)) {
+            result.removed.push(tf.relPath);
+        }
+    }
+
+    // Update source_hash for untranslated files that are outdated
+    for (const tf of targetFiles) {
+        if (tf.status === "outdated" && !tf.hasTranslation && tf.currentSourceHash) {
+            const targetPath = join(targetDir, tf.relPath);
+            const content = await readFile(targetPath, "utf-8");
+            const { data } = parseFrontmatter(content);
+            data.source_hash = tf.currentSourceHash;
+            await writeFile(targetPath, fmFormat(data, "\n"));
+            result.updated.push(tf.relPath);
+        }
+    }
+
+    // Copy new part.yaml files
+    for (const sourcePath of sourceFiles) {
+        const dir = dirname(sourcePath);
+        if (dir !== "manuscript") {
+            const partYaml = join(sourceDir, dir, "part.yaml");
+            const targetPartYaml = join(targetDir, dir, "part.yaml");
+            if (await fileExists(partYaml) && !(await fileExists(targetPartYaml))) {
+                await mkdir(join(targetDir, dir), { recursive: true });
+                await copyFile(partYaml, targetPartYaml);
+            }
+        }
+    }
+
+    return result;
+}
+
+async function collectSourcePaths(
+    dir: string,
+    sourceDir: string,
+    results: string[],
+): Promise<void> {
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            await collectSourcePaths(fullPath, sourceDir, results);
+        } else if (extname(entry.name) === ".md") {
+            results.push(relative(sourceDir, fullPath).replace(/\\/g, "/"));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
