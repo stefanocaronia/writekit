@@ -125,7 +125,9 @@ export const buildCommand = new Command("build")
         console.log(`\n${icon.report} ${c.bold("Generating reports...")}\n`);
         const { generateReports } = await import("../project/reports.js");
         const reports = await generateReports(projectDir);
-        console.log(`  ${c.dim(`✓ ${reports.join(", ")}`)}`);
+        const { generateBuildChangelog } = await import("../project/changelog.js");
+        await generateBuildChangelog(projectDir, config, chapters);
+        console.log(`  ${c.dim(`✓ ${reports.join(", ")}, changelog`)}`);
 
         console.log(`\n${icon.done} ${c.green("Done!")}\n`);
     });

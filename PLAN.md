@@ -196,7 +196,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - `wk check` avvisa se alcuni capitoli tracciano il draft e altri no
     - `status.md` mostra latest draft, capitoli senza metadata e distribuzione per draft
     - `wk stats` espone copertura e draft più recente
-- [ ] **Changelog automatico** — diff tra build
+- [x] **Changelog automatico** — `wk build` salva uno snapshot del progetto e genera `build/reports/changelog.md` con capitoli aggiunti, rimossi o modificati rispetto alla build precedente
 
 ---
 

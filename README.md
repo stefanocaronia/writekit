@@ -600,6 +600,7 @@ Every time you build, writekit generates reports in `build/reports/`:
 - **relationships.md** — Character relationships as a graph and per-character summary
 - **locations.md** — Which locations appear in which chapters
 - **timeline.md** — Your timeline formatted and readable
+- **changelog.md** — Difference from the previous build snapshot (added, removed, updated chapters)
 
 These are auto-generated and overwritten on every build. Don't edit them.
 

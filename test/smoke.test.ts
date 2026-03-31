@@ -152,6 +152,26 @@ describe("writekit smoke tests", () => {
         expect(existsSync(join(TEST_DIR, "build", "reports", "relationships.md"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "build", "reports", "locations.md"))).toBe(true);
         expect(existsSync(join(TEST_DIR, "build", "reports", "timeline.md"))).toBe(true);
+        expect(existsSync(join(TEST_DIR, "build", "reports", "changelog.md"))).toBe(true);
+    });
+
+    it("changelog tracks differences between builds", () => {
+        writeFileSync(join(TEST_DIR, "manuscript", "02-la-tempesta.md"), `---
+chapter: 2
+title: La Tempesta
+draft: 2
+---
+
+# La Tempesta
+
+The storm is louder now.
+`, "utf-8");
+
+        run(`${CLI} build html`, TEST_DIR);
+        const changelog = readFileSync(join(TEST_DIR, "build", "reports", "changelog.md"), "utf-8");
+        expect(changelog).toContain("## Updated chapters");
+        expect(changelog).toContain("02-la-tempesta.md");
+        expect(changelog).toContain("draft:");
     });
 
     it("build epub works", () => {
