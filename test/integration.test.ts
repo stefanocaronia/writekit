@@ -525,6 +525,7 @@ Water in Italian culture carries deep symbolic weight: purification, memory, the
         expect(out).toContain("The Fountain of Secrets");
         expect(out).toContain("Total words");
         expect(out).toContain("Chapters");
+        expect(out).toContain("Draft coverage");
     });
 
     it("build html works with all content", () => {
@@ -1526,6 +1527,8 @@ describe("content verification", () => {
         const status = readFileSync(join(SANDBOX, "int-novel", "build", "reports", "status.md"), "utf-8");
         expect(status).toContain("The Fountain");
         expect(status).toContain("Total words");
+        expect(status).toContain("## Draft tracking");
+        expect(status).toContain("Latest draft");
     });
 
     it("essay: thesis.md present", () => {

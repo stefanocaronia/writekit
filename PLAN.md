@@ -191,7 +191,11 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - warnings strutturati, senza NLP o matching fuzzy
 - [ ] **Grafo relazioni** — report relazioni personaggi
 - [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
-- [ ] **Draft tracking** — stato draft per capitolo
+- [x] **Draft tracking** — stato draft per capitolo:
+    - `wk check` avvisa se `draft` non è un intero positivo
+    - `wk check` avvisa se alcuni capitoli tracciano il draft e altri no
+    - `status.md` mostra latest draft, capitoli senza metadata e distribuzione per draft
+    - `wk stats` espone copertura e draft più recente
 - [ ] **Changelog automatico** — diff tra build
 
 ---

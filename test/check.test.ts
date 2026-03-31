@@ -8,6 +8,7 @@ const ROOT = process.cwd();
 const CLI = `node ${join(ROOT, "dist", "cli.js")}`;
 const SANDBOX = join(ROOT, "sandbox");
 const CHECK_DIR = join(SANDBOX, "test-crossrefs");
+const DRAFT_DIR = join(SANDBOX, "test-draft-tracking");
 
 function run(cmd: string, cwd?: string): string {
     return execSync(cmd, {
@@ -25,6 +26,7 @@ describe("cross-reference validation", () => {
 
     afterAll(() => {
         rmSync(CHECK_DIR, { recursive: true, force: true });
+        rmSync(DRAFT_DIR, { recursive: true, force: true });
     });
 
     it("warns about missing novel cross references", async () => {
@@ -103,5 +105,47 @@ related:
         expect(result.warnings.some((msg) => msg.includes('arguments/example.md: related reference "Missing Argument" not found in concepts/ or arguments/'))).toBe(true);
 
         rmSync(essayDir, { recursive: true, force: true });
+    });
+
+    it("warns when draft tracking is inconsistent", async () => {
+        rmSync(DRAFT_DIR, { recursive: true, force: true });
+        run(`${CLI} init test-draft-tracking --yes --type novel`, SANDBOX);
+
+        writeFileSync(join(DRAFT_DIR, "manuscript", "01-chapter-one.md"), `---
+chapter: 1
+title: Chapter One
+draft: 2
+---
+
+# Chapter One
+
+Text.
+`, "utf-8");
+
+        writeFileSync(join(DRAFT_DIR, "manuscript", "02-chapter-two.md"), `---
+chapter: 2
+title: Chapter Two
+draft: 0
+---
+
+# Chapter Two
+
+Text.
+`, "utf-8");
+
+        writeFileSync(join(DRAFT_DIR, "manuscript", "03-chapter-three.md"), `---
+chapter: 3
+title: Chapter Three
+---
+
+# Chapter Three
+
+Text.
+`, "utf-8");
+
+        const result = await checkProject(DRAFT_DIR);
+
+        expect(result.warnings.some((msg) => msg.includes("manuscript/02-chapter-two.md: draft should be a positive integer"))).toBe(true);
+        expect(result.warnings.some((msg) => msg.includes("manuscript/03-chapter-three.md: missing draft while draft tracking is enabled in other chapters"))).toBe(true);
     });
 });

@@ -92,8 +92,15 @@ export const statsCommand = new Command("stats")
         const noteCount = await countFilesInDir(join(projectDir, "notes"));
 
         // Draft stats
-        const drafts = chapters.map((ch) => ch.draft ?? 1);
+        const draftTrackedChapters = chapters.filter((ch) => ch.number > 0 && !ch.sectionKind);
+        const drafts = draftTrackedChapters
+            .map((ch) => ch.draft)
+            .filter((draft): draft is number => typeof draft === "number" && Number.isInteger(draft) && draft > 0);
         const avgDraft = drafts.length > 0 ? (drafts.reduce((a, b) => a + b, 0) / drafts.length).toFixed(1) : "—";
+        const latestDraft = drafts.length > 0 ? String(Math.max(...drafts)) : "—";
+        const draftCoverage = draftTrackedChapters.length > 0
+            ? `${drafts.length}/${draftTrackedChapters.length}`
+            : "—";
 
         console.log(`\n${icon.book} ${c.bold(config.title)}`);
         const subtitle = [config.type || "novel", config.language || ""].filter(Boolean).join(" · ");
@@ -109,6 +116,8 @@ export const statsCommand = new Command("stats")
         ov("Total words", totalWords.toLocaleString());
         ov("Reading time", readingTime(totalWords));
         ov("Avg draft", String(avgDraft));
+        ov("Latest draft", latestDraft);
+        ov("Draft coverage", draftCoverage);
         if (contributors.length > 0) ov("Contributors", String(contributors.length));
         if (characterCount > 0) ov("Characters", String(characterCount));
         if (worldCount > 0) ov("Locations", String(worldCount));

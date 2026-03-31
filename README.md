@@ -358,7 +358,7 @@ Writekit uses this metadata for validation, reports, and building your book. You
 | `chapter` | novel, paper | Chapter number (auto-assigned by `wk add`) |
 | `pov` | novel only | Point-of-view character |
 | `author` | collection | Per-chapter author (for anthologies with multiple writers) |
-| `draft` | no | Draft number (tracked in reports) |
+| `draft` | no | Draft number (tracked in reports and checked for consistency) |
 
 **Front/back matter sections** (prologue.md, epilogue.md, etc.):
 
@@ -595,7 +595,7 @@ In collection projects, each chapter can have an `author` field in its frontmatt
 
 Every time you build, writekit generates reports in `build/reports/`:
 
-- **status.md** — Word count per chapter, total progress, draft numbers
+- **status.md** — Word count per chapter, total progress, latest draft, missing draft metadata, draft distribution
 - **cast.md** — Which characters appear in which chapters
 - **locations.md** — Which locations appear in which chapters
 - **timeline.md** — Your timeline formatted and readable

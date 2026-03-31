@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { fileExists, dirExists } from "../support/fs-utils.js";
-import { SECTION_FILE_MAP, parseFrontmatter, type BookConfig } from "../project/parse.js";
+import { SECTION_FILE_MAP, loadChapters, parseFrontmatter, type BookConfig } from "../project/parse.js";
 import { parse as parseYaml, YAMLParseError } from "yaml";
 import { listThemes } from "../support/theme.js";
 import { supportedLanguages } from "../support/i18n.js";
@@ -184,6 +184,40 @@ async function validateCrossReferences(
                 }
             }
         }
+    }
+}
+
+async function validateDraftTracking(
+    projectDir: string,
+    issues: ValidationIssue[],
+): Promise<void> {
+    const chapters = (await loadChapters(projectDir))
+        .filter((chapter) => !chapter.sectionKind && chapter.number > 0);
+
+    if (chapters.length === 0) return;
+
+    let draftTrackingEnabled = false;
+
+    for (const chapter of chapters) {
+        if (chapter.draft === undefined) continue;
+        draftTrackingEnabled = true;
+
+        if (!Number.isInteger(chapter.draft) || chapter.draft < 1) {
+            issues.push({
+                level: "warning",
+                message: `manuscript/${chapter.filename}: draft should be a positive integer`,
+            });
+        }
+    }
+
+    if (!draftTrackingEnabled) return;
+
+    for (const chapter of chapters) {
+        if (chapter.draft !== undefined) continue;
+        issues.push({
+            level: "warning",
+            message: `manuscript/${chapter.filename}: missing draft while draft tracking is enabled in other chapters`,
+        });
     }
 }
 
@@ -682,6 +716,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
     }
 
     await validateCrossReferences(projectDir, projectTypeName, issues);
+    await validateDraftTracking(projectDir, issues);
 
     // Split into errors and warnings
     return {

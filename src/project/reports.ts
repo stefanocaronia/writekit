@@ -106,6 +106,10 @@ function wordCount(text: string): number {
     return text.split(/\s+/).filter((w) => w.length > 0).length;
 }
 
+function trackedChapters<T extends { number: number; sectionKind?: string; draft?: number }>(chapters: T[]): T[] {
+    return chapters.filter((chapter) => chapter.number > 0 && !chapter.sectionKind);
+}
+
 // --- Status Report ---
 
 async function generateStatus(projectDir: string): Promise<string> {
@@ -121,6 +125,20 @@ async function generateStatus(projectDir: string): Promise<string> {
     });
 
     const totalWords = chapters.reduce((sum, ch) => sum + wordCount(ch.body), 0);
+    const draftTracked = trackedChapters(chapters);
+    const missingDraft = draftTracked.filter((chapter) => chapter.draft === undefined).length;
+    const draftCounts = new Map<number, number>();
+
+    for (const chapter of draftTracked) {
+        if (chapter.draft === undefined || !Number.isInteger(chapter.draft) || chapter.draft < 1) continue;
+        draftCounts.set(chapter.draft, (draftCounts.get(chapter.draft) ?? 0) + 1);
+    }
+
+    const latestDraft = draftCounts.size > 0 ? Math.max(...draftCounts.keys()) : null;
+    const draftRows = [...draftCounts.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([draft, count]) => `| Draft ${draft} | ${count} |`)
+        .join("\n");
 
     return `# Status — ${config.title}
 
@@ -134,6 +152,9 @@ async function generateStatus(projectDir: string): Promise<string> {
 | Characters | ${characters.length} |
 | Locations/World | ${world.length} |
 | Timeline events | ${timeline.length} |
+| Tracked chapters | ${draftTracked.length} |
+| Missing draft metadata | ${missingDraft} |
+| Latest draft | ${latestDraft ?? "—"} |
 | **Total words** | **${totalWords.toLocaleString()}** |
 
 ## Chapters
@@ -141,6 +162,12 @@ async function generateStatus(projectDir: string): Promise<string> {
 | # | Title | POV | Draft | Words |
 |---|---|---|---|---|
 ${chapterRows.join("\n")}
+
+## Draft tracking
+
+| Draft | Chapters |
+|---|---|
+${draftRows || "| _No draft metadata yet_ | 0 |"}
 
 **Total: ${totalWords.toLocaleString()} words**
 `;
