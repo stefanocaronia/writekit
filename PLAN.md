@@ -190,7 +190,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - essay/paper: `related` in `concepts/` e `arguments/`
     - warnings strutturati, senza NLP o matching fuzzy
 - [ ] **Grafo relazioni** — report relazioni personaggi
-- [ ] **Timeline validation** — ordine cronologico vs ordine capitoli
+- [x] **Timeline validation** — `wk check` valida i riferimenti capitolo in `timeline.yaml` e avvisa quando la timeline cronologica punta all'indietro rispetto all'ordine dei capitoli (warning editoriale, utile per rilevare flashback/non-linearità non intenzionali)
 - [x] **Draft tracking** — stato draft per capitolo:
     - `wk check` avvisa se `draft` non è un intero positivo
     - `wk check` avvisa se alcuni capitoli tracciano il draft e altri no

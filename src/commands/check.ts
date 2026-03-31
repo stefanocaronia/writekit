@@ -107,6 +107,16 @@ function pushMissingReferenceWarning(
     });
 }
 
+function chapterRef(value: unknown): number | null {
+    if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+        return value;
+    }
+    if (typeof value === "string" && /^\d+$/.test(value.trim())) {
+        return Number.parseInt(value.trim(), 10);
+    }
+    return null;
+}
+
 async function validateCrossReferences(
     projectDir: string,
     typeName: string,
@@ -218,6 +228,66 @@ async function validateDraftTracking(
             level: "warning",
             message: `manuscript/${chapter.filename}: missing draft while draft tracking is enabled in other chapters`,
         });
+    }
+}
+
+async function validateTimelineTracking(
+    projectDir: string,
+    issues: ValidationIssue[],
+): Promise<void> {
+    const timelinePath = join(projectDir, "timeline.yaml");
+    if (!(await fileExists(timelinePath))) return;
+
+    const raw = await readFile(timelinePath, "utf-8");
+    const parsed = parseYaml(raw) as { events?: unknown[] } | null;
+    const events = Array.isArray(parsed?.events) ? parsed.events : [];
+    if (events.length === 0) return;
+
+    const chapterNumbers = new Set(
+        (await loadChapters(projectDir))
+            .filter((chapter) => !chapter.sectionKind && chapter.number > 0)
+            .map((chapter) => chapter.number),
+    );
+
+    let previousChapter: number | null = null;
+
+    for (let index = 0; index < events.length; index++) {
+        const event = events[index];
+        if (!isPlainObject(event)) continue;
+
+        const rawChapter = event.chapter;
+        if (rawChapter === undefined || rawChapter === null || rawChapter === "") continue;
+
+        const filePath = `timeline.yaml: event ${index + 1}`;
+        const currentChapter = chapterRef(rawChapter);
+
+        if (currentChapter === null) {
+            issues.push({
+                level: "warning",
+                message: `${filePath} chapter "${String(rawChapter)}" is not a valid chapter number`,
+            });
+            continue;
+        }
+
+        if (!chapterNumbers.has(currentChapter)) {
+            issues.push({
+                level: "warning",
+                message: `${filePath} refers to missing chapter ${currentChapter}`,
+            });
+            continue;
+        }
+
+        if (previousChapter !== null && currentChapter < previousChapter) {
+            const label = typeof event.description === "string" && event.description.trim()
+                ? `"${event.description.trim()}"`
+                : `event ${index + 1}`;
+            issues.push({
+                level: "warning",
+                message: `${filePath} (${label}) points back to chapter ${currentChapter} after chapter ${previousChapter} — timeline chronology diverges from chapter order`,
+            });
+        }
+
+        previousChapter = currentChapter;
     }
 }
 
@@ -717,6 +787,7 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
 
     await validateCrossReferences(projectDir, projectTypeName, issues);
     await validateDraftTracking(projectDir, issues);
+    await validateTimelineTracking(projectDir, issues);
 
     // Split into errors and warnings
     return {

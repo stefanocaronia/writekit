@@ -602,6 +602,8 @@ Every time you build, writekit generates reports in `build/reports/`:
 
 These are auto-generated and overwritten on every build. Don't edit them.
 
+`wk check` also validates `timeline.yaml`: it warns if an event points to a missing chapter, or if the chronological timeline goes backward relative to chapter order.
+
 ## License
 
 MIT
