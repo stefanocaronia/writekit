@@ -278,7 +278,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - `config.yaml build_formats: [html, epub, latex]` include format custom
     - Il TypePlugin può dichiarare format aggiuntivi specifici per il tipo (es. screenplay → fountain)
 - [x] **Preset plugin system** — preset locali in `presets/` e package esterni `writekit-preset-*`, con `layout` come layer di override finale
-- [ ] **Export Markdown singolo** — tutto il progetto (sorgenti + metadata) in un .md strutturato, utile per dare contesto completo a un LLM
+- [x] **Export Markdown singolo** — `wk export` dumpa tutto il progetto (config, style, synopsis, characters, world, outline, manuscript, notes, contributors) in un singolo .md strutturato con YAML in blocchi fenced. Utile per dare contesto completo a un LLM o archiviare il progetto
 - [ ] **Import da Markdown** — splitta un .md in capitoli
 - [ ] **Font embedding** — woff2/ttf in HTML e ePub
 - ~~**Backup command**~~ — rimosso: ridondante con git e zip standard
