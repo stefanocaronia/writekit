@@ -128,69 +128,65 @@ function buildReadme(options: InitOptions, typeDef: ProjectType): string {
     const lines: string[] = [
         `# ${options.title}`,
         options.author ? `\nby ${options.author}\n` : "",
-        `A ${options.type} project powered by [writekit](https://github.com/stefanocaronia/writekit).`,
+        `> ${typeDef.description}`,
         "",
-        "## Project Structure",
+        `A **${options.type}** project powered by [writekit](https://www.npmjs.com/package/writekit).`,
+        "",
+        "## Getting started",
+        "",
+        "```bash",
+        "wk check          # validate project",
+        "wk build html     # preview as web page",
+        "wk build all      # build all formats (pdf, epub, html, docx, md)",
+        "wk stats          # word count and chapter balance",
+        "```",
+        "",
+        "For the full command reference, configuration, and guide, see [`docs/writekit.md`](docs/writekit.md).",
+        "",
+        "## Project structure",
         "",
         "| Path | Purpose |",
         "|---|---|",
-        "| `config.yaml` | Project metadata |",
+        "| `config.yaml` | Title, author, language, build settings |",
     ];
 
     if (typeDef.files.includes("style.yaml"))
-        lines.push("| `style.yaml` | Writing rules — POV, tense, tone |");
-    if (typeDef.files.includes("timeline.yaml"))
-        lines.push("| `timeline.yaml` | Chronological events |");
+        lines.push("| `style.yaml` | Writing rules — POV, tense, tone, text normalization |");
     if (typeDef.files.includes("synopsis.md"))
         lines.push("| `synopsis.md` | Short summary / pitch |");
+    if (typeDef.files.includes("timeline.yaml"))
+        lines.push("| `timeline.yaml` | Chronological events |");
     if (typeDef.files.includes("thesis.md"))
         lines.push("| `thesis.md` | Central thesis statement |");
     if (typeDef.files.includes("abstract.md"))
-        lines.push("| `abstract.md` | Paper abstract (150–300 words) |");
+        lines.push("| `abstract.md` | Paper abstract |");
     if (typeDef.files.includes("bibliography.yaml"))
         lines.push("| `bibliography.yaml` | Sources and references |");
 
+    lines.push("| `manuscript/` | Your text — chapters, front/back matter |");
+
+    const dirDescriptions: Record<string, string> = {
+        outline: "Planning and structure",
+        "outline/chapters": "Per-chapter outlines",
+        characters: "Character sheets (name, role, backstory)",
+        world: "Locations, cultures, systems",
+        arguments: "Argument sheets (claim, support, counterpoint)",
+        concepts: "Key terms and definitions",
+        contributors: "Author/translator/editor bios",
+        notes: "Free-form ideas and research",
+        reference: "External material",
+        assets: "Cover image, illustrations, fonts",
+    };
+
     for (const dir of typeDef.dirs) {
-        if (dir === "build") continue;
-        const purposes: Record<string, string> = {
-            outline: "Story/argument structure",
-            "outline/chapters": "Per-chapter outlines",
-            manuscript: "The actual text",
-            characters: "Character sheets",
-            world: "Worldbuilding — locations, systems",
-            arguments: "Argument sheets — claim, support, counterpoint",
-            concepts: "Key terms and definitions",
-            contributors: "Author/translator/editor bios",
-            notes: "Free-form ideas and research",
-            reference: "External material",
-            assets: "Cover, illustrations",
-        };
-        if (purposes[dir]) {
-            lines.push(`| \`${dir}/\` | ${purposes[dir]} |`);
+        if (dir === "build" || dir === "manuscript") continue;
+        if (dirDescriptions[dir]) {
+            lines.push(`| \`${dir}/\` | ${dirDescriptions[dir]} |`);
         }
     }
 
+    lines.push("| `docs/` | writekit guide (auto-generated) |");
     lines.push("| `build/` | Generated output |");
-    lines.push("");
-    lines.push("## Commands");
-    lines.push("");
-    lines.push("```bash");
-    lines.push("wk check              # Validate project");
-    lines.push("wk build [format]     # Build (pdf, epub, html, docx, md, all)");
-    lines.push("wk watch              # Watch and rebuild build_formats from config.yaml");
-
-    for (const cmd of typeDef.add_commands) {
-        const argName = cmd === "event" ? "<desc>" : `<${cmd === "chapter" ? "title" : "name"}>`;
-        lines.push(`wk add ${cmd} ${argName}`);
-    }
-
-    lines.push("wk add author <name>        # Add an author");
-    lines.push("wk add translator <name>    # Add a translator");
-    lines.push("wk add editor <name>        # Add an editor");
-    lines.push("wk add illustrator <name>   # Add an illustrator");
-    lines.push("wk remove author <name>     # Remove an author");
-    lines.push("wk sync                     # Sync derived fields");
-    lines.push("```");
 
     return lines.join("\n") + "\n";
 }
