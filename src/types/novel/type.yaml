@@ -77,7 +77,7 @@ reports:
 schemas:
     manuscript:
         required: [chapter, title]
-        optional: [narrator, pov, draft, author]
+        optional: [narrator, pov, characters, location, draft, author]
     outline/chapters:
         required: [chapter, title]
         optional: [narrator, pov, characters, location]
