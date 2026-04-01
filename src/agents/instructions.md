@@ -48,6 +48,29 @@ wk stats                         # word count, balance
 
 See `README.md` for the full list.
 
+### Translation
+
+```
+wk translate init --to en          # create translation project
+wk translate init --to en --context # include characters/world/outline
+wk translate glossary              # show glossary progress
+wk translate status                # translation progress per file
+wk translate verify                # check glossary consistency
+wk translate sync                  # add new source chapters
+wk translate diff                  # show outdated files
+```
+
+Translation projects live in `translations/<lang>/`. Each is a standalone writekit project.
+Key files: `translation.yaml` (source link), `translation-glossary.yaml` (proper names).
+Manuscript files have `source_path` and `source_hash` in frontmatter — do not edit these.
+
+### Import and export
+
+```
+wk import file.md                  # split by # headings into chapters
+wk export                          # dump entire project to single .md
+```
+
 ## Do not
 
 - Edit files in `build/` or `build/reports/`
@@ -56,6 +79,8 @@ See `README.md` for the full list.
 - Modify `config.yaml` or `style.yaml` unless explicitly asked
 - Invent characters, locations, or plot points without author approval
 - Add ad-hoc top-level config keys for plugins; use `type_options` and `format_options`
+- Edit `translation.yaml`, `source_hash`, or `source_path` in translation projects
+- Add `print_preset` to config.yaml unless the author explicitly wants print output
 
 ## Manuscript structure
 
@@ -81,6 +106,12 @@ See `README.md` for the full list.
 - Scene breaks: `---` or `***` (never just a blank line)
 
 Use images only when they materially help the work. Keep paths relative to project root, usually `assets/...`.
+
+## Fonts and DOCX templates
+
+- Font files (`.woff2`, `.ttf`, `.otf`) in `assets/fonts/` or `themes/<name>/fonts/` are auto-embedded in HTML and ePub.
+- A `assets/template.docx` file customizes Word output styles/fonts. Do not modify it unless asked.
+- `print_preset` is optional. Default is `screen` (no print features). Only add it when the author wants to print.
 
 ## Back cover
 

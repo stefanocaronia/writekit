@@ -235,6 +235,42 @@ The package should export a default plugin object with a `build(ctx)` function. 
 
 Format plugins can also expose `configSchema`, and then read their validated options from `format_options.<format>` in `config.yaml`.
 
+### Import and export
+
+| Command | What it does |
+|---|---|
+| `wk import <file.md>` | Import a Markdown file — splits it into manuscript chapters by `# Heading` boundaries |
+| `wk import <file.md> --start-at 5` | Start chapter numbering at 5 |
+| `wk import <file.md> --part 2` | Import into part 2 |
+| `wk export` | Export entire project to a single structured Markdown file (config, characters, world, outline, manuscript, notes) |
+| `wk export -o path.md` | Export to a specific file |
+
+The export produces a self-contained `.md` with all source files — useful for giving full context to an LLM, archiving, or sharing.
+
+### Translation
+
+Manage translations of your project. The translation system creates a standalone writekit project for each target language.
+
+| Command | What it does |
+|---|---|
+| `wk translate init --to en` | Create a translation project in `translations/en/` |
+| `wk translate init --to en --context` | Also copy context dirs (characters, world, outline) |
+| `wk translate init --to en --translator "Name"` | Set the translator name |
+| `wk translate init --to en --output ../book-en` | Create in a custom directory |
+| `wk translate glossary` | Show glossary — highlight untranslated entries |
+| `wk translate status` | Show translation progress per file |
+| `wk translate verify` | Check glossary consistency in translated text |
+| `wk translate sync` | Add new source chapters, flag removed ones |
+| `wk translate diff` | Show which files are behind the source |
+
+The translation project contains:
+
+- **`translation.yaml`** — links back to the source project
+- **`translation-glossary.yaml`** — proper names extracted from characters, world, concepts, contributors, config
+- **`manuscript/`** — empty chapter files with `source_path` and `source_hash` in frontmatter for drift detection
+
+Each target is a full writekit project — `wk check` and `wk build` work on it independently.
+
 ### Validating and watching
 
 | Command | What it does |
@@ -275,6 +311,42 @@ themes/my-theme/
 To switch themes: `wk theme use my-theme` (updates config.yaml).
 
 When you update writekit via npm, the built-in themes are refreshed but your custom themes in `themes/` are never touched.
+
+#### Custom fonts
+
+Place font files in your theme's `fonts/` folder or in `assets/fonts/`:
+
+```
+themes/my-theme/fonts/
+├── MySerif.woff2
+└── MySans.ttf
+```
+
+Or project-wide:
+
+```
+assets/fonts/
+├── CustomBody.woff2
+└── CustomHeading.otf
+```
+
+Supported formats: `.woff2`, `.woff`, `.ttf`, `.otf`. Fonts are automatically embedded in HTML (as base64 `@font-face`) and ePub (as ZIP entries). Then reference them in your theme CSS:
+
+```css
+body { font-family: "CustomBody", Georgia, serif; }
+h1, h2 { font-family: "CustomHeading", sans-serif; }
+```
+
+#### DOCX templates
+
+You can customize Word output by providing a `.docx` template with your own styles, fonts, and formatting:
+
+- **Project template:** `assets/template.docx`
+- **Theme template:** `themes/my-theme/template.docx`
+
+When building DOCX, writekit generates the content normally, then merges it into the template — keeping the template's styles, fonts, numbering, and settings. If no template is found, the built-in defaults are used.
+
+To create a template: build your project as DOCX, open it in Word, adjust styles and fonts, then save as `assets/template.docx`.
 
 ## Writing in Markdown
 
@@ -614,6 +686,27 @@ type_options:
   timeline:
     allow_non_linear: true
 ```
+
+## Node.js API
+
+Writekit can be used programmatically. All core functions are exported from the main package:
+
+```js
+import { loadConfig, loadChapters, buildFormat, checkProject } from "writekit";
+
+const config = await loadConfig("./my-novel");
+const chapters = await loadChapters("./my-novel");
+
+// Build a specific format
+const result = await buildFormat("html", "./my-novel", config, chapters, theme);
+
+// Validate
+const { warnings, errors } = await checkProject("./my-novel");
+```
+
+Available exports include project loading (`loadConfig`, `loadChapters`, `loadContributors`, `loadParts`), build (`buildFormat`, `hasFormat`, `allFormatNames`), validation (`checkProject`, `syncProject`), typography (`loadTypography`), type system (`loadType`, `allTypeNames`), presets (`getPreset`, `resolvePrintPreset`), translation functions, and utilities (`fileExists`, `slugify`, `supportedLanguages`).
+
+See [src/index.ts](./src/index.ts) for the complete list.
 
 ## License
 
