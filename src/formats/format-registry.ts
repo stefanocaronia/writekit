@@ -191,6 +191,7 @@ const builtinPlugins: Record<string, FormatPlugin> = {
                 ctx.sections,
                 ctx.features,
                 preset,
+                ctx.theme.dir,
             );
             return pathResult(path);
         },

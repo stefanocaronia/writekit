@@ -6,7 +6,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { SECTION_LABEL_KEY } from "../project/parse.js";
 import type { BookConfig, Chapter, Contributor } from "../project/parse.js";
-import type { Theme } from "../support/theme.js";
+import { fontFaceCss, type Theme } from "../support/theme.js";
 import type { Section, TypeFeatures } from "../project/project-type.js";
 import { buildColophonLines, formatAuthors } from "../support/metadata.js";
 import { getLabels } from "../support/i18n.js";
@@ -59,7 +59,7 @@ function generateContainerXml(): string {
 </container>`;
 }
 
-function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = [], hasColophon = true, hasTitlePage = true, hasToc = true): string {
+function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcover = false, hasAbout = false, coverExt?: string, imageFiles: { filename: string }[] = [], hasColophon = true, hasTitlePage = true, hasToc = true, fontFiles: { filename: string; mime: string }[] = []): string {
         const uuid = `urn:uuid:${simpleUuid()}`;
 
         const metadataLines = [
@@ -125,6 +125,11 @@ function generateContentOpf(config: BookConfig, chapters: Chapter[], hasBackcove
                 const ext = imageFiles[i].filename.substring(imageFiles[i].filename.lastIndexOf("."));
                 const mime = imgMimeMap[ext] ?? "image/jpeg";
                 manifestItems.push(`    <item id="img-${i + 1}" href="images/${imageFiles[i].filename}" media-type="${mime}" />`);
+        }
+
+        // Add fonts
+        for (let i = 0; i < fontFiles.length; i++) {
+                manifestItems.push(`    <item id="font-${i + 1}" href="fonts/${fontFiles[i].filename}" media-type="${fontFiles[i].mime}" />`);
         }
 
         // Add colophon
@@ -321,10 +326,16 @@ export async function buildEpub(
 
         // ePub: no separate part pages (reflowable format). Part headers are inline.
 
-        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc)), "OEBPS/content.opf");
-        // Prepend typography CSS variables to theme CSS
-        const epubCss = `:root { ${typoVars} }\n${theme.epubCss}`;
+        zip.addBuffer(Buffer.from(generateContentOpf(config, chapters, hasBackcover, hasAbout, coverExt, images, hasColophon, hasTitlePage, hasToc, theme.fonts)), "OEBPS/content.opf");
+        // Prepend typography CSS variables and font-face to theme CSS
+        const fontCss = theme.fonts.length > 0 ? fontFaceCss(theme.fonts, "fonts/") + "\n" : "";
+        const epubCss = `${fontCss}:root { ${typoVars} }\n${theme.epubCss}`;
         zip.addBuffer(Buffer.from(epubCss), "OEBPS/style.css");
+
+        // Add font files to ePub archive
+        for (const font of theme.fonts) {
+            zip.addBuffer(font.data, `OEBPS/fonts/${font.filename}`);
+        }
 
         // Title page
         if (has("title_page")) {

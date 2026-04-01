@@ -17,7 +17,7 @@ import {
 } from "../project/schema.js";
 import { resolveFormatPlugin } from "../formats/format-registry.js";
 
-interface CheckResult {
+export interface CheckResult {
     warnings: string[];
     errors: string[];
 }

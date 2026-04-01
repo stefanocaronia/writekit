@@ -87,7 +87,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
 - [x] **Doc temi nel README** — workflow completo documentato: builtin vs custom, struttura cartella tema, DOCX style priority chain
 - [x] **Footnotes** — sintassi Pandoc/MultiMarkdown via marked-footnote. HTML/ePub/PDF con CSS, DOCX con FootnoteReferenceRun nativo Word.
 - [x] **PDF configurabile + print presets** — 9 preset (a4, a5, pocket, digest, trade, royal, kdp, ingramspark, lulu). Ogni preset ha dimensioni, margini e bleed specifici. Config: `print_preset: trade`. Validazione nel check.
-- [ ] **DOCX template utente** — dipende da DOCX template custom
+- [x] **DOCX template utente** — `assets/template.docx` o `themes/{name}/template.docx`: il builder genera il documento normalmente, poi inietta document.xml nel template mantenendo styles/fonts/settings del template
 - [x] **Incremental build nel watch** — skip build se il file cambiato non è content (notes, characters, ecc.). Build solo su manuscript, config, style, assets, contributors.
 - [x] **`wk stats`** — statistiche dettagliate (parole, reading time, frequenza, bilancio capitoli)
 - [x] **`wk remove`** — remove chapter (con rinumerazione), character, location, note, author. Type-aware: derivato da add_commands escludendo yaml-only (event, source). Sync rinumera capitoli automaticamente.
@@ -122,7 +122,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - abstract e keywords per paper
     - uso di `wk stats`
     - parti e front/back matter: struttura e comandi
-- [ ] **DOCX template custom** — da rifare con approccio diverso. `externalStyles` della libreria docx non funziona. Serve aprire il .docx come zip e sostituire document.xml mantenendo styles/fonts/settings del template.
+- [x] **DOCX template custom** — approccio zip-based: il builder genera il .docx, poi apre il template e il generato come zip, copia document.xml/media/headers/footers dal generato nel template mantenendo styles/fonts/settings. Risoluzione: `assets/template.docx` > `themes/{name}/template.docx`.
 
 ---
 
@@ -248,13 +248,7 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
         - l'agent traduce capitolo per capitolo
         - l'agent non inventa il workflow: usa `translate init/status/verify/sync`
         - il target va trattato come progetto derivato ma editoriale, non come dump automatico
-- [ ] **API Node pubblica** — esportare le funzioni core da `writekit` come API programmatica:
-    - `loadConfig`, `loadChapters`, `loadContributors`, `loadParts`, `loadTypography`
-    - `buildHtml`, `buildEpub`, `buildDocx`, `buildPdf`, `renderBookMd`
-    - `check`, `sync`, `stats`
-    - Entry point: `writekit/api` o export diretti dal package
-    - Documentazione API per agent e integrazioni custom
-    - Predisposizione per MCP server wrapper
+- [x] **API Node pubblica** — `import { loadConfig, buildFormat, checkProject } from "writekit"`. Entry point `src/index.ts` esporta: parse (loadConfig, loadChapters, loadContributors, loadParts, parseFrontmatter), typography (loadTypography), build (buildFormat, hasFormat, allFormatNames), check (checkProject), sync (syncProject), translation (tutto), type system (loadType, allTypeNames), presets (getPreset, resolvePrintPreset), utilities (fileExists, dirExists, slugify, supportedLanguages). `package.json` con `exports`, `main`, `types` per consumo programmatico.
 - [x] **Type modulari e plugin system** — ogni type è un modulo indipendente, supporto type custom completo:
     - [x] **Fase 1 (refactoring interno)** — logica type-specific rimossa dal core:
         - [x] Ogni type in `src/types/{type}/` con `type.yaml` completo (dirs, files, schemas, reports, add_commands, sample_files, config_extra, typography)
@@ -279,8 +273,8 @@ Supporto per diversi tipi di testo. Il tipo si sceglie alla creazione (`wk init 
     - Il TypePlugin può dichiarare format aggiuntivi specifici per il tipo (es. screenplay → fountain)
 - [x] **Preset plugin system** — preset locali in `presets/` e package esterni `writekit-preset-*`, con `layout` come layer di override finale
 - [x] **Export Markdown singolo** — `wk export` dumpa tutto il progetto (config, style, synopsis, characters, world, outline, manuscript, notes, contributors) in un singolo .md strutturato con YAML in blocchi fenced. Utile per dare contesto completo a un LLM o archiviare il progetto
-- [ ] **Import da Markdown** — splitta un .md in capitoli
-- [ ] **Font embedding** — woff2/ttf in HTML e ePub
+- [x] **Import da Markdown** — `wk import file.md` splitta un .md in capitoli basandosi su heading `# Title`, genera frontmatter con chapter/title/draft, supporta `--start-at` e `--part`
+- [x] **Font embedding** — font in `assets/fonts/` o `themes/{name}/fonts/` (.woff2, .ttf, .otf) vengono automaticamente embedded: in HTML come base64 @font-face inline, in ePub come file nel ZIP con manifest entries. Il tema può poi referenziarli via `font-family` nel CSS
 - ~~**Backup command**~~ — rimosso: ridondante con git e zip standard
 
 ---

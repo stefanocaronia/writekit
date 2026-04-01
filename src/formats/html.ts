@@ -4,7 +4,7 @@ import { marked } from "../support/markdown.js";
 import { embedImagesAsBase64 } from "../support/images.js";
 import { SECTION_LABEL_KEY } from "../project/parse.js";
 import type { BookConfig, Chapter, Contributor } from "../project/parse.js";
-import type { Theme } from "../support/theme.js";
+import { fontFaceCss, type Theme } from "../support/theme.js";
 import { buildColophonLines, formatAuthors } from "../support/metadata.js";
 import { getLabels } from "../support/i18n.js";
 import type { Typography, Labels as TypoLabels } from "../support/typography.js";
@@ -271,7 +271,7 @@ export async function renderBook(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(config.title)}</title>
-    <style>${theme.htmlCss}</style>
+    <style>${theme.fonts.length > 0 ? fontFaceCss(theme.fonts) + "\n" : ""}${theme.htmlCss}</style>
 </head>
 <body class="${typography ? typographyClasses(typography) : ""}" style="${typography ? typographyCssVars(typography) : ""}">
     ${coverImageSection}

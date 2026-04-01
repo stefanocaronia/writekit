@@ -3,6 +3,12 @@
   "version": "0.4.1",
   "description": "CLI framework for creating books — generates PDF, ePub, HTML, and DOCX",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./cli": "./dist/cli.js"
+  },
   "bin": {
     "wk": "./dist/cli.js",
     "writekit": "./dist/cli.js"

@@ -38,7 +38,7 @@ import type { Section, TypeFeatures } from "../project/project-type.js";
 import { loadTypography, formatPartHeading, formatChapterHeading } from "../support/typography.js";
 import type { Labels as TypoLabels } from "../support/typography.js";
 import { resolvePrintPreset, type PrintPreset } from "./print-presets.js";
-// Template support removed — externalStyles doesn't work reliably. See PLAN.md.
+import { resolveTemplatePath, applyTemplate } from "./docx-template.js";
 
 // Module-level style, set by buildDocx before rendering
 let FONT = "Georgia";
@@ -525,6 +525,7 @@ export async function buildDocx(
     sections?: Section[],
     features?: TypeFeatures,
     preset?: PrintPreset,
+    themeDir?: string,
 ): Promise<string> {
     const has = (s: Section) => !sections || sections.includes(s);
     // Load typography and set module-level vars
@@ -1089,7 +1090,14 @@ export async function buildDocx(
     });
 
     const rawBuffer = await Packer.toBuffer(doc);
-    const buffer = await applyDocxSettingsPatch(rawBuffer, resolvedPreset.mirrorMargins);
+    let buffer = await applyDocxSettingsPatch(rawBuffer, resolvedPreset.mirrorMargins);
+
+    // Apply user/theme template if available (keeps template styles, fonts, settings)
+    const templatePath = await resolveTemplatePath(projectDir, themeDir);
+    if (templatePath) {
+        buffer = await applyTemplate(buffer, templatePath);
+    }
+
     const outPath = join(buildDir, filename);
     await writeFile(outPath, buffer);
 

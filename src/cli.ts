@@ -13,6 +13,7 @@ import { statsCommand } from "./commands/stats.js";
 import { renameCommand } from "./commands/rename.js";
 import { translateCommand } from "./commands/translate.js";
 import { exportCommand } from "./commands/export.js";
+import { importCommand } from "./commands/import.js";
 
 const program = new Command();
 
@@ -33,5 +34,6 @@ program.addCommand(renameCommand);
 program.addCommand(themeCommand);
 program.addCommand(translateCommand);
 program.addCommand(exportCommand);
+program.addCommand(importCommand);
 
 program.parse();
