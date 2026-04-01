@@ -124,7 +124,7 @@ copyright: ${JSON.stringify(copyrightLine)}
     return yaml;
 }
 
-function buildReadme(options: InitOptions, typeDef: ProjectType): string {
+export function buildReadme(options: InitOptions, typeDef: ProjectType): string {
     const lines: string[] = [
         `# ${options.title}`,
         options.author ? `\nby ${options.author}\n` : "",

@@ -186,7 +186,15 @@ export async function syncProject(projectDir: string): Promise<{ roles: number; 
     }
 
     await ensureAgentsMd(projectDir, typeName);
-    if (typeDef) await generateDocs(projectDir, typeDef);
+    if (typeDef) {
+        await generateDocs(projectDir, typeDef);
+        // Regenerate README only if missing or empty
+        const readmePath = join(projectDir, "README.md");
+        if (!(await fileExists(readmePath)) || (await readFile(readmePath, "utf-8")).trim() === "") {
+            const { buildReadme } = await import("./init.js");
+            await writeFile(readmePath, buildReadme({ title: config.title, author: Array.isArray(config.author) ? config.author[0] : config.author, language: config.language, type: typeName }, typeDef));
+        }
+    }
     const reports = await generateReports(projectDir);
 
     return { roles, chapters, agents: true, reports, normalized };
