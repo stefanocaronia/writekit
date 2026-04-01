@@ -8,3 +8,6 @@ test-*/
 .gemini
 .agents
 template.docx
+
+/MANUAL-TEST-CHECKLIST.md
+/PLAN.md
