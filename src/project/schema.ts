@@ -55,6 +55,10 @@ export const styleSchema: Schema = {
     tone: { type: "string" },
     voice: { type: "string" },
     rules: { type: "array" },
+    dialogue_style: { type: "string", values: ["em_dash", "double_quotes", "guillemets", "angle_quotes"] },
+    smart_quotes: { type: "boolean" },
+    normalize_ellipsis: { type: "boolean" },
+    normalize_dashes: { type: "boolean" },
 };
 
 export const timelineSchema: Schema = {

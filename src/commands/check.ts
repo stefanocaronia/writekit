@@ -16,6 +16,7 @@ import {
     type ValidationIssue,
 } from "../project/schema.js";
 import { resolveFormatPlugin } from "../formats/format-registry.js";
+import { loadNormalizationConfig, checkNormalization } from "../support/text-normalize.js";
 
 export interface CheckResult {
     warnings: string[];
@@ -698,6 +699,29 @@ export async function checkProject(projectDir: string): Promise<CheckResult> {
                     message: `outline/chapters/${file}: doesn't follow naming convention NN.md`,
                 });
             }
+        }
+    }
+
+    // Text normalization checks (dialogue style, smart quotes, ellipsis, dashes)
+    if (typeDef.files.includes("style.yaml") && await fileExists(join(projectDir, "style.yaml"))) {
+        const raw = await readFile(join(projectDir, "style.yaml"), "utf-8");
+        try {
+            const styleData = parseYaml(raw) as Record<string, unknown>;
+            const normConfig = loadNormalizationConfig(styleData);
+            if (normConfig.dialogue_style || normConfig.smart_quotes || normConfig.normalize_ellipsis || normConfig.normalize_dashes) {
+                const msDir = join(projectDir, "manuscript");
+                const msFiles = await getMdFiles(msDir);
+                for (const file of msFiles) {
+                    const content = await readFile(join(msDir, file), "utf-8");
+                    const { body } = parseFrontmatter(content);
+                    const warnings = checkNormalization(body, { ...normConfig }, `manuscript/${file}`);
+                    for (const w of warnings) {
+                        issues.push({ level: "warning", message: w });
+                    }
+                }
+            }
+        } catch {
+            // style.yaml parse errors already reported above
         }
     }
 

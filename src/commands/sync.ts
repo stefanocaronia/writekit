@@ -10,6 +10,9 @@ import { generateReports } from "../project/reports.js";
 import { hasType, loadType } from "../project/project-type.js";
 import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
 import { c, icon } from "../support/ui.js";
+import { fileExists, dirExists } from "../support/fs-utils.js";
+import { parseFrontmatter } from "../project/parse.js";
+import { loadNormalizationConfig, normalizeText } from "../support/text-normalize.js";
 
 const CONTRIBUTOR_ROLES = ["author", "translator", "editor", "illustrator"] as const;
 
@@ -119,7 +122,33 @@ async function syncChapterNumbering(projectDir: string): Promise<number> {
     return renamed;
 }
 
-export async function syncProject(projectDir: string): Promise<{ roles: number; chapters: number; agents: boolean; reports: string[] }> {
+async function normalizeManuscript(msDir: string, normConfig: import("../support/text-normalize.js").NormalizationConfig): Promise<number> {
+    let count = 0;
+    const entries = await readdir(msDir, { withFileTypes: true });
+    for (const entry of entries) {
+        const fullPath = join(msDir, entry.name);
+        if (entry.isDirectory()) {
+            count += await normalizeManuscript(fullPath, normConfig);
+        } else if (extname(entry.name) === ".md") {
+            const content = await readFile(fullPath, "utf-8");
+            const { data, body } = parseFrontmatter(content);
+            const normalizedBody = normalizeText(body, normConfig);
+            if (normalizedBody !== body) {
+                // Rebuild file with original frontmatter + normalized body
+                const { frontmatter: fmFormat } = await import("../support/fs-utils.js");
+                if (Object.keys(data).length > 0) {
+                    await writeFile(fullPath, fmFormat(data, normalizedBody));
+                } else {
+                    await writeFile(fullPath, normalizedBody);
+                }
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+export async function syncProject(projectDir: string): Promise<{ roles: number; chapters: number; agents: boolean; reports: string[]; normalized: number }> {
     const roles = await syncContributorRoles(projectDir);
     const chapters = await syncChapterNumbering(projectDir);
     const config = await loadConfig(projectDir);
@@ -137,10 +166,28 @@ export async function syncProject(projectDir: string): Promise<{ roles: number; 
         });
     }
 
+    // Text normalization (dialogue style, smart quotes, ellipsis, dashes)
+    let normalized = 0;
+    if (typeDef?.files.includes("style.yaml") && await fileExists(join(projectDir, "style.yaml"))) {
+        try {
+            const styleRaw = await readFile(join(projectDir, "style.yaml"), "utf-8");
+            const styleData = parseYaml(styleRaw) as Record<string, unknown>;
+            const normConfig = loadNormalizationConfig(styleData);
+            if (normConfig.dialogue_style || normConfig.smart_quotes || normConfig.normalize_ellipsis || normConfig.normalize_dashes) {
+                const msDir = join(projectDir, "manuscript");
+                if (await dirExists(msDir)) {
+                    normalized = await normalizeManuscript(msDir, normConfig);
+                }
+            }
+        } catch {
+            // style.yaml parse errors are non-fatal for sync
+        }
+    }
+
     await ensureAgentsMd(projectDir);
     const reports = await generateReports(projectDir);
 
-    return { roles, chapters, agents: true, reports };
+    return { roles, chapters, agents: true, reports, normalized };
 }
 
 export const syncCommand = new Command("sync")
@@ -162,6 +209,9 @@ export const syncCommand = new Command("sync")
             console.log(`  ${c.green("✓")} Renumbered ${result.chapters} chapter file(s)`);
         } else {
             console.log(`  ${c.dim("✓ Chapter numbering up to date")}`);
+        }
+        if (result.normalized > 0) {
+            console.log(`  ${c.green("✓")} Normalized text in ${result.normalized} file(s)`);
         }
         console.log(`  ${c.dim("✓ AGENTS.md refreshed")}`);
         console.log(`  ${c.dim(`✓ Reports: ${result.reports.join(", ")}`)}`);
