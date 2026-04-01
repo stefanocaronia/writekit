@@ -708,6 +708,20 @@ Available exports include project loading (`loadConfig`, `loadChapters`, `loadCo
 
 See [src/index.ts](./src/index.ts) for the complete list.
 
+## Deploy
+
+`wk build html` produces a self-contained HTML file in `build/`. You can host it anywhere that serves static files.
+
+**GitHub Pages** — Push `build/` to a `gh-pages` branch, or configure Settings > Pages to serve from a folder. See [GitHub Pages docs](https://docs.github.com/en/pages).
+
+**Netlify** — Set the build command to `npm i -g writekit && wk build html` and the publish directory to `build/`. See [Netlify docs](https://docs.netlify.com/).
+
+**Vercel** — Same approach: install writekit in the build step, output to `build/`. See [Vercel docs](https://vercel.com/docs).
+
+**Any static host** — Just upload the contents of `build/`. The HTML output is a single file with all CSS and images embedded inline — no server required.
+
+For ePub distribution, `wk build epub` produces a standard `.epub` file you can upload to any ebook store or attach to a GitHub Release.
+
 ## License
 
 MIT
