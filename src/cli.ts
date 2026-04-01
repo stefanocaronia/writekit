@@ -20,7 +20,7 @@ const program = new Command();
 program
     .name("wk")
     .description("CLI toolkit for writing books, essays, and articles")
-    .version("1.0.4");
+    .version("1.0.5");
 
 program.addCommand(initCommand);
 program.addCommand(buildCommand);
