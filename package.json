@@ -1,6 +1,6 @@
 {
   "name": "writekit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI framework for creating books — generates PDF, ePub, HTML, and DOCX",
   "type": "module",
   "main": "./dist/index.js",
@@ -30,8 +30,13 @@
     "epub",
     "docx"
   ],
-  "author": "",
+  "author": "Stefano Caronia",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefanocaronia/writekit.git"
+  },
+  "homepage": "https://github.com/stefanocaronia/writekit#readme",
   "devDependencies": {
     "@types/marked": "^5.0.2",
     "@types/node": "^22.0.0",
@@ -54,6 +59,7 @@
     "node": ">=18"
   },
   "files": [
-    "dist"
+    "dist",
+    "PLUGINS.md"
   ]
 }
