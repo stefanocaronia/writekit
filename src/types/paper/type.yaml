@@ -51,7 +51,7 @@ reports:
 schemas:
     manuscript:
         required: [title]
-        optional: [draft, author]
+        optional: [narrator, pov, draft, author]
     concepts:
         required: [term]
         optional: [related]
@@ -61,7 +61,8 @@ schemas:
 sample_files:
     style.yaml:
         body: |
-            pov: third-person
+            narrator: third-person
+            pov: ""
             tense: past
             tone: ""
             voice: ""

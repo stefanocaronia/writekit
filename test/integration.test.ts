@@ -173,7 +173,7 @@ When Marco Bellini returns to his hometown after two decades, he expects to find
 `);
 
         // Style
-        writeContent(DIR, "style.yaml", `pov: third-person
+        writeContent(DIR, "style.yaml", `narrator: third-person
 tense: past
 tone: dark, atmospheric
 voice: literary

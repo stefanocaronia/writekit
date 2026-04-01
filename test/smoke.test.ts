@@ -475,7 +475,7 @@ schemas:
         optional: [chapter, draft]
 sample_files:
     style.yaml:
-        body: "pov: third-person\\ntense: past\\ntone: \\\"\\\"\\nvoice: \\\"\\\"\\nrules: []\\n"
+        body: "narrator: third-person\\ntense: past\\ntone: \\\"\\\"\\nvoice: \\\"\\\"\\nrules: []\\n"
     synopsis.md:
         body: "# Synopsis\\n\\nWrite your synopsis here...\\n"
     manuscript/01-opening.md:
@@ -587,7 +587,7 @@ schemas:
         optional: [chapter, draft]
 sample_files:
     style.yaml:
-        body: "pov: third-person\\ntense: past\\ntone: \\\"\\\"\\nvoice: \\\"\\\"\\nrules: []\\n"
+        body: "narrator: third-person\\ntense: past\\ntone: \\\"\\\"\\nvoice: \\\"\\\"\\nrules: []\\n"
     synopsis.md:
         body: "# Synopsis\\n\\nWrite your synopsis here...\\n"
     manuscript/01-opening.md:

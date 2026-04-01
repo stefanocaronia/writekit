@@ -5,7 +5,7 @@ You are working inside a **writekit** project. Read `README.md` for full command
 ## Before writing anything
 
 1. Read `config.yaml` — type, title, author, language. Adapt to the type.
-2. Read `style.yaml` — POV, tense, tone, voice, rules. Never break these.
+2. Read `style.yaml` — narrator (voice type), POV (character), tense, tone, voice, rules. Never break these.
 3. Read `synopsis.md` — the story/argument summary. Stay aligned.
 4. Read the type-specific instructions for your project type.
 5. If the project has local `types/`, `formats/`, or `presets/`, inspect them before changing structure, build behavior, or print layout.
@@ -81,6 +81,22 @@ wk export                          # dump entire project to single .md
 - Add ad-hoc top-level config keys for plugins; use `type_options` and `format_options`
 - Edit `translation.yaml`, `source_hash`, or `source_path` in translation projects
 - Add `print_preset` to config.yaml unless the author explicitly wants print output
+
+## Narrator and POV
+
+Two distinct concepts — do not confuse them:
+
+- **`narrator`** (style.yaml + per-chapter override): the narrative voice type.
+  - `first-person`: the narrator IS a character ("I walked...")
+  - `third-person`: external narrator following one character ("He thought...")
+  - `omniscient`: all-knowing narrator ("Meanwhile, she was thinking...")
+  - `second-person`: rare ("You walk into the room...")
+- **`pov`** (style.yaml default + per-chapter): the point-of-view character(s). String or list.
+  - In first-person: who is the "I"
+  - In third-person: whose thoughts we follow
+  - In omniscient: optional focus character(s)
+
+Check consistency: if `narrator: first-person` and `pov: Marco`, every chapter with that POV must use "I" as Marco. If a chapter overrides `narrator: third-person`, the voice switches.
 
 ## Manuscript structure
 

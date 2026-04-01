@@ -1,4 +1,4 @@
-export type FieldType = "string" | "number" | "array" | "boolean" | "object";
+export type FieldType = "string" | "number" | "array" | "boolean" | "object" | "string_or_array";
 
 export interface FieldDef {
     type: FieldType;
@@ -42,11 +42,12 @@ export const configSchema: Schema = {
 };
 
 export const styleSchema: Schema = {
-    pov: {
+    narrator: {
         type: "string",
         required: true,
-        values: ["first-person", "third-person", "omniscient"],
+        values: ["first-person", "third-person", "omniscient", "second-person"],
     },
+    pov: { type: "string_or_array" },
     tense: {
         type: "string",
         required: true,
@@ -121,6 +122,8 @@ function checkType(value: unknown, expectedType: FieldType): boolean {
             return Array.isArray(value);
         case "object":
             return value !== null && typeof value === "object" && !Array.isArray(value);
+        case "string_or_array":
+            return typeof value === "string" || Array.isArray(value);
     }
 }
 

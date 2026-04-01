@@ -57,14 +57,15 @@ reports:
 schemas:
     manuscript:
         required: [title]
-        optional: [chapter, author, draft]
+        optional: [chapter, narrator, pov, author, draft]
     contributors:
         required: [name]
         optional: [roles]
 sample_files:
     style.yaml:
         body: |
-            pov: third-person
+            narrator: third-person
+            pov: ""
             tense: past
             tone: ""
             voice: ""

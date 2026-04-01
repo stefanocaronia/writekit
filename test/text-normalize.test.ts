@@ -185,7 +185,7 @@ describe("wk check with normalization rules", () => {
         run(`${CLI} init test-normalize-check --yes --type novel`, SANDBOX);
 
         // Set normalization rules
-        writeFileSync(join(PROJ_DIR, "style.yaml"), `pov: third-person
+        writeFileSync(join(PROJ_DIR, "style.yaml"), `narrator: third-person
 tense: past
 dialogue_style: em_dash
 smart_quotes: true
@@ -228,7 +228,7 @@ describe("wk sync with normalization rules", () => {
         mkdirSync(SANDBOX, { recursive: true });
         run(`${CLI} init test-normalize-sync --yes --type novel`, SANDBOX);
 
-        writeFileSync(join(PROJ_DIR, "style.yaml"), `pov: third-person
+        writeFileSync(join(PROJ_DIR, "style.yaml"), `narrator: third-person
 tense: past
 smart_quotes: true
 normalize_ellipsis: true

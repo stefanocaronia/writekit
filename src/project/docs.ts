@@ -125,8 +125,9 @@ theme: default
 ### style.yaml
 
 \`\`\`yaml
-pov: third-person          # first-person, third-person, omniscient
-tense: past                # past, present
+narrator: third-person     # first-person | third-person | omniscient | second-person
+pov: ""                    # default POV character(s) — name or list of names
+tense: past                # past | present
 tone: ""
 voice: ""
 rules: []
@@ -139,6 +140,21 @@ normalize_dashes: true     # -- → \\u2014
 \`\`\`
 
 When normalization rules are set, \`wk check\` warns about violations and \`wk sync\` auto-fixes them.
+
+### Narrator vs POV
+
+These are two distinct concepts:
+
+- **\`narrator\`** — the narrative voice type. Set in \`style.yaml\` as the project default, overridable per chapter.
+  - \`first-person\`: the narrator is a character ("I walked...")
+  - \`third-person\`: external narrator following one character's thoughts ("He walked... he thought...")
+  - \`omniscient\`: external narrator who knows everything ("Meanwhile, across town, she was thinking...")
+  - \`second-person\`: rare ("You walk into the room...")
+
+- **\`pov\`** — the point-of-view character(s). Who the reader experiences the scene through. Can be a single name or a list.
+  - In first-person: who is the "I"
+  - In third-person: whose thoughts we follow
+  - In omniscient: optional, indicates the focus character(s) of the scene
 
 ### Typography overrides
 
@@ -214,8 +230,10 @@ wk theme create <name>         # create custom theme
 | Field | Required | Description |
 |---|---|---|
 | \`title\` | yes | Chapter title |
-${hasCmd("chapter") ? '| `chapter` | yes | Chapter number |\n' : ""}| \`draft\` | no | Draft number (tracked in reports) |
-${hasDir("characters") ? '| `pov` | no | Point-of-view character |\n' : ""}${t.features.show_chapter_author ? '| `author` | no | Per-chapter author |\n' : ""}| \`show_title\` | no | Set to false to hide heading |
+${hasCmd("chapter") ? '| `chapter` | yes | Chapter number |\n' : ""}| \`narrator\` | no | Override narrative voice for this chapter (first-person, third-person, omniscient, second-person) |
+| \`pov\` | no | Point-of-view character(s) — name or list of names |
+| \`draft\` | no | Draft number (tracked in reports) |
+${t.features.show_chapter_author ? '| `author` | no | Per-chapter author |\n' : ""}| \`show_title\` | no | Set to false to hide heading |
 | \`toc\` | no | Set to false to exclude from TOC |
 `);
 
