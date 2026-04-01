@@ -5,6 +5,7 @@ import { stringify, parse as parseYaml } from "yaml";
 import { slugify, padNumber } from "../support/slug.js";
 import { fileExists, dirExists, assertProject, frontmatter } from "../support/fs-utils.js";
 import { loadType, hasType } from "../project/project-type.js";
+import { SECTION_FILE_MAP } from "../project/parse.js";
 import { c, icon } from "../support/ui.js";
 
 async function ensureDir(dir: string): Promise<void> {
@@ -32,7 +33,8 @@ async function assertAddCommand(projectDir: string, command: string): Promise<vo
 async function countMdFiles(dir: string): Promise<number> {
     try {
         const files = await readdir(dir);
-        return files.filter((f) => extname(f) === ".md").length;
+        const sectionFiles = new Set(Object.keys(SECTION_FILE_MAP));
+        return files.filter((f) => extname(f) === ".md" && !sectionFiles.has(f)).length;
     } catch {
         return 0;
     }
