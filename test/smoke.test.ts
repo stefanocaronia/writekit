@@ -43,6 +43,9 @@ describe("writekit smoke tests", () => {
         expect(out).toContain("watch");
         expect(out).toContain("add");
         expect(out).toContain("theme");
+        expect(out).toContain("translate");
+        expect(out).toContain("export");
+        expect(out).toContain("import");
     });
 
     it("shows version", () => {
