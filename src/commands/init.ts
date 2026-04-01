@@ -9,6 +9,7 @@ import { loadType, allTypeNames, resolveTypeFile, type ProjectType } from "../pr
 import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
 import { languageChoices } from "../support/i18n.js";
 import { ensureAgentsMd } from "../project/agents.js";
+import { generateDocs } from "../project/docs.js";
 
 interface InitOptions {
     title: string;
@@ -264,8 +265,9 @@ export const initCommand = new Command("init")
         // .gitignore
         await writeFile(join(projectDir, ".gitignore"), "build/\n");
 
-        // AGENTS.md
-        await ensureAgentsMd(projectDir);
+        // AGENTS.md + docs
+        await ensureAgentsMd(projectDir, options.type);
+        await generateDocs(projectDir, typeDef);
 
         // Copy custom local type into the new project so future commands can resolve it.
         if (typeSource?.source === "local") {
@@ -314,6 +316,8 @@ export const initCommand = new Command("init")
                 console.log(c.gray(`  ├── ${dir}/`));
             }
         }
+        console.log(c.gray("  ├── docs/"));
+        console.log(c.gray("  │   └── writekit.md"));
         console.log(c.gray("  ├── AGENTS.md"));
         console.log(c.gray("  └── README.md"));
 

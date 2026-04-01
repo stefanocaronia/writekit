@@ -6,6 +6,7 @@ import { assertProject } from "../support/fs-utils.js";
 import { SECTION_FILE_MAP, loadConfig } from "../project/parse.js";
 import { padNumber } from "../support/slug.js";
 import { ensureAgentsMd } from "../project/agents.js";
+import { generateDocs } from "../project/docs.js";
 import { generateReports } from "../project/reports.js";
 import { hasType, loadType } from "../project/project-type.js";
 import { loadTypePlugin, typeOptions as resolveTypeOptions } from "../project/type-plugin.js";
@@ -184,7 +185,8 @@ export async function syncProject(projectDir: string): Promise<{ roles: number; 
         }
     }
 
-    await ensureAgentsMd(projectDir);
+    await ensureAgentsMd(projectDir, typeName);
+    if (typeDef) await generateDocs(projectDir, typeDef);
     const reports = await generateReports(projectDir);
 
     return { roles, chapters, agents: true, reports, normalized };
