@@ -47,6 +47,7 @@ add_commands:
     - part
     - note
     - dedication
+    - epigraph
     - preface
     - foreword
     - afterword

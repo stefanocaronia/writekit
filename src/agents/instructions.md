@@ -102,7 +102,7 @@ Check consistency: if `narrator: first-person` and `pov: Marco`, every chapter w
 
 - Chapters: `manuscript/01-slug.md` (numbered, frontmatter with `title`)
 - Parts: `manuscript/part-01/part.yaml` + chapters inside
-- Front matter: `dedication.md`, `preface.md`, `foreword.md`, `prologue.md`
+- Front matter: `dedication.md`, `epigraph.md`, `preface.md`, `foreword.md`, `prologue.md`
 - Back matter: `epilogue.md`, `afterword.md`, `appendix.md`, `author-note.md`
 - Section titles come from i18n. Custom title via frontmatter `title:`.
 - `show_title: false` hides heading in page. `toc: false` excludes from TOC.

@@ -36,6 +36,7 @@ export interface Labels {
     appendix: string;
     authorNote: string;
     dedication: string;
+    epigraph: string;
 }
 
 const en: Labels = {
@@ -69,6 +70,7 @@ const en: Labels = {
     appendix: "Appendix",
     authorNote: "Author's Note",
     dedication: "Dedication",
+    epigraph: "Epigraph",
 };
 
 const it: Labels = {
@@ -102,6 +104,7 @@ const it: Labels = {
     appendix: "Appendice",
     authorNote: "Nota dell'Autore",
     dedication: "Dedica",
+    epigraph: "Epigrafe",
 };
 
 const fr: Labels = {
@@ -135,6 +138,7 @@ const fr: Labels = {
     appendix: "Annexe",
     authorNote: "Note de l'auteur",
     dedication: "Dédicace",
+    epigraph: "Épigraphe",
 };
 
 const de: Labels = {
@@ -168,6 +172,7 @@ const de: Labels = {
     appendix: "Anhang",
     authorNote: "Anmerkung des Autors",
     dedication: "Widmung",
+    epigraph: "Epigraph",
 };
 
 const es: Labels = {
@@ -201,6 +206,7 @@ const es: Labels = {
     appendix: "Apéndice",
     authorNote: "Nota del autor",
     dedication: "Dedicatoria",
+    epigraph: "Epígrafe",
 };
 
 const pt: Labels = {
@@ -234,6 +240,7 @@ const pt: Labels = {
     appendix: "Apêndice",
     authorNote: "Nota do autor",
     dedication: "Dedicatória",
+    epigraph: "Epígrafe",
 };
 
 const ru: Labels = {
@@ -267,6 +274,7 @@ const ru: Labels = {
     appendix: "Приложение",
     authorNote: "Заметка автора",
     dedication: "Посвящение",
+    epigraph: "Эпиграф",
 };
 
 const ar: Labels = {
@@ -300,6 +308,7 @@ const ar: Labels = {
     appendix: "ملحق",
     authorNote: "ملاحظة المؤلف",
     dedication: "إهداء",
+    epigraph: "صدر الكتاب",
 };
 
 const hi: Labels = {
@@ -333,6 +342,7 @@ const hi: Labels = {
     appendix: "परिशिष्ट",
     authorNote: "लेखक की टिप्पणी",
     dedication: "समर्पण",
+    epigraph: "अधिवचन",
 };
 
 const zh: Labels = {
@@ -366,6 +376,7 @@ const zh: Labels = {
     appendix: "附录",
     authorNote: "作者的话",
     dedication: "献词",
+    epigraph: "题词",
 };
 
 const ko: Labels = {
@@ -399,6 +410,7 @@ const ko: Labels = {
     appendix: "부록",
     authorNote: "저자의 말",
     dedication: "헌사",
+    epigraph: "제사",
 };
 
 const ja: Labels = {
@@ -432,6 +444,7 @@ const ja: Labels = {
     appendix: "付録",
     authorNote: "著者ノート",
     dedication: "献辞",
+    epigraph: "題辞",
 };
 
 const nl: Labels = {
@@ -465,6 +478,7 @@ const nl: Labels = {
     appendix: "Bijlage",
     authorNote: "Woord van de auteur",
     dedication: "Opdracht",
+    epigraph: "Epigraaf",
 };
 
 const pl: Labels = {
@@ -498,6 +512,7 @@ const pl: Labels = {
     appendix: "Dodatek",
     authorNote: "Nota autora",
     dedication: "Dedykacja",
+    epigraph: "Epigraf",
 };
 
 const tr: Labels = {
@@ -531,6 +546,7 @@ const tr: Labels = {
     appendix: "Ek",
     authorNote: "Yazarın notu",
     dedication: "İthaf",
+    epigraph: "Epigraf",
 };
 
 const sv: Labels = {
@@ -564,6 +580,7 @@ const sv: Labels = {
     appendix: "Bilaga",
     authorNote: "Författarens anmärkning",
     dedication: "Dedikation",
+    epigraph: "Epigraf",
 };
 
 const el: Labels = {
@@ -597,6 +614,7 @@ const el: Labels = {
     appendix: "Παράρτημα",
     authorNote: "Σημείωμα συγγραφέα",
     dedication: "Αφιέρωση",
+    epigraph: "Επιγραφή",
 };
 
 const catalog: Record<string, Labels> = {

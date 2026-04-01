@@ -50,6 +50,7 @@ add_commands:
     - concept
     - note
     - dedication
+    - epigraph
     - preface
     - foreword
     - afterword

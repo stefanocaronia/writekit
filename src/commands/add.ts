@@ -537,6 +537,7 @@ interface SectionDef {
 
 const SECTION_DEFS: SectionDef[] = [
     { command: "dedication", filename: "dedication.md", displayTitle: "Dedication" },
+    { command: "epigraph", filename: "epigraph.md", displayTitle: "Epigraph" },
     { command: "preface", filename: "preface.md", displayTitle: "Preface" },
     { command: "foreword", filename: "foreword.md", displayTitle: "Foreword" },
     { command: "prologue", filename: "prologue.md", displayTitle: "Prologue" },

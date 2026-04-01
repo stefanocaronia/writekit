@@ -60,6 +60,7 @@ add_commands:
     - note
     - event
     - dedication
+    - epigraph
     - preface
     - foreword
     - prologue

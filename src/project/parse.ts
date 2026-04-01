@@ -42,14 +42,15 @@ export interface BookConfig {
     keywords?: string[];
 }
 
-export type SectionKind = "dedication" | "preface" | "foreword" | "prologue" | "epilogue" | "afterword" | "appendix" | "author_note";
+export type SectionKind = "dedication" | "epigraph" | "preface" | "foreword" | "prologue" | "epilogue" | "afterword" | "appendix" | "author_note";
 
-export const FRONT_SECTIONS: SectionKind[] = ["dedication", "preface", "foreword", "prologue"];
+export const FRONT_SECTIONS: SectionKind[] = ["dedication", "epigraph", "preface", "foreword", "prologue"];
 export const BACK_SECTIONS: SectionKind[] = ["epilogue", "afterword", "appendix", "author_note"];
 
 // Maps SectionKind to the i18n Labels key
 export const SECTION_LABEL_KEY: Record<SectionKind, string> = {
     dedication: "dedication",
+    epigraph: "epigraph",
     preface: "preface",
     foreword: "foreword",
     prologue: "prologue",
@@ -61,6 +62,7 @@ export const SECTION_LABEL_KEY: Record<SectionKind, string> = {
 
 export const SECTION_FILE_MAP: Record<string, SectionKind> = {
     "dedication.md": "dedication",
+    "epigraph.md": "epigraph",
     "preface.md": "preface",
     "foreword.md": "foreword",
     "prologue.md": "prologue",
@@ -183,20 +185,24 @@ export async function loadConfig(projectDir: string): Promise<BookConfig> {
     return parseYaml(raw) as BookConfig;
 }
 
-function parseMdFile(content: string, file: string, chapterNum: number, isSection = false): Chapter {
+// Sections that default to hidden title and excluded from TOC
+const SILENT_SECTIONS = new Set<SectionKind>(["dedication", "epigraph"]);
+
+function parseMdFile(content: string, file: string, chapterNum: number, isSection = false, sectionKind?: SectionKind): Chapter {
     const { data, body } = parseFrontmatter(content);
     const cleanBody = body.replace(/^#\s+.+\n+/, "");
     // For sections: title empty if not explicitly set (builder resolves from i18n)
     // For chapters: fallback to filename
     const title = (data.title as string) ?? (isSection ? "" : file.replace(/\.md$/, ""));
+    const isSilent = sectionKind && SILENT_SECTIONS.has(sectionKind);
     return {
         number: (data.chapter as number) ?? chapterNum,
         title,
         pov: data.pov as string | undefined,
         draft: data.draft as number | undefined,
         author: data.author as string | undefined,
-        toc: data.toc === false ? false : undefined,
-        showTitle: data.show_title === false ? false : undefined,
+        toc: data.toc === false ? false : isSilent ? false : undefined,
+        showTitle: data.show_title === false ? false : isSilent ? false : undefined,
         body: cleanBody,
         filename: file,
     };
@@ -253,8 +259,9 @@ export async function loadChapters(projectDir: string): Promise<Chapter[]> {
     // Front matter
     for (const file of frontFiles) {
         const content = await readFile(join(manuscriptDir, file), "utf-8");
-        const ch = parseMdFile(content, file, 0, true);
-        ch.sectionKind = SECTION_FILE_MAP[file];
+        const kind = SECTION_FILE_MAP[file];
+        const ch = parseMdFile(content, file, 0, true, kind);
+        ch.sectionKind = kind;
         ch.number = 0;
         result.push(ch);
     }
@@ -299,8 +306,9 @@ export async function loadChapters(projectDir: string): Promise<Chapter[]> {
     // Back matter
     for (const file of backFiles) {
         const content = await readFile(join(manuscriptDir, file), "utf-8");
-        const ch = parseMdFile(content, file, 0, true);
-        ch.sectionKind = SECTION_FILE_MAP[file];
+        const kind = SECTION_FILE_MAP[file];
+        const ch = parseMdFile(content, file, 0, true, kind);
+        ch.sectionKind = kind;
         ch.number = 0;
         result.push(ch);
     }

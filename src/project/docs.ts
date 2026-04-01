@@ -55,6 +55,7 @@ wk stats          # word count, reading time, chapter balance
     addCmds.push("wk add translator <name>          # add a translator");
     // Front/back matter
     if (hasCmd("dedication")) addCmds.push("wk add dedication                 # dedication page");
+    if (hasCmd("epigraph")) addCmds.push("wk add epigraph                   # opening quotation(s)");
     if (hasCmd("preface")) addCmds.push("wk add preface                    # preface");
     if (hasCmd("foreword")) addCmds.push("wk add foreword                   # foreword");
     if (hasCmd("prologue")) addCmds.push("wk add prologue                   # prologue");

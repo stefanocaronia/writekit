@@ -135,6 +135,7 @@ These special sections are recognized by filename and rendered in the correct po
 | Section | Position | Available for |
 |---|---|---|
 | `dedication.md` | front | novel, collection, essay |
+| `epigraph.md` | front | novel, collection, essay |
 | `preface.md` | front | novel, collection, essay |
 | `foreword.md` | front | novel, collection, essay |
 | `prologue.md` | front | novel |
@@ -170,6 +171,7 @@ Add them with `wk add prologue`, `wk add epilogue`, etc. Remove with `wk remove 
 | `wk add prologue` | Add a prologue (novel only) |
 | `wk add epilogue` | Add an epilogue (novel only) |
 | `wk add dedication` | Add a dedication page |
+| `wk add epigraph` | Add an epigraph (opening quotation) |
 | `wk add preface` | Add a preface |
 | `wk add foreword` | Add a foreword |
 | `wk add afterword` | Add an afterword |
