@@ -1,9 +1,9 @@
 ---
 project: writekit
-version: 0.4.1
-last_updated: 2026-03-31
-status: v0.4.1 released in git, with a few manual DOCX/PDF follow-ups still pending; plugin system for types, formats, and presets implemented; npm publish pending
-last_published_npm: 0.1.0
+version: 1.0.0
+last_updated: 2026-04-01
+status: v1.0.0 — all roadmap items complete. Full translation suite, public API, font embedding, DOCX templates, import/export, plugin system.
+last_published_npm: 1.0.0
 types_planned: [novel, collection, essay, paper]
 ---
 
